@@ -6,7 +6,6 @@ namespace aggregator.cli
     class Program
     {
         /*
-- list.instances
 - install.instance
 - unistall.instance
 - configure.instance
@@ -21,10 +20,11 @@ namespace aggregator.cli
          */
         static int Main(string[] args)
         {
-            return Parser.Default.ParseArguments<LogonAzureCommand, LogonVstsCommand>(args)
+            return Parser.Default.ParseArguments<LogonAzureCommand, LogonVstsCommand, ListInstancesCommand>(args)
                 .MapResult(
                     (LogonAzureCommand cmd) => cmd.Run(),
                     (LogonVstsCommand cmd) => cmd.Run(),
+                    (ListInstancesCommand cmd) => cmd.Run(),
                     errs => 1);
         }
     }
