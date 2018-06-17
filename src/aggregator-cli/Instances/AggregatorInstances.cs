@@ -27,5 +27,19 @@ namespace aggregator.cli
                 );
             }
         }
+
+        internal bool Add(string name, string location)
+        {
+            string rgName = InstancePrefix + name;
+            if (!azure.ResourceGroups.Contain(rgName))
+            {
+                azure.ResourceGroups
+                    .Define(rgName)
+                    .WithRegion(location)
+                    .Create();
+            }
+            // TODO here the meat
+            return true;
+        }
     }
 }
