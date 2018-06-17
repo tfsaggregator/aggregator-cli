@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -89,6 +90,7 @@ namespace aggregator.cli
                 // validate credentials
                 return Microsoft.Azure.Management.Fluent.Azure
                     .Configure()
+                    .WithLogLevel(HttpLoggingDelegatingHandler.Level.None)
                     .Authenticate(credentials)
                     .WithSubscription(SubscriptionId);
             }
