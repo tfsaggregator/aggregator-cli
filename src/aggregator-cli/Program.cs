@@ -19,12 +19,17 @@ namespace aggregator.cli
          */
         static int Main(string[] args)
         {
-            return Parser.Default.ParseArguments<LogonAzureCommand, LogonVstsCommand, ListInstancesCommand, InstallInstanceCommand>(args)
+            return Parser.Default.ParseArguments<
+                LogonAzureCommand, LogonVstsCommand,
+                ListInstancesCommand, InstallInstanceCommand,
+                AddRuleCommand
+                >(args)
                 .MapResult(
                     (LogonAzureCommand cmd) => cmd.Run(),
                     (LogonVstsCommand cmd) => cmd.Run(),
                     (ListInstancesCommand cmd) => cmd.Run(),
                     (InstallInstanceCommand cmd)=> cmd.Run(),
+                    (AddRuleCommand cmd)=> cmd.Run(),
                     errs => 1);
         }
     }

@@ -24,7 +24,7 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(azure);
             instances.Progress += Instances_Progress;
             instances.Add(Name, Location);
-            return 1;
+            return 0;
         }
 
         private void Instances_Progress(object sender, AggregatorInstances.ProgressEventArgs e)
