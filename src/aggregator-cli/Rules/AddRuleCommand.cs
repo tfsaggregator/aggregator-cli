@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -17,7 +18,7 @@ namespace aggregator.cli
         [Option('f', "file", HelpText = "Aggregator rule code.")]
         public string File { get; set; }
 
-        internal override int Run()
+        internal override Task<int> RunAsync()
         {
             var azure = AzureLogon.Load()?.Logon();
             if (azure == null)
@@ -27,7 +28,7 @@ namespace aggregator.cli
             var rules = new AggregatorRules(azure);
             //rules.Progress += Instances_Progress;
             rules.AddAsync(Instance, Name, File).Wait();
-            return 0;
+            return Task.Run(() => 0);
         }
     }
 }

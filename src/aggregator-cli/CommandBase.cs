@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -11,7 +12,7 @@ namespace aggregator.cli
         [Option(Default = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
-        internal abstract int Run();
+        internal abstract Task<int> RunAsync();
 
         public void WriteOutput(object data, Func<object, string> humanOutput)
         {
@@ -46,5 +47,17 @@ namespace aggregator.cli
             Console.WriteLine(message);
             Console.ForegroundColor = save;
         }
+    }
+
+    static class CommandBaseExtension
+    {
+        static internal int Run(this CommandBase cmd)
+        {
+            var t = cmd.RunAsync();
+            t.Wait();
+            return t.Result;
+        }
+
+
     }
 }

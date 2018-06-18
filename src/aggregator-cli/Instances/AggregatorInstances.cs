@@ -6,8 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Xml;
 
 namespace aggregator.cli
 {
@@ -101,6 +104,26 @@ namespace aggregator.cli
             }
             Progress?.Invoke(this, new ProgressEventArgs($"Deployment {deployment.ProvisioningState}"));
             return true;
+        }
+
+        internal (string username, string password) GetPublishCredentials(string instance)
+        {
+            // see https://zimmergren.net/azure-resource-manager-part-7-download-an-azure-publishing-profile-xml-programmatically-using-rest/
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+            var logon = AzureLogon.Load();
+            string token = logon.GetAuthorizationToken();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            string apiUrl = $"https://management.azure.com/subscriptions/{azure.SubscriptionId}/resourceGroups/aggregator-{instance}/providers/Microsoft.Web/sites/{instance}/publishxml?api-version=2016-08-01";
+            var response = client.PostAsync(apiUrl, new StringContent(string.Empty));
+            var task = response.Result.Content.ReadAsStringAsync();
+            task.Wait();
+            string publishxml = task.Result;
+            var publishDoc = new XmlDocument();
+            publishDoc.LoadXml(publishxml);
+            var node = publishDoc.SelectSingleNode("/publishData/publishProfile[@publishMethod='MSDeploy']");
+            // TODO this should be cached
+            return (username: node.Attributes["userName"].Value, password: node.Attributes["userPWD"].Value);
         }
     }
 }

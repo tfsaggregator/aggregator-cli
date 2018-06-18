@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -98,6 +99,19 @@ namespace aggregator.cli
             {
                 return null;
             }
+        }
+
+        public string GetAuthorizationToken()
+        {
+            var cc = new ClientCredential(this.ClientId, this.ClientSecret);
+            var context = new AuthenticationContext("https://login.windows.net/" + this.TenantId);
+            var result = context.AcquireTokenAsync("https://management.azure.com/", cc);
+            if (result == null)
+            {
+                throw new InvalidOperationException("Failed to obtain the JWT token");
+            }
+
+            return result.Result.AccessToken;
         }
     }
 }

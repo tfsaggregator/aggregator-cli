@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -16,7 +17,7 @@ namespace aggregator.cli
         [Option('t', "tenant", Required = true, HelpText = "Tenant Id.")]
         public string TenantId { get; set; }
 
-        override internal int Run()
+        internal override Task<int> RunAsync()
         {
             var data = new AzureLogon()
             {
@@ -31,9 +32,9 @@ namespace aggregator.cli
             if (azure == null)
             {
                 WriteError("Invalid azure credentials");
-                return 2;
+                return Task.Run(() => 2);
             }
-            return 0;
+            return Task.Run(() => 0);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -23,9 +24,9 @@ namespace aggregator.cli
         [Option('t', "token", SetName = "PAT", HelpText = "VSTS Personal Authentication Token.")]
         public string Token { get; set; }
 
-        override internal int Run()
+        internal override Task<int> RunAsync()
         {
-            return 2;
+            return Task.Run(() => 2);
         }
     }
 }

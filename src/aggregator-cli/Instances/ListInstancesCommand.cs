@@ -1,13 +1,14 @@
 ﻿using CommandLine;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
     [Verb("list.instances", HelpText = "Lists Aggregator instances.")]
     class ListInstancesCommand : CommandBase
     {
-        internal override int Run()
+        internal override Task<int> RunAsync()
         {
             var azure = AzureLogon.Load()?.Logon();
             if (azure == null)
@@ -27,7 +28,7 @@ namespace aggregator.cli
             {
                 WriteInfo("No aggregator instances found.");
             }
-            return 0;
+            return Task.Run(() => 2);
         }
     }
 }

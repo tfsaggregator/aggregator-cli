@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -14,7 +15,7 @@ namespace aggregator.cli
         [Option('l', "location", HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
-        internal override int Run()
+        internal override Task<int> RunAsync()
         {
             var azure = AzureLogon.Load()?.Logon();
             if (azure == null)
@@ -24,7 +25,7 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(azure);
             instances.Progress += Instances_Progress;
             instances.Add(Name, Location);
-            return 0;
+            return Task.Run(() => 0);
         }
 
         private void Instances_Progress(object sender, AggregatorInstances.ProgressEventArgs e)
