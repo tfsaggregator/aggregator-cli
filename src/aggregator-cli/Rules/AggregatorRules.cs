@@ -24,13 +24,27 @@ namespace aggregator.cli
             this.azure = azure;
         }
 
-        internal class KuduFunctionListItem
+        public class KuduFunctionBinding
         {
-            public string name { get; internal set; }
-            public object configuration { get; internal set; }
+            public string name { get; set; }
+            public string type { get; set; }
+            public string direction { get; set; }
+            public string webHookType { get; set; }
         }
 
-        internal async Task<IEnumerable<KuduFunctionListItem>> List(string instance)
+        public class KuduFunctionConfig
+        {
+            public KuduFunctionBinding[] bindings { get; set; }
+            public bool disabled { get; set; }
+        }
+
+        public class KuduFunction
+        {
+            public string name { get; set; }
+            public KuduFunctionConfig config { get; set; }
+        }
+
+        internal async Task<IEnumerable<KuduFunction>> List(string instance)
         {
             var instances = new AggregatorInstances(azure);
             (string username, string password) = instances.GetPublishCredentials(instance);
@@ -54,12 +68,12 @@ namespace aggregator.cli
                         using (var jtr = new JsonTextReader(sr))
                         {
                             var js = new JsonSerializer();
-                            var functionList = js.Deserialize<KuduFunctionListItem[]>(jtr);
+                            var functionList = js.Deserialize<KuduFunction[]>(jtr);
                             return functionList;
                         }
                     }
                     else
-                        return new KuduFunctionListItem[0];
+                        return new KuduFunction[0];
                 }
             }
         }

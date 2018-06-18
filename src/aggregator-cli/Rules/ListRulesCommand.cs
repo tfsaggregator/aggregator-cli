@@ -25,7 +25,7 @@ namespace aggregator.cli
             {
                 WriteOutput(
                     item,
-                    (data) => $"Rule {item.name} with {item.configuration}");
+                    (data) => $"Rule {item.name} {(item.config.disabled ? "(disabled)" : string.Empty)}");
                 any = true;
             }
             if (!any)

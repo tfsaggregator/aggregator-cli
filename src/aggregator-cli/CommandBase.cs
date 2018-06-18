@@ -57,7 +57,5 @@ namespace aggregator.cli
             t.Wait();
             return t.Result;
         }
-
-
     }
 }
