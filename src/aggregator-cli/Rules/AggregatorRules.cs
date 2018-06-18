@@ -24,10 +24,44 @@ namespace aggregator.cli
             this.azure = azure;
         }
 
-        internal IEnumerable<(string name, object configuration)> List(string instance)
+        internal class KuduFunctionListItem
         {
+            public string name { get; internal set; }
+            public object configuration { get; internal set; }
+        }
+
+        internal async Task<IEnumerable<KuduFunctionListItem>> List(string instance)
+        {
+            var instances = new AggregatorInstances(azure);
+            (string username, string password) = instances.GetPublishCredentials(instance);
             string apiUrl = $"https://{instance}.scm.azurewebsites.net/api/functions";
-            return null;
+            CancellationToken cancellationToken;
+
+            using (var client = new HttpClient())
+            using (var request = new HttpRequestMessage(HttpMethod.Get, apiUrl))
+            {
+                request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+                string base64AuthInfo = Convert.ToBase64String(Encoding.ASCII.GetBytes(($"{username}:{password}")));
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64AuthInfo);
+
+                using (var response = await client.SendAsync(request, cancellationToken))
+                {
+                    var stream = await response.Content.ReadAsStreamAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        using (var sr = new StreamReader(stream))
+                        using (var jtr = new JsonTextReader(sr))
+                        {
+                            var js = new JsonSerializer();
+                            var functionList = js.Deserialize<KuduFunctionListItem[]>(jtr);
+                            return functionList;
+                        }
+                    }
+                    else
+                        return new KuduFunctionListItem[0];
+                }
+            }
         }
 
         internal async Task AddAsync(string instance, string name, string filePath)
