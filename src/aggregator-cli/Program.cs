@@ -10,7 +10,6 @@ namespace aggregator.cli
 - unistall.instance
 - configure.rule
 - remove.rule
-- list.mappings
 - map.rule
 - unmap.rule
 - run.local
@@ -20,7 +19,8 @@ namespace aggregator.cli
             return Parser.Default.ParseArguments<
                 LogonAzureCommand, LogonVstsCommand,
                 ListInstancesCommand, InstallInstanceCommand,
-                ListRulesCommand, AddRuleCommand
+                ListRulesCommand, AddRuleCommand,
+                ListMappingsCommand
                 >(args)
                 .MapResult(
                     (LogonAzureCommand cmd) => cmd.Run(),
@@ -29,6 +29,7 @@ namespace aggregator.cli
                     (InstallInstanceCommand cmd) => cmd.Run(),
                     (ListRulesCommand cmd) => cmd.Run(),
                     (AddRuleCommand cmd)=> cmd.Run(),
+                    (ListMappingsCommand cmd)=> cmd.Run(),
                     errs => 1);
         }
     }

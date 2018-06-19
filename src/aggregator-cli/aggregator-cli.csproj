@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.11.1" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.11.1" />
     <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.135.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.ServiceHooks.WebApi" Version="16.135.0-preview" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
