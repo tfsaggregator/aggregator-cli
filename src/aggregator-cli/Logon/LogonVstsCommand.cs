@@ -10,14 +10,17 @@ namespace aggregator.cli
     {
         // HACK: CommandLineParser is case sensitive, sigh!
         integrated = 0,
-        Integrated = 0,
+        Integrated = integrated,
         pat = 1,
-        PAT = 1,
+        PAT = pat,
     }
 
     [Verb("logon.vsts", HelpText = "Logon into Visual Studio Team Services.")]
     class LogonVstsCommand : CommandBase
     {
+        [Option('u', "url", Required = true, HelpText = "Account/server URL, e.g. myaccount.visualstudio.com .")]
+        public string Url { get; set; }
+
         [Option('m', "mode", Required = true, HelpText = "Logon mode.")]
         public VstsLogonMode Mode { get; set; }
 
@@ -26,7 +29,21 @@ namespace aggregator.cli
 
         internal override Task<int> RunAsync()
         {
-            return Task.Run(() => 2);
+            var data = new VstsLogon()
+            {
+                Url = this.Url,
+                Mode = this.Mode,
+                Token = this.Token
+            };
+            string path = data.Save();
+            // now check for validity
+            var vsts = data.Logon();
+            if (vsts == null)
+            {
+                WriteError("Invalid VSTS credentials");
+                return Task.Run(() => 2);
+            }
+            return Task.Run(() => 0);
         }
     }
 }
