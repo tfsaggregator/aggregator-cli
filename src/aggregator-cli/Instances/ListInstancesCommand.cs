@@ -14,6 +14,7 @@ namespace aggregator.cli
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");
+                return Task.Run(() => 2);
             }
             var instances = new AggregatorInstances(azure);
             bool any = false;
@@ -28,7 +29,7 @@ namespace aggregator.cli
             {
                 WriteInfo("No aggregator instances found.");
             }
-            return Task.Run(() => 2);
+            return Task.Run(() => 0);
         }
     }
 }

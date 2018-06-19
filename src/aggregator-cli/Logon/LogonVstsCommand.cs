@@ -27,7 +27,7 @@ namespace aggregator.cli
         [Option('t', "token", SetName = "PAT", HelpText = "VSTS Personal Authentication Token.")]
         public string Token { get; set; }
 
-        internal override Task<int> RunAsync()
+        internal override async Task<int> RunAsync()
         {
             var data = new VstsLogon()
             {
@@ -37,13 +37,13 @@ namespace aggregator.cli
             };
             string path = data.Save();
             // now check for validity
-            var vsts = data.Logon();
+            var vsts = await data.LogonAsync();
             if (vsts == null)
             {
                 WriteError("Invalid VSTS credentials");
-                return Task.Run(() => 2);
+                return 2;
             }
-            return Task.Run(() => 0);
+            return 0;
         }
     }
 }

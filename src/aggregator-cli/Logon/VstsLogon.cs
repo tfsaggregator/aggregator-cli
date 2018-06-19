@@ -26,7 +26,7 @@ namespace aggregator.cli
             return new LogonDataStore(LogonDataTag).Load<VstsLogon>();
         }
 
-        public async Task<VssConnection> Logon()
+        public async Task<VssConnection> LogonAsync()
         {
             var clientCredentials = default(VssCredentials);
             switch (Mode)
