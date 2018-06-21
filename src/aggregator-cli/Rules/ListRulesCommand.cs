@@ -9,7 +9,7 @@ namespace aggregator.cli
     [Verb("list.rules", HelpText = "List the rule in existing Aggregator instance in Azure.")]
     class ListRulesCommand : CommandBase
     {
-        [Option('i', "instance", HelpText = "Aggregator instance name.")]
+        [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
         internal override async Task<int> RunAsync()

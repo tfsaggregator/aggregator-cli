@@ -9,10 +9,10 @@ namespace aggregator.cli
     [Verb("install.instance", HelpText = "Creates a new Aggregator instance in Azure.")]
     class InstallInstanceCommand : CommandBase
     {
-        [Option('n', "name", HelpText = "Aggregator instance name.")]
+        [Option('n', "name", Required = true, HelpText = "Aggregator instance name.")]
         public string Name { get; set; }
 
-        [Option('l', "location", HelpText = "Aggregator instance location (Azure region).")]
+        [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
         internal override Task<int> RunAsync()

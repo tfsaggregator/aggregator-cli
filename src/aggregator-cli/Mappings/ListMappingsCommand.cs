@@ -10,6 +10,9 @@ namespace aggregator.cli
     [Verb("list.mappings", HelpText = "Lists mappings from existing VSTS Projects to Aggregator Rules.")]
     class ListMappingsCommand : CommandBase
     {
+        [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
+        public string Instance { get; set; }
+
         internal override async Task<int> RunAsync()
         {
             var vsts = await VstsLogon.Load()?.LogonAsync();
@@ -18,9 +21,10 @@ namespace aggregator.cli
                 WriteError($"Must logon.vsts first.");
                 return 2;
             }
-            var mappings = new AggregatorMappings(vsts);
+
+            var mappings = new AggregatorMappings(vsts, null);
             bool any = false;
-            foreach (var item in mappings.List())
+            foreach (var item in mappings.List(Instance))
             {
                 WriteOutput(
                     item,

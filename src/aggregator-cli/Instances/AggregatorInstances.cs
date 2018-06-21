@@ -50,7 +50,7 @@ namespace aggregator.cli
 
         internal bool Add(string name, string location)
         {
-            string rgName = InstancePrefix + name;
+            string rgName = GetResourceGroupName(name);
             if (!azure.ResourceGroups.Contain(rgName))
             {
                 Progress?.Invoke(this, new ProgressEventArgs($"Creating resource group {rgName}"));
@@ -106,24 +106,19 @@ namespace aggregator.cli
             return true;
         }
 
+        private static string GetResourceGroupName(string instanceName)
+        {
+            return InstancePrefix + instanceName;
+        }
+
         internal (string username, string password) GetPublishCredentials(string instance)
         {
-            // see https://zimmergren.net/azure-resource-manager-part-7-download-an-azure-publishing-profile-xml-programmatically-using-rest/
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-            var logon = AzureLogon.Load();
-            string token = logon.GetAuthorizationToken();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            string apiUrl = $"https://management.azure.com/subscriptions/{azure.SubscriptionId}/resourceGroups/aggregator-{instance}/providers/Microsoft.Web/sites/{instance}/publishxml?api-version=2016-08-01";
-            var response = client.PostAsync(apiUrl, new StringContent(string.Empty));
-            var task = response.Result.Content.ReadAsStringAsync();
-            task.Wait();
-            string publishxml = task.Result;
-            var publishDoc = new XmlDocument();
-            publishDoc.LoadXml(publishxml);
-            var node = publishDoc.SelectSingleNode("/publishData/publishProfile[@publishMethod='MSDeploy']");
+            var webFunctionApp = azure.AppServices.FunctionApps.GetByResourceGroup(GetResourceGroupName(instance), instance);
+            var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
+            var username = ftpUsername.Split('\\').ToList()[1];
+            var password = webFunctionApp.GetPublishingProfile().FtpPassword;
             // TODO this should be cached
-            return (username: node.Attributes["userName"].Value, password: node.Attributes["userPWD"].Value);
+            return (username: username, password: password);
         }
     }
 }

@@ -9,13 +9,13 @@ namespace aggregator.cli
     [Verb("add.rule", HelpText = "Add a rule to existing Aggregator instance in Azure.")]
     class AddRuleCommand : CommandBase
     {
-        [Option('i', "instance", HelpText = "Aggregator instance name.")]
+        [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
-        [Option('n', "name", HelpText = "Aggregator rule name.")]
+        [Option('n', "name", Required = true, HelpText = "Aggregator rule name.")]
         public string Name { get; set; }
 
-        [Option('f', "file", HelpText = "Aggregator rule code.")]
+        [Option('f', "file", Required = true, HelpText = "Aggregator rule code.")]
         public string File { get; set; }
 
         internal override async Task<int> RunAsync()

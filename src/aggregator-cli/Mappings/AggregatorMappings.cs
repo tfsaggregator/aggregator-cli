@@ -4,19 +4,24 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.Azure.Management.Fluent;
+using System.Text.RegularExpressions;
 
 namespace aggregator.cli
 {
     internal class AggregatorMappings
     {
         private VssConnection vsts;
+        private IAzure azure;
 
-        public AggregatorMappings(VssConnection vsts)
+        public AggregatorMappings(VssConnection vsts, IAzure azure)
         {
             this.vsts = vsts;
+            this.azure = azure;
         }
 
-        internal IEnumerable<(string rule, string project, string events)> List()
+        internal IEnumerable<(string rule, string project, string events)> List(string instance)
         {
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = serviceHooksClient
@@ -25,18 +30,51 @@ namespace aggregator.cli
                 .Where(s
                     => s.PublisherId == "tfs"
                     && s.EventType == "workitem.created"
-                    //&& s.ConsumerId == "webHooks"
-                    //&& s.ConsumerActionId == "httpRequest"
+                    && s.ConsumerInputs["url"].ToString().StartsWith($"https://{instance}.azurewebsites.net")
                     );
 
             foreach (var subscription in subscriptions)
             {
                 yield return (
-                    subscription.ActionDescription,
-                    subscription.ActionDescription,
+                    subscription.ConsumerInputs["url"],
+                    subscription.PublisherInputs["projectId"],
                     subscription.EventType
                     );
             }
+        }
+        internal async Task<bool> Add(string projectName, string @event, string instance, string ruleName)
+        {
+            var projectClient = vsts.GetClient<ProjectHttpClient>();
+            var project = await projectClient.GetProject(projectName);
+
+            var rules = new AggregatorRules(azure);
+            var rule = await rules.Get(instance, ruleName);
+
+            string ruleUrl = rule.url;
+
+            var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
+
+            var subscriptionParameters = new Subscription()
+            {
+                ConsumerId = "webHooks",
+                ConsumerActionId = "httpRequest",
+                ConsumerInputs = new Dictionary<string, string>
+                {
+                    { "url", ruleUrl }
+                },
+                EventType = "workitem.created",
+                PublisherId = "tfs",
+                PublisherInputs = new Dictionary<string, string>
+                {
+                    { "projectId", project.Id.ToString() },
+                    //{ "subscriberId" },
+                    //"teamId"
+                },
+            };
+
+            Subscription newSubscription = await serviceHooksClient.CreateSubscriptionAsync(subscriptionParameters);
+            Guid subscriptionId = newSubscription.Id;
+            return true;
         }
     }
 }
