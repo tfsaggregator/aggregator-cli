@@ -60,6 +60,7 @@ namespace aggregator.cli
                     .Create();
             }
 
+            // TODO the template must create a Storage account and/or a Key Vault
             var resourceName = "aggregator.cli.Instances.instance-template.json";
             string armTemplateString;
             var assembly = Assembly.GetExecutingAssembly();

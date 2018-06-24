@@ -28,8 +28,10 @@ namespace aggregator.cli
 
         public class KuduFunctionKey
         {
-            public string name { get; set; }
-            public string value { get; set; }
+            [JsonProperty(PropertyName = "name")]
+            public string Name { get; set; }
+            [JsonProperty(PropertyName = "value")]
+            public string Value { get; set; }
         }
 
         public class KuduFunctionKeys
@@ -132,7 +134,7 @@ namespace aggregator.cli
                         {
                             var js = new JsonSerializer();
                             var keys = js.Deserialize<KuduFunctionKeys>(jtr);
-                            ruleKey = keys.keys[0].value;
+                            ruleKey = keys.keys[0].Value;
                         }
                     }
                     else

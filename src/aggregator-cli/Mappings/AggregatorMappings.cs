@@ -54,13 +54,20 @@ namespace aggregator.cli
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
 
+            // TODO see https://docs.microsoft.com/en-us/vsts/service-hooks/consumers?toc=%2Fvsts%2Fintegrate%2Ftoc.json&bc=%2Fvsts%2Fintegrate%2Fbreadcrumb%2Ftoc.json&view=vsts#web-hooks
             var subscriptionParameters = new Subscription()
             {
                 ConsumerId = "webHooks",
                 ConsumerActionId = "httpRequest",
                 ConsumerInputs = new Dictionary<string, string>
                 {
-                    { "url", ruleUrl }
+                    { "url", ruleUrl },
+                    { "httpHeaders", "Key1:value1" },
+                    { "basicAuthUsername", "me"},
+                    { "basicAuthPassword", "pass" },
+                    { "resourceDetailsToSend", "All" },
+                    { "messagesToSend", "None" },
+                    { "detailedMessagesToSend", "None" },
                 },
                 EventType = "workitem.created",
                 PublisherId = "tfs",
