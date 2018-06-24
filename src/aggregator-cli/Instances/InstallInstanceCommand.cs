@@ -15,17 +15,18 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
-        internal override Task<int> RunAsync()
+        internal override async Task<int> RunAsync()
         {
             var azure = AzureLogon.Load()?.Logon();
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");
+                return 2;
             }
             var instances = new AggregatorInstances(azure);
             instances.Progress += Instances_Progress;
             instances.Add(Name, Location);
-            return Task.Run(() => 0);
+            return 0;
         }
 
         private void Instances_Progress(object sender, AggregatorInstances.ProgressEventArgs e)

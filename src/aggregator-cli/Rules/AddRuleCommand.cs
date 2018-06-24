@@ -24,6 +24,7 @@ namespace aggregator.cli
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");
+                return 2;
             }
             var rules = new AggregatorRules(azure);
             //rules.Progress += Instances_Progress;

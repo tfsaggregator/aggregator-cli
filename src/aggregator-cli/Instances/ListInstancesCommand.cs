@@ -8,13 +8,13 @@ namespace aggregator.cli
     [Verb("list.instances", HelpText = "Lists Aggregator instances.")]
     class ListInstancesCommand : CommandBase
     {
-        internal override Task<int> RunAsync()
+        internal override async Task<int> RunAsync()
         {
             var azure = AzureLogon.Load()?.Logon();
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");
-                return Task.Run(() => 2);
+                return 2;
             }
             var instances = new AggregatorInstances(azure);
             bool any = false;
@@ -29,7 +29,7 @@ namespace aggregator.cli
             {
                 WriteInfo("No aggregator instances found.");
             }
-            return Task.Run(() => 0);
+            return 0;
         }
     }
 }
