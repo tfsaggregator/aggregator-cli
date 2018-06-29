@@ -16,12 +16,14 @@ namespace aggregator.cli
         static int Main(string[] args)
         {
             return Parser.Default.ParseArguments<
+                TestCommand,
                 LogonAzureCommand, LogonVstsCommand,
                 ListInstancesCommand, InstallInstanceCommand,
                 ListRulesCommand, AddRuleCommand,
                 ListMappingsCommand, MapRuleCommand
                 >(args)
                 .MapResult(
+                    (TestCommand cmd) => cmd.Run(),
                     (LogonAzureCommand cmd) => cmd.Run(),
                     (LogonVstsCommand cmd) => cmd.Run(),
                     (ListInstancesCommand cmd) => cmd.Run(),

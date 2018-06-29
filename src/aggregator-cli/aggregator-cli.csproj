@@ -17,6 +17,7 @@
     <PackageReference Include="CommandLineParser" Version="2.2.1" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.11.1" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.11.1" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="3.19.8" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.135.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.135.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.135.0-preview" />
