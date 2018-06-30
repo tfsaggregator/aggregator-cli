@@ -105,9 +105,9 @@ namespace aggregator.cli
             {
                 using (var response = await client.SendAsync(request))
                 {
-                    var stream = await response.Content.ReadAsStreamAsync();
                     if (response.IsSuccessStatusCode)
                     {
+                        using (var stream = await response.Content.ReadAsStreamAsync())
                         using (var sr = new StreamReader(stream))
                         using (var jtr = new JsonTextReader(sr))
                         {
@@ -207,6 +207,61 @@ namespace aggregator.cli
             using (var response = await client.SendAsync(request))
             {
                 return response.IsSuccessStatusCode;
+            }
+        }
+
+        internal class Binding
+        {
+            public string type { get; set; }
+            public string direction { get; set; }
+            public string webHookType { get; set; }
+            public string name { get; set; }
+            public string queueName { get; set; }
+            public string connection { get; set; }
+            public string accessRights { get; set; }
+            public string schedule { get; set; }
+        }
+
+        internal class FunctionSettings
+        {
+            public List<Binding> bindings { get; set; }
+            public bool disabled { get; set; }
+        }
+
+        internal async Task<bool> EnableAsync(string instance, string name, bool disable)
+        {
+            var instances = new AggregatorInstances(azure);
+
+            FunctionSettings settings;
+            string settingsUrl = $"/api/vfs/site/wwwroot/{name}/function.json";
+
+            using (var client = new HttpClient())
+            using (var request1 = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, settingsUrl))
+            using (var response1 = await client.SendAsync(request1))
+            {
+                if (response1.IsSuccessStatusCode)
+                {
+                    string settingsString = await response1.Content.ReadAsStringAsync();
+                    settings = JsonConvert.DeserializeObject<FunctionSettings>(settingsString);
+                    settings.disabled = disable;
+
+                    using (var request2 = await instances.GetKuduRequestAsync(instance, HttpMethod.Put, settingsUrl))
+                    {
+                        request2.Headers.Add("If-Match", "*"); // we are updating a file
+                        var jset = new JsonSerializerSettings() {
+                            Formatting = Formatting.Indented,
+                            NullValueHandling = NullValueHandling.Ignore
+                        };
+                        settingsString = JsonConvert.SerializeObject(settings, jset);
+                        request2.Content = new StringContent(settingsString);
+                        using (var response2 = await client.SendAsync(request2))
+                        {
+                            return response2.IsSuccessStatusCode;
+                        }
+                    }
+                }
+                else
+                    return false;
             }
         }
     }
