@@ -29,7 +29,6 @@ namespace aggregator.cli
                 .Result
                 .Where(s
                     => s.PublisherId == "tfs"
-                    && s.EventType == "workitem.created"
                     && s.ConsumerInputs["url"].ToString().StartsWith($"https://{instance}.azurewebsites.net")
                     );
 
@@ -42,6 +41,17 @@ namespace aggregator.cli
                     );
             }
         }
+
+        internal bool ValidateEvent(string @event)
+        {
+            //HACK
+            switch (@event)
+            {
+                case "workitem.created": return true;
+                default: return false;
+            }
+        }
+
         internal async Task<bool> Add(string projectName, string @event, string instance, string ruleName)
         {
             var projectClient = vsts.GetClient<ProjectHttpClient>();
@@ -69,7 +79,7 @@ namespace aggregator.cli
                     { "messagesToSend", "None" },
                     { "detailedMessagesToSend", "None" },
                 },
-                EventType = "workitem.created",
+                EventType = @event,
                 PublisherId = "tfs",
                 PublisherInputs = new Dictionary<string, string>
                 {

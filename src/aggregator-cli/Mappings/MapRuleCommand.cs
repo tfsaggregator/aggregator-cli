@@ -38,7 +38,13 @@ namespace aggregator.cli
             }
 
             var mappings = new AggregatorMappings(vsts, azure);
-            bool ok = await mappings.Add(Project, Event, Instance, Rule);
+            bool ok = mappings.ValidateEvent(Event);
+            if (!ok)
+            {
+                WriteError($"Invalid event type.");
+                return 2;
+            }
+            ok = await mappings.Add(Project, Event, Instance, Rule);
             return ok ? 0 : 1;
         }
     }
