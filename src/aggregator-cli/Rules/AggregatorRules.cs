@@ -19,13 +19,14 @@ namespace aggregator.cli
 {
     class AggregatorRules
     {
-        private IAzure azure;
+        private readonly IAzure azure;
 
         public AggregatorRules(IAzure azure)
         {
             this.azure = azure;
         }
 
+#pragma warning disable IDE1006
         public class KuduFunctionKey
         {
             [JsonProperty(PropertyName = "name")]
@@ -62,6 +63,7 @@ namespace aggregator.cli
 
             public KuduFunctionConfig config { get; set; }
         }
+#pragma warning restore IDE1006
 
         internal async Task<IEnumerable<KuduFunction>> List(string instance)
         {

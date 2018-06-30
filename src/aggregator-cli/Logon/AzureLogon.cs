@@ -31,10 +31,15 @@ namespace aggregator.cli
             return new LogonDataStore(LogonDataTag).Load<AzureLogon>();
         }
 
+#pragma warning disable CS1998
         public async Task<IAzure> LogonAsync()
+#pragma warning restore CS1998
         {
             try
             {
+                // see https://github.com/AzureAD/azure-activedirectory-library-for-dotnet/wiki/Logging-in-ADAL.Net
+                LoggerCallbackHandler.UseDefaultLogging = false;
+
                 var credentials = SdkContext.AzureCredentialsFactory
                     .FromServicePrincipal(
                         ClientId,

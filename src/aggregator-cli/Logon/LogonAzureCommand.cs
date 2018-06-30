@@ -28,7 +28,7 @@ namespace aggregator.cli
             };
             string path = data.Save();
             // now check for validity
-            var azure = data.LogonAsync();
+            var azure = await data.LogonAsync();
             if (azure == null)
             {
                 WriteError("Invalid azure credentials");
