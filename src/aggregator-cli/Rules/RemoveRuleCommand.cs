@@ -6,17 +6,14 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("add.rule", HelpText = "Add a rule to existing Aggregator instance in Azure.")]
-    class AddRuleCommand : CommandBase
+    [Verb("remove.rule", HelpText = "Remove a rule from existing Aggregator instance in Azure.")]
+    class RemoveRuleCommand : CommandBase
     {
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
         [Option('n', "name", Required = true, HelpText = "Aggregator rule name.")]
         public string Name { get; set; }
-
-        [Option('f', "file", Required = true, HelpText = "Aggregator rule code.")]
-        public string File { get; set; }
 
         internal override async Task<int> RunAsync()
         {
@@ -26,9 +23,20 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
+
+            var vsts = await VstsLogon.Load()?.LogonAsync();
+            if (vsts == null)
+            {
+                WriteError($"Must logon.vsts first.");
+                return 2;
+            }
+
+            var mappings = new AggregatorMappings(vsts, azure);
+            bool ok = await mappings.RemoveRuleAsync(Instance, Name);
+
             var rules = new AggregatorRules(azure);
             //rules.Progress += Instances_Progress;
-            bool ok = await rules.AddAsync(Instance, Name, File);
+            ok = ok && await rules.RemoveAsync(Instance, Name);
             return ok ? 0 : 1;
         }
     }

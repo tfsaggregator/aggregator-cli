@@ -1,1 +1,7 @@
-﻿// there will be something here
+﻿class Rule
+{
+	public static string Invoke(dynamic data)
+	{
+		return $"Hello {data.resource.fields["System.WorkItemType"]} #{data.resource.id} - {data.resource.fields["System.Title"]}!";
+	}
+}

@@ -63,70 +63,47 @@ namespace aggregator.cli
 
             public KuduFunctionConfig config { get; set; }
         }
+
+        public class KuduSecret
+        {
+            public string key { get; set; }
+            public string trigger_url { get; set; }
+        }
 #pragma warning restore IDE1006
 
         internal async Task<IEnumerable<KuduFunction>> List(string instance)
         {
             var instances = new AggregatorInstances(azure);
-            (string username, string password) = instances.GetPublishCredentials(instance);
-            var base64Auth = Convert.ToBase64String(Encoding.Default.GetBytes($"{username}:{password}"));
-            var kuduUrl = new Uri($"https://{instance}.scm.azurewebsites.net/api");
-            CancellationToken cancellationToken;
-
             using (var client = new HttpClient())
-            using (var request = new HttpRequestMessage(HttpMethod.Get, $"{kuduUrl}/functions"))
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, $"/api/functions"))
+            using (var response = await client.SendAsync(request))
             {
-                request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64Auth);
+                var stream = await response.Content.ReadAsStreamAsync();
 
-                using (var response = await client.SendAsync(request, cancellationToken))
+                if (response.IsSuccessStatusCode)
                 {
-                    var stream = await response.Content.ReadAsStreamAsync();
-
-                    if (response.IsSuccessStatusCode)
+                    using (var sr = new StreamReader(stream))
+                    using (var jtr = new JsonTextReader(sr))
                     {
-                        using (var sr = new StreamReader(stream))
-                        using (var jtr = new JsonTextReader(sr))
-                        {
-                            var js = new JsonSerializer();
-                            var functionList = js.Deserialize<KuduFunction[]>(jtr);
-                            return functionList;
-                        }
+                        var js = new JsonSerializer();
+                        var functionList = js.Deserialize<KuduFunction[]>(jtr);
+                        return functionList;
                     }
-                    else
-                        return new KuduFunction[0];
                 }
+                else
+                    return new KuduFunction[0];
             }
         }
 
-        internal async Task<KuduFunction> Get(string instance, string rule)
+        internal async Task<string> GetInvocationUrl(string instance, string rule)
         {
-            // see https://stackoverflow.com/questions/46338239/retrieve-the-host-keys-from-an-azure-function-app/46436102#46436102
-            // and https://github.com/Azure/azure-functions-host/wiki/Key-management-API
-
             var instances = new AggregatorInstances(azure);
-            (string username, string password) = instances.GetPublishCredentials(instance);
 
-            var base64Auth = Convert.ToBase64String(Encoding.Default.GetBytes($"{username}:{password}"));
-            var kuduUrl = $"https://{instance}.scm.azurewebsites.net/api";
-            var siteUrl = $"https://{instance}.azurewebsites.net";
-            string JWT;
+            // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/functions/{rule}/listsecrets"))
             {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64Auth);
-
-                var result = await client.GetAsync($"{kuduUrl}/functions/admin/token");
-                JWT = await result.Content.ReadAsStringAsync(); //get  JWT for call function key
-                JWT = JWT.Trim('"');
-            }
-            string ruleKey;
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + JWT);
-                
-                using (var response = await client.GetAsync($"{siteUrl}/admin/functions/{rule}/keys"))
+                using (var response = await client.SendAsync(request))
                 {
                     var stream = await response.Content.ReadAsStreamAsync();
                     if (response.IsSuccessStatusCode)
@@ -135,51 +112,25 @@ namespace aggregator.cli
                         using (var jtr = new JsonTextReader(sr))
                         {
                             var js = new JsonSerializer();
-                            var keys = js.Deserialize<KuduFunctionKeys>(jtr);
-                            ruleKey = keys.keys[0].Value;
-                        }
-                    }
-                    else
-                        ruleKey = "FAILED RETRIEVING KEY";
-                }
-            }
-
-            CancellationToken cancellationToken;
-            using (var client = new HttpClient())
-            using (var request = new HttpRequestMessage(HttpMethod.Get, $"{kuduUrl}/functions/{rule}"))
-            {
-                request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64Auth);
-
-                using (var response = await client.SendAsync(request, cancellationToken))
-                {
-                    var stream = await response.Content.ReadAsStreamAsync();
-                    if (response.IsSuccessStatusCode)
-                    {
-                        using (var sr = new StreamReader(stream))
-                        using (var jtr = new JsonTextReader(sr))
-                        {
-                            var js = new JsonSerializer();
-                            var function = js.Deserialize<KuduFunction>(jtr);
-                            function.url = $"{siteUrl}/api/{rule}?code={ruleKey}&clientId=default";
-                            return function;
+                            var secret = js.Deserialize<KuduSecret>(jtr);
+                            return secret.trigger_url;
                         }
                     }
                     else
                         return null;
                 }
             }
-
         }
 
-        internal async Task AddAsync(string instance, string name, string filePath)
+        internal async Task<bool> AddAsync(string instance, string name, string filePath)
         {
             byte[] zipContent = CreateTemporaryZipForRule(name, filePath);
 
             var instances = new AggregatorInstances(azure);
-            (string username, string password) = instances.GetPublishCredentials(instance);
+            (string username, string password) = await instances.GetPublishCredentials(instance);
 
-            await UploadZipWithRule(instance, zipContent, username, password);
+            bool ok = await UploadZipWithRule(instance, zipContent, username, password);
+            return ok;
         }
 
         private static byte[] CreateTemporaryZipForRule(string name, string filePath)
@@ -196,8 +147,14 @@ namespace aggregator.cli
                 name);
             Directory.CreateDirectory(tempDirPath);
 
-            // copy content
-            File.Copy(filePath, Path.Combine(tempDirPath, Path.GetFileName(filePath)));
+            // copy rule content
+            string deployedRulePath = Path.GetFileName(filePath) + ".csx";
+            File.Copy(
+                filePath,
+                Path.Combine(
+                    tempDirPath,
+                    deployedRulePath));
+            // copy templates
             var assembly = Assembly.GetExecutingAssembly();
             using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
             using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
@@ -207,6 +164,8 @@ namespace aggregator.cli
             using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
             using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
             {
+                var header = Encoding.UTF8.GetBytes($"#load \"{deployedRulePath}\"\r\n\r\n");
+                writer.Write(header, 0, header.Length);
                 reader.CopyTo(writer);
             }
 
@@ -222,17 +181,33 @@ namespace aggregator.cli
             return zipContent;
         }
 
-        private static async Task UploadZipWithRule(string instance, byte[] zipContent, string username, string password)
+        private async Task<bool> UploadZipWithRule(string instance, byte[] zipContent, string username, string password)
         {
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
             // POST /api/zipdeploy?isAsync=true
             // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
-            string apiUrl = $"https://{instance}.scm.azurewebsites.net/api/zipdeploy";
-            string base64AuthInfo = Convert.ToBase64String(Encoding.ASCII.GetBytes(($"{username}:{password}")));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64AuthInfo);
+            var instances = new AggregatorInstances(azure);
             var body = new ByteArrayContent(zipContent);
-            await client.PostAsync(apiUrl, body);
+            using (var client = new HttpClient())
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/zipdeploy"))
+            {
+                request.Content = body;
+                using (var response = await client.SendAsync(request))
+                {
+                    return response.IsSuccessStatusCode;
+                }
+            }
+        }
+
+        internal async Task<bool> RemoveAsync(string instance, string name)
+        {
+            var instances = new AggregatorInstances(azure);
+            // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
+            using (var client = new HttpClient())
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Delete, $"/api/functions/{name}"))
+            using (var response = await client.SendAsync(request))
+            {
+                return response.IsSuccessStatusCode;
+            }
         }
     }
 }

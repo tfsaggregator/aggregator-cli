@@ -109,12 +109,12 @@ namespace aggregator.cli
             return true;
         }
 
-        private static string GetResourceGroupName(string instanceName)
+        internal static string GetResourceGroupName(string instanceName)
         {
             return InstancePrefix + instanceName;
         }
 
-        internal (string username, string password) GetPublishCredentials(string instance)
+        internal async Task<(string username, string password)> GetPublishCredentials(string instance)
         {
             var webFunctionApp = azure.AppServices.FunctionApps.GetByResourceGroup(GetResourceGroupName(instance), instance);
             var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
@@ -122,6 +122,48 @@ namespace aggregator.cli
             var password = webFunctionApp.GetPublishingProfile().FtpPassword;
             // TODO this should be cached
             return (username: username, password: password);
+        }
+
+        internal async Task<AuthenticationHeaderValue> GetKuduAuthentication(string instance)
+        {
+            (string username, string password) = await GetPublishCredentials(instance);
+            var base64Auth = Convert.ToBase64String(Encoding.Default.GetBytes($"{username}:{password}"));
+            return new AuthenticationHeaderValue("Basic", base64Auth);
+        }
+
+        internal async Task<string> GetAzureFunctionJWTAsync(string instance)
+        {
+            var kuduUrl = $"https://{instance}.scm.azurewebsites.net/api";
+            string JWT;
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+                client.DefaultRequestHeaders.Authorization = await GetKuduAuthentication(instance);
+
+                var result = await client.GetAsync($"{kuduUrl}/functions/admin/token");
+                JWT = await result.Content.ReadAsStringAsync(); //get  JWT for call function key
+                JWT = JWT.Trim('"');
+            }
+            return JWT;
+        }
+
+        internal async Task<bool> Remove(string name, string location)
+        {
+            string rgName = GetResourceGroupName(name);
+            if (await azure.ResourceGroups.ContainAsync(rgName))
+            {
+                await azure.ResourceGroups.DeleteByNameAsync(rgName);
+            }
+            return true;
+        }
+
+        internal async Task<HttpRequestMessage> GetKuduRequestAsync(string instance, HttpMethod method, string restApi)
+        {
+            var kuduUrl = new Uri($"https://{instance}.scm.azurewebsites.net");
+            var request = new HttpRequestMessage(method, $"{kuduUrl}/{restApi}");
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+            request.Headers.Authorization = await GetKuduAuthentication(instance);
+            return request;
         }
     }
 }

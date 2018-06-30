@@ -6,12 +6,9 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("map.rule", HelpText = "Maps an Aggregator Rule to existing VSTS Projects.")]
-    class MapRuleCommand : CommandBase
+    [Verb("unmap.rule", HelpText = "Unmaps an Aggregator Rule from a VSTS Project.")]
+    class UnmapRuleCommand : CommandBase
     {
-        [Option('p', "project", Required = true, HelpText = "VSTS project name.")]
-        public string Project { get; set; }
-
         [Option('e', "event", Required = true, HelpText = "VSTS event.")]
         public string Event { get; set; }
 
@@ -38,14 +35,8 @@ namespace aggregator.cli
             }
 
             var mappings = new AggregatorMappings(vsts, azure);
-            bool ok = mappings.ValidateEvent(Event);
-            if (!ok)
-            {
-                WriteError($"Invalid event type.");
-                return 2;
-            }
-            var id = await mappings.Add(Project, Event, Instance, Rule);
-            return id.Equals(Guid.Empty) ? 1 : 0;
+            bool ok = await mappings.RemoveRuleEventAsync(Event, Instance, Rule);
+            return ok ? 0 : 1;
         }
     }
 }
