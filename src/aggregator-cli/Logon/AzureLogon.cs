@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -30,7 +31,7 @@ namespace aggregator.cli
             return new LogonDataStore(LogonDataTag).Load<AzureLogon>();
         }
 
-        public IAzure Logon()
+        public async Task<IAzure> LogonAsync()
         {
             try
             {
@@ -42,11 +43,12 @@ namespace aggregator.cli
                         AzureEnvironment.AzureGlobalCloud);
 
                 // validate credentials
-                return Microsoft.Azure.Management.Fluent.Azure
+                var azure = Azure
                     .Configure()
                     .WithLogLevel(HttpLoggingDelegatingHandler.Level.None)
                     .Authenticate(credentials)
                     .WithSubscription(SubscriptionId);
+                return azure;
             }
             catch (Exception)
             {
@@ -54,17 +56,17 @@ namespace aggregator.cli
             }
         }
 
-        public string GetAuthorizationToken()
+        public async Task<string> GetAuthorizationToken()
         {
             var cc = new ClientCredential(this.ClientId, this.ClientSecret);
             var context = new AuthenticationContext("https://login.windows.net/" + this.TenantId);
-            var result = context.AcquireTokenAsync("https://management.azure.com/", cc);
+            var result = await context.AcquireTokenAsync("https://management.azure.com/", cc);
             if (result == null)
             {
                 throw new InvalidOperationException("Failed to obtain the JWT token");
             }
 
-            return result.Result.AccessToken;
+            return result.AccessToken;
         }
     }
 }

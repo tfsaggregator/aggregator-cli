@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace aggregator.cli
@@ -36,28 +37,30 @@ namespace aggregator.cli
             this.azure = azure;
         }
 
-        public IEnumerable<(string name, string region)> List()
+        public async Task<IEnumerable<(string name, string region)>> ListAsync()
         {
-            var rgs = azure.ResourceGroups.List().Where(rg => rg.Name.StartsWith(InstancePrefix));
-            foreach (var rg in rgs)
+            var rgs = await azure.ResourceGroups.ListAsync();
+            var result = new List<(string name, string region)>();
+            foreach (var rg in rgs.Where(rg => rg.Name.StartsWith(InstancePrefix)))
             {
-                yield return (
+                result.Add((
                     rg.Name.Remove(0, InstancePrefix.Length),
-                    rg.RegionName
+                    rg.RegionName)
                 );
             }
+            return result;
         }
 
-        internal bool Add(string name, string location)
+        internal async Task<bool> Add(string name, string location)
         {
             string rgName = GetResourceGroupName(name);
-            if (!azure.ResourceGroups.Contain(rgName))
+            if (!await azure.ResourceGroups.ContainAsync(rgName))
             {
                 Progress?.Invoke(this, new ProgressEventArgs($"Creating resource group {rgName}"));
-                azure.ResourceGroups
+                await azure.ResourceGroups
                     .Define(rgName)
                     .WithRegion(location)
-                    .Create();
+                    .CreateAsync();
             }
 
             // TODO the template must create a Storage account and/or a Key Vault
@@ -67,7 +70,7 @@ namespace aggregator.cli
             using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             using (StreamReader reader = new StreamReader(stream))
             {
-                armTemplateString = reader.ReadToEnd();
+                armTemplateString = await reader.ReadToEndAsync();
             }
 
             var parsedTemplate = JObject.Parse(armTemplateString);
@@ -83,17 +86,16 @@ namespace aggregator.cli
 
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
             Progress?.Invoke(this, new ProgressEventArgs($"Started deployment {deploymentName}"));
-            azure.Deployments.Define(deploymentName)
+            var deployment = await azure.Deployments.Define(deploymentName)
                     .WithExistingResourceGroup(rgName)
                     .WithTemplate(armTemplateString)
                     .WithParameters(templateParams)
                     .WithMode(DeploymentMode.Incremental)
-                    .BeginCreate();
+                    .CreateAsync();
 
             // poll
             const int PollIntervalInSeconds = 10;
             int totalDelay = 0;
-            var deployment = azure.Deployments.GetByResourceGroup(rgName, deploymentName);
             while (!(StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Succeeded") ||
                     StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Failed") ||
                     StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Cancelled")))
@@ -101,7 +103,7 @@ namespace aggregator.cli
                 SdkContext.DelayProvider.Delay(PollIntervalInSeconds * 1000);
                 totalDelay += PollIntervalInSeconds;
                 Progress?.Invoke(this, new ProgressEventArgs($"Deployment running ({totalDelay}s)"));
-                deployment = azure.Deployments.GetByResourceGroup(rgName, deploymentName);
+                await deployment.RefreshAsync();
             }
             Progress?.Invoke(this, new ProgressEventArgs($"Deployment {deployment.ProvisioningState}"));
             return true;

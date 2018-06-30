@@ -17,7 +17,7 @@ namespace aggregator.cli
         [Option('t', "tenant", Required = true, HelpText = "Tenant Id.")]
         public string TenantId { get; set; }
 
-        internal override Task<int> RunAsync()
+        internal override async Task<int> RunAsync()
         {
             var data = new AzureLogon()
             {
@@ -28,13 +28,13 @@ namespace aggregator.cli
             };
             string path = data.Save();
             // now check for validity
-            var azure = data.Logon();
+            var azure = data.LogonAsync();
             if (azure == null)
             {
                 WriteError("Invalid azure credentials");
-                return Task.Run(() => 2);
+                return 2;
             }
-            return Task.Run(() => 0);
+            return 0;
         }
     }
 }

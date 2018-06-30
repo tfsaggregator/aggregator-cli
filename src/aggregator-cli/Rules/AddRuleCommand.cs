@@ -20,7 +20,7 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var azure = AzureLogon.Load()?.Logon();
+            var azure = await AzureLogon.Load()?.LogonAsync();
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");

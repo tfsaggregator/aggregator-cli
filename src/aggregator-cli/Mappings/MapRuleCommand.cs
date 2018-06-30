@@ -30,7 +30,7 @@ namespace aggregator.cli
                 return 2;
             }
 
-            var azure = AzureLogon.Load()?.Logon();
+            var azure = await AzureLogon.Load()?.LogonAsync();
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");

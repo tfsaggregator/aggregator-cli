@@ -17,7 +17,7 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var azure = AzureLogon.Load()?.Logon();
+            var azure = await AzureLogon.Load()?.LogonAsync();
             if (azure == null)
             {
                 WriteError($"Must logon.azure first.");
@@ -25,8 +25,8 @@ namespace aggregator.cli
             }
             var instances = new AggregatorInstances(azure);
             instances.Progress += Instances_Progress;
-            instances.Add(Name, Location);
-            return 0;
+            bool ok = await instances.Add(Name, Location);
+            return ok ? 0 : 1;
         }
 
         private void Instances_Progress(object sender, AggregatorInstances.ProgressEventArgs e)
