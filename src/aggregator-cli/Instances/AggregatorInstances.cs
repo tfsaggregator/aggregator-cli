@@ -71,8 +71,9 @@ namespace aggregator.cli
                 // not good, blah
             }
 
+            string appName = GetFunctionAppName(name);
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
-                    {"appName", new Dictionary<string, object>{{"value", name } }}
+                    {"appName", new Dictionary<string, object>{{"value", appName } }}
             };
 
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
@@ -105,10 +106,15 @@ namespace aggregator.cli
             return InstancePrefix + instanceName;
         }
 
+        internal static string GetFunctionAppName(string instanceName)
+        {
+            return InstancePrefix + instanceName;
+        }
+
         string lastPublishCredentialsInstance = string.Empty;
         internal async Task<(string username, string password)> GetPublishCredentials(string instance)
         {
-            var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(GetResourceGroupName(instance), instance);
+            var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(GetResourceGroupName(instance), GetFunctionAppName(instance));
             var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
             var username = ftpUsername.Split('\\').ToList()[1];
             var password = webFunctionApp.GetPublishingProfile().FtpPassword;
@@ -125,7 +131,7 @@ namespace aggregator.cli
 
         internal async Task<string> GetAzureFunctionJWTAsync(string instance)
         {
-            var kuduUrl = $"https://{instance}.scm.azurewebsites.net/api";
+            var kuduUrl = $"https://{GetFunctionAppName(instance)}.scm.azurewebsites.net/api";
             string JWT;
             using (var client = new HttpClient())
             {
@@ -144,14 +150,16 @@ namespace aggregator.cli
             string rgName = GetResourceGroupName(name);
             if (await azure.ResourceGroups.ContainAsync(rgName))
             {
+                logger.WriteVerbose($"Deleting resource group {rgName}");
                 await azure.ResourceGroups.DeleteByNameAsync(rgName);
+                logger.WriteInfo($"Resource group {rgName} deleted.");
             }
             return true;
         }
 
         internal async Task<HttpRequestMessage> GetKuduRequestAsync(string instance, HttpMethod method, string restApi)
         {
-            var kuduUrl = new Uri($"https://{instance}.scm.azurewebsites.net");
+            var kuduUrl = new Uri($"https://{GetFunctionAppName(instance)}.scm.azurewebsites.net");
             var request = new HttpRequestMessage(method, $"{kuduUrl}/{restApi}");
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
             request.Headers.Authorization = await GetKuduAuthentication(instance);
