@@ -333,3 +333,4 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 secrets/
+src/aggregator-cli/function-bin.zip
