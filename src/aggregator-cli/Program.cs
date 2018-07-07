@@ -14,7 +14,7 @@ namespace aggregator.cli
             int rc = Parser.Default.ParseArguments<
                 LogonAzureCommand, LogonVstsCommand,
                 ListInstancesCommand, InstallInstanceCommand, UninstallInstanceCommand,
-                ListRulesCommand, AddRuleCommand, ConfigureRuleCommand,
+                ListRulesCommand, AddRuleCommand, RemoveRuleCommand, ConfigureRuleCommand,
                 ListMappingsCommand, MapRuleCommand, UnmapRuleCommand
                 >(args)
                 .MapResult(
@@ -25,6 +25,7 @@ namespace aggregator.cli
                     (UninstallInstanceCommand cmd) => cmd.Run(),
                     (ListRulesCommand cmd) => cmd.Run(),
                     (AddRuleCommand cmd) => cmd.Run(),
+                    (RemoveRuleCommand cmd) => cmd.Run(),
                     (ConfigureRuleCommand cmd) => cmd.Run(),
                     (ListMappingsCommand cmd) => cmd.Run(),
                     (MapRuleCommand cmd) => cmd.Run(),
