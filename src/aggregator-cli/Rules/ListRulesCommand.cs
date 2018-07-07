@@ -20,7 +20,7 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
-            var rules = new AggregatorRules(azure);
+            var rules = new AggregatorRules(azure, this);
             bool any = false;
             foreach (var item in await rules.List(Instance))
             {

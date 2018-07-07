@@ -37,7 +37,7 @@ namespace aggregator.cli
                 return 2;
             }
 
-            var mappings = new AggregatorMappings(vsts, azure);
+            var mappings = new AggregatorMappings(vsts, azure, this);
             bool ok = mappings.ValidateEvent(Event);
             if (!ok)
             {

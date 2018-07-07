@@ -22,7 +22,7 @@ namespace aggregator.cli
                 return 2;
             }
 
-            var mappings = new AggregatorMappings(vsts, null);
+            var mappings = new AggregatorMappings(vsts, null, this);
             bool any = false;
             foreach (var item in mappings.List(Instance))
             {

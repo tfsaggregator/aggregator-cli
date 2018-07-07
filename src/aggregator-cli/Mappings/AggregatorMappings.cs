@@ -15,11 +15,13 @@ namespace aggregator.cli
     {
         private VssConnection vsts;
         private readonly IAzure azure;
+        private readonly ILogger logger;
 
-        public AggregatorMappings(VssConnection vsts, IAzure azure)
+        public AggregatorMappings(VssConnection vsts, IAzure azure, ILogger logger)
         {
             this.vsts = vsts;
             this.azure = azure;
+            this.logger = logger;
         }
 
         internal IEnumerable<(string rule, string project, string events)> List(string instance)
@@ -61,7 +63,7 @@ namespace aggregator.cli
             var projectClient = vsts.GetClient<ProjectHttpClient>();
             var project = await projectClient.GetProject(projectName);
 
-            var rules = new AggregatorRules(azure);
+            var rules = new AggregatorRules(azure, logger);
             string ruleUrl = await rules.GetInvocationUrl(instance, ruleName);
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();

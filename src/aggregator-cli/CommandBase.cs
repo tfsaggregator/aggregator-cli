@@ -6,46 +6,41 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    abstract class CommandBase
+    abstract class CommandBase : ILogger
     {
+        ILogger logger = new ConsoleLogger();
+
         // Omitting long name, defaults to name of property, ie "--verbose"
-        [Option(Default = false, HelpText = "Prints all messages to standard output.")]
+        [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
         internal abstract Task<int> RunAsync();
 
         public void WriteOutput(object data, Func<object, string> humanOutput)
         {
-            string message = humanOutput(data);
-            Console.WriteLine(message);
+            logger.WriteOutput(data, humanOutput);
         }
 
-        public void WriteVerbse(string message)
+        public void WriteVerbose(string message)
         {
             if (!Verbose)
                 return;
-            Console.WriteLine(message);
+            logger.WriteVerbose(message);
         }
 
         public void WriteInfo(string message)
         {
-            Console.WriteLine(message);
+            logger.WriteInfo(message);
         }
 
         public void WriteWarning(string message)
         {
-            var save = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(message);
-            Console.ForegroundColor = save;
+            logger.WriteWarning(message);
         }
 
         public void WriteError(string message)
         {
-            var save = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
-            Console.ForegroundColor = save;
+            logger.WriteError(message);
         }
     }
 
@@ -53,9 +48,24 @@ namespace aggregator.cli
     {
         static internal int Run(this CommandBase cmd)
         {
-            var t = cmd.RunAsync();
-            t.Wait();
-            return t.Result;
+            try
+            {
+                var t = cmd.RunAsync();
+                t.Wait();
+                int rc = t.Result;
+                var logger = new ConsoleLogger();
+                if (rc != 0)
+                {
+                    logger.WriteError("Failed");
+                }
+                return rc;
+            }
+            catch (Exception ex)
+            {
+                var logger = new ConsoleLogger();
+                logger.WriteError(ex.Message);
+                return 99;
+            }
         }
     }
 }

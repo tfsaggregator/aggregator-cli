@@ -16,7 +16,7 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
-            var instances = new AggregatorInstances(azure);
+            var instances = new AggregatorInstances(azure, this);
             var found = await instances.ListAsync();
             bool any = false;
             foreach (var item in found)

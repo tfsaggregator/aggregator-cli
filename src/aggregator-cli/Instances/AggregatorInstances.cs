@@ -19,22 +19,12 @@ namespace aggregator.cli
     {
         const string InstancePrefix = "aggregator-";
         private readonly IAzure azure;
+        private readonly ILogger logger;
 
-        public class ProgressEventArgs
-        {
-            public ProgressEventArgs(string s) { Message = s; }
-            public String Message { get; private set; } // readonly
-        }
-
-        // Declare the delegate (if using non-generic pattern).
-        public delegate void ProgressHandler(object sender, ProgressEventArgs e);
-
-        // Declare the event.
-        public event ProgressHandler Progress;
-
-        public AggregatorInstances(IAzure azure)
+        public AggregatorInstances(IAzure azure, ILogger logger)
         {
             this.azure = azure;
+            this.logger = logger;
         }
 
         public async Task<IEnumerable<(string name, string region)>> ListAsync()
@@ -56,11 +46,12 @@ namespace aggregator.cli
             string rgName = GetResourceGroupName(name);
             if (!await azure.ResourceGroups.ContainAsync(rgName))
             {
-                Progress?.Invoke(this, new ProgressEventArgs($"Creating resource group {rgName}"));
+                logger.WriteVerbose($"Creating resource group {rgName}");
                 await azure.ResourceGroups
                     .Define(rgName)
                     .WithRegion(location)
                     .CreateAsync();
+                logger.WriteInfo($"Resource group {rgName} created.");
             }
 
             // TODO the template must create a Storage account and/or a Key Vault
@@ -85,7 +76,7 @@ namespace aggregator.cli
             };
 
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
-            Progress?.Invoke(this, new ProgressEventArgs($"Started deployment {deploymentName}"));
+            logger.WriteInfo($"Started deployment {deploymentName}");
             var deployment = await azure.Deployments.Define(deploymentName)
                     .WithExistingResourceGroup(rgName)
                     .WithTemplate(armTemplateString)
@@ -102,10 +93,10 @@ namespace aggregator.cli
             {
                 SdkContext.DelayProvider.Delay(PollIntervalInSeconds * 1000);
                 totalDelay += PollIntervalInSeconds;
-                Progress?.Invoke(this, new ProgressEventArgs($"Deployment running ({totalDelay}s)"));
+                logger.WriteVerbose($"Deployment running ({totalDelay}s)");
                 await deployment.RefreshAsync();
             }
-            Progress?.Invoke(this, new ProgressEventArgs($"Deployment {deployment.ProvisioningState}"));
+            logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
             return true;
         }
 

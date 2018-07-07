@@ -25,10 +25,14 @@ namespace aggregator
     internal class RuleWrapper
     {
         private readonly IConfigurationRoot config;
+        private readonly ILogger logger;
+        private readonly string functionDirectory;
 
-        public RuleWrapper(IConfigurationRoot config)
+        public RuleWrapper(IConfigurationRoot config, ILogger logger, string functionDirectory)
         {
             this.config = config;
+            this.logger = logger;
+            this.functionDirectory = functionDirectory;
         }
 
         internal async Task<string> Execute(string aggregatorVersion, dynamic data)
@@ -42,16 +46,31 @@ namespace aggregator
             int workItemId = data.resource.id;
             string patToken = config["VSTS_PAT"];
 
+            logger.WriteVerbose($"Connecting to VSTS using PAT...");
             var clientCredentials = new VssBasicCredential("pat", patToken);
             var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
             await vsts.ConnectAsync();
+            logger.WriteInfo($"Connected to VSTS");
             var witClient = vsts.GetClient<WorkItemTrackingHttpClient>();
             var self = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All);
+            logger.WriteInfo($"Self retrieved");
 
+            string ruleFilePath;
+            string probedDir = functionDirectory;
+            do
+            {
+                ruleFilePath = Path.Combine(probedDir, "default.rule");
+                logger.WriteVerbose($"probing {ruleFilePath}");
+                probedDir = Directory.GetParent(probedDir).FullName;
+            } while (!File.Exists(ruleFilePath));
+
+            logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+            string ruleCode = File.ReadAllText(ruleFilePath);
+
+            logger.WriteVerbose($"Executing Rule...");
             var globals = new Globals { self = self };
-            string ruleCode = File.ReadAllText("sample.rule");
             var result = await CSharpScript.EvaluateAsync<string>(ruleCode, globals: globals);
-
+            logger.WriteVerbose($"Rule returned {result}");
             return result;
         }
     }

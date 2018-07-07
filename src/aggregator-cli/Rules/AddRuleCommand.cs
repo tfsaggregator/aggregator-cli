@@ -26,8 +26,12 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
-            var rules = new AggregatorRules(azure);
-            //rules.Progress += Instances_Progress;
+            if (Name == "FunctionCore")
+            {
+                WriteError($"{Name} is reserved, cannot be used as rule name");
+                return 2;
+            }
+            var rules = new AggregatorRules(azure, this);
             bool ok = await rules.AddAsync(Instance, Name, File);
             return ok ? 0 : 1;
         }

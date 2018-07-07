@@ -36,7 +36,7 @@ namespace aggregator.cli
                 return 2;
             }
 
-            var rules = new AggregatorRules(azure);
+            var rules = new AggregatorRules(azure, this);
             bool ok = false;
             if (Disable || Enable)
             {

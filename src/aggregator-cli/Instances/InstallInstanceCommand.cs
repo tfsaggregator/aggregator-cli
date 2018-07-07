@@ -23,15 +23,9 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
-            var instances = new AggregatorInstances(azure);
-            instances.Progress += Instances_Progress;
+            var instances = new AggregatorInstances(azure, this);
             bool ok = await instances.Add(Name, Location);
             return ok ? 0 : 1;
-        }
-
-        private void Instances_Progress(object sender, AggregatorInstances.ProgressEventArgs e)
-        {
-            WriteInfo(e.Message);
         }
     }
 }

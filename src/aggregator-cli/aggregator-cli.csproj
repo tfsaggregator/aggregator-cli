@@ -9,8 +9,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Instances\instance-template.json" />
-    <EmbeddedResource Include="Rules\function.json" />
-    <EmbeddedResource Include="Rules\run.csx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,10 +24,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aggregator-core\aggregator-core.csproj" />
+    <ProjectReference Include="..\aggregator-function\aggregator-function.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="sample.rule">
+    <None Update="function-bin.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="test.rule">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

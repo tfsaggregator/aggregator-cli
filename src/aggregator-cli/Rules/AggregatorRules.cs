@@ -20,10 +20,12 @@ namespace aggregator.cli
     class AggregatorRules
     {
         private readonly IAzure azure;
+        private readonly ILogger logger;
 
-        public AggregatorRules(IAzure azure)
+        public AggregatorRules(IAzure azure, ILogger logger)
         {
             this.azure = azure;
+            this.logger = logger;
         }
 
 #pragma warning disable IDE1006
@@ -73,7 +75,7 @@ namespace aggregator.cli
 
         internal async Task<IEnumerable<KuduFunction>> List(string instance)
         {
-            var instances = new AggregatorInstances(azure);
+            var instances = new AggregatorInstances(azure, logger);
             using (var client = new HttpClient())
             using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, $"/api/functions"))
             using (var response = await client.SendAsync(request))
@@ -97,7 +99,7 @@ namespace aggregator.cli
 
         internal async Task<string> GetInvocationUrl(string instance, string rule)
         {
-            var instances = new AggregatorInstances(azure);
+            var instances = new AggregatorInstances(azure, logger);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
@@ -124,12 +126,25 @@ namespace aggregator.cli
 
         internal async Task<bool> AddAsync(string instance, string name, string filePath)
         {
+            logger.WriteVerbose($"Packaging {filePath} into rule {name}");
             byte[] zipContent = CreateTemporaryZipForRule(name, filePath);
+            logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
-            var instances = new AggregatorInstances(azure);
+            logger.WriteVerbose($"Requesting Publish credentials for {instance}");
+            var instances = new AggregatorInstances(azure, logger);
             (string username, string password) = await instances.GetPublishCredentials(instance);
+            logger.WriteInfo($"Retrieved publish credentials for {instance}.");
 
+            logger.WriteVerbose($"Uploading package to {instance}");
             bool ok = await UploadZipWithRule(instance, zipContent, username, password);
+            if (ok)
+            {
+                logger.WriteInfo($"Package {name} uploaded to {instance}.");
+            }
+            else
+            {
+                logger.WriteError($"Failed to uplaod package {name} to {instance}!");
+            }
             return ok;
         }
 
@@ -142,32 +157,19 @@ namespace aggregator.cli
             string baseDirPath = Path.Combine(
                 Path.GetTempPath(),
                 $"aggregator-{rand.Next().ToString()}");
+            string tempDirPath = baseDirPath;
+            /*
             string tempDirPath = Path.Combine(
                 baseDirPath,
                 name);
+            */
             Directory.CreateDirectory(tempDirPath);
 
-            // copy rule content
-            string deployedRulePath = Path.GetFileName(filePath) + ".csx";
-            File.Copy(
-                filePath,
-                Path.Combine(
-                    tempDirPath,
-                    deployedRulePath));
-            // copy templates
-            var assembly = Assembly.GetExecutingAssembly();
-            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
-            using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
-            {
-                reader.CopyTo(writer);
-            }
-            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
-            using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
-            {
-                var header = Encoding.UTF8.GetBytes($"#load \"{deployedRulePath}\"\r\n\r\n");
-                writer.Write(header, 0, header.Length);
-                reader.CopyTo(writer);
-            }
+
+            // copy aggregator-function binaries
+            ZipFile.ExtractToDirectory("function-bin.zip", tempDirPath);
+            // copy rule content to fixed file name
+            File.Copy(filePath, Path.Combine(tempDirPath, "default.rule"), true);
 
             // zip
             string tempZipPath = Path.GetTempFileName();
@@ -185,7 +187,7 @@ namespace aggregator.cli
         {
             // POST /api/zipdeploy?isAsync=true
             // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
-            var instances = new AggregatorInstances(azure);
+            var instances = new AggregatorInstances(azure, logger);
             var body = new ByteArrayContent(zipContent);
             using (var client = new HttpClient())
             using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/zipdeploy"))
@@ -200,7 +202,7 @@ namespace aggregator.cli
 
         internal async Task<bool> RemoveAsync(string instance, string name)
         {
-            var instances = new AggregatorInstances(azure);
+            var instances = new AggregatorInstances(azure, logger);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
             using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Delete, $"/api/functions/{name}"))
@@ -232,7 +234,7 @@ namespace aggregator.cli
 
         internal async Task<bool> EnableAsync(string instance, string name, bool disable)
         {
-            var instances = new AggregatorInstances(azure);
+            var instances = new AggregatorInstances(azure, logger);
 
             FunctionSettings settings;
             string settingsUrl = $"/api/vfs/site/wwwroot/{name}/function.json";
