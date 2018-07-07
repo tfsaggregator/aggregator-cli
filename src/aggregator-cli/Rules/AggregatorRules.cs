@@ -204,7 +204,12 @@ namespace aggregator.cli
                 request.Content = body;
                 using (var response = await client.SendAsync(request))
                 {
-                    return response.IsSuccessStatusCode;
+                    bool ok = response.IsSuccessStatusCode;
+                    if (!ok)
+                    {
+                        logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                    }
+                    return ok;
                 }
             }
         }
