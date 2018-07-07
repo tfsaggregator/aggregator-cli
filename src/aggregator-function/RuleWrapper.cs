@@ -24,7 +24,7 @@ namespace aggregator
     /// </summary>
     internal class RuleWrapper
     {
-        private IConfigurationRoot config;
+        private readonly IConfigurationRoot config;
 
         public RuleWrapper(IConfigurationRoot config)
         {

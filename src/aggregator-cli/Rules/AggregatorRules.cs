@@ -210,6 +210,7 @@ namespace aggregator.cli
             }
         }
 
+#pragma warning disable IDE1006
         internal class Binding
         {
             public string type { get; set; }
@@ -227,6 +228,7 @@ namespace aggregator.cli
             public List<Binding> bindings { get; set; }
             public bool disabled { get; set; }
         }
+#pragma warning restore IDE1006
 
         internal async Task<bool> EnableAsync(string instance, string name, bool disable)
         {
