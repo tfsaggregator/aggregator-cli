@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-core", "unittests
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-cli", "unittests-cli\unittests-cli.csproj", "{2DFEB5D5-A70E-4C43-B180-586FAA52E2DD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-function", "aggregator-function\aggregator-function.csproj", "{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{2DFEB5D5-A70E-4C43-B180-586FAA52E2DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DFEB5D5-A70E-4C43-B180-586FAA52E2DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DFEB5D5-A70E-4C43-B180-586FAA52E2DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

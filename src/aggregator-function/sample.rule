@@ -1,0 +1,1 @@
+﻿$"Hello { self.Fields["System.WorkItemType"] } #{ self.Id } - { self.Fields["System.Title"] }!"
