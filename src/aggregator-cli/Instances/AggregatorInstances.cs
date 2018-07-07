@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Management.Fluent;
+﻿using Microsoft.Azure.Management.AppService.Fluent;
+using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
 using Newtonsoft.Json.Linq;
@@ -17,7 +18,8 @@ namespace aggregator.cli
 {
     class AggregatorInstances
     {
-        const string InstancePrefix = "aggregator-";
+        const string ResourceGroupInstancePrefix = "aggregator-";
+        const string FunctionAppInstanceSuffix = "aggregator";
         private readonly IAzure azure;
         private readonly ILogger logger;
 
@@ -31,10 +33,10 @@ namespace aggregator.cli
         {
             var rgs = await azure.ResourceGroups.ListAsync();
             var result = new List<(string name, string region)>();
-            foreach (var rg in rgs.Where(rg => rg.Name.StartsWith(InstancePrefix)))
+            foreach (var rg in rgs.Where(rg => rg.Name.StartsWith(ResourceGroupInstancePrefix)))
             {
                 result.Add((
-                    rg.Name.Remove(0, InstancePrefix.Length),
+                    rg.Name.Remove(0, ResourceGroupInstancePrefix.Length),
                     rg.RegionName)
                 );
             }
@@ -103,12 +105,12 @@ namespace aggregator.cli
 
         internal static string GetResourceGroupName(string instanceName)
         {
-            return InstancePrefix + instanceName;
+            return ResourceGroupInstancePrefix + instanceName;
         }
 
         internal static string GetFunctionAppName(string instanceName)
         {
-            return InstancePrefix + instanceName;
+            return instanceName + FunctionAppInstanceSuffix;
         }
 
         string lastPublishCredentialsInstance = string.Empty;
@@ -120,6 +122,21 @@ namespace aggregator.cli
             var password = webFunctionApp.GetPublishingProfile().FtpPassword;
             // TODO this should be cached
             return (username: username, password: password);
+        }
+
+        internal async Task<bool> ChangeAppSettings(string instance, string pat)
+        {
+            var webFunctionApp = await azure
+                .AppServices
+                .WebApps
+                .GetByResourceGroupAsync(
+                    GetResourceGroupName(instance),
+                    GetFunctionAppName(instance));
+            webFunctionApp
+                .Update()
+                .WithAppSetting("VSTS_PAT", pat)
+                .Apply();
+            return true;
         }
 
         internal async Task<AuthenticationHeaderValue> GetKuduAuthentication(string instance)
@@ -160,7 +177,7 @@ namespace aggregator.cli
         internal async Task<HttpRequestMessage> GetKuduRequestAsync(string instance, HttpMethod method, string restApi)
         {
             var kuduUrl = new Uri($"https://{GetFunctionAppName(instance)}.scm.azurewebsites.net");
-            var request = new HttpRequestMessage(method, $"{kuduUrl}/{restApi}");
+            var request = new HttpRequestMessage(method, $"{kuduUrl}{restApi}");
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
             request.Headers.Authorization = await GetKuduAuthentication(instance);
             return request;

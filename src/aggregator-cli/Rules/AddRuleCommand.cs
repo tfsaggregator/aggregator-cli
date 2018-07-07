@@ -26,7 +26,7 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
-            if (Name == "FunctionCore")
+            if (Name == "xxx")
             {
                 WriteError($"{Name} is reserved, cannot be used as rule name");
                 return 2;

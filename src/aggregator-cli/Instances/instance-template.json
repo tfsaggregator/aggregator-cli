@@ -101,6 +101,10 @@
             {
               "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
               "value": "false"
+            },
+            {
+              "name": "VSTS_PAT",
+              "value": "to-be-replaced"
             }
           ]
         }

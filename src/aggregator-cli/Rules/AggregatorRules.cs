@@ -77,7 +77,7 @@ namespace aggregator.cli
         {
             var instances = new AggregatorInstances(azure, logger);
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, $"/api/functions"))
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, $"api/functions"))
             using (var response = await client.SendAsync(request))
             {
                 var stream = await response.Content.ReadAsStreamAsync();
@@ -103,7 +103,7 @@ namespace aggregator.cli
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/functions/{rule}/listsecrets"))
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"api/functions/{rule}/listsecrets"))
             {
                 using (var response = await client.SendAsync(request))
                 {
@@ -199,7 +199,7 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(azure, logger);
             var body = new ByteArrayContent(zipContent);
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/zipdeploy"))
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"api/zipdeploy"))
             {
                 request.Content = body;
                 using (var response = await client.SendAsync(request))
@@ -214,7 +214,7 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(azure, logger);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Delete, $"/api/functions/{name}"))
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Delete, $"api/functions/{name}"))
             using (var response = await client.SendAsync(request))
             {
                 return response.IsSuccessStatusCode;
@@ -285,22 +285,13 @@ namespace aggregator.cli
 
         private async Task<bool> SetRuleConfiguration(string instance)
         {
-            var vstsLogonData = VstsLogon.Load();
-
             var instances = new AggregatorInstances(azure, logger);
-            using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/settings"))
+            var vstsLogonData = VstsLogon.Load();
+            if (vstsLogonData.Mode == VstsLogonMode.PAT)
             {
-                if (vstsLogonData.Mode == VstsLogonMode.PAT)
-                {
-                    string json = $"{{ \"VSTS_PAT\": \"{vstsLogonData.Token}\" }}";
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                }
-                using (var response = await client.SendAsync(request))
-                {
-                    return response.IsSuccessStatusCode;
-                }
+                return await instances.ChangeAppSettings(instance, vstsLogonData.Token);
             }
+            return true;
         }
     }
 }
