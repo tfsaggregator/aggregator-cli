@@ -54,7 +54,7 @@ namespace aggregator.cli
                 logger.WriteInfo($"Resource group {rgName} created.");
             }
 
-            // TODO the template must create a Storage account and/or a Key Vault
+            // TODO the template should create a Storage account and/or a Key Vault
             var resourceName = "aggregator.cli.Instances.instance-template.json";
             string armTemplateString;
             var assembly = Assembly.GetExecutingAssembly();
@@ -105,9 +105,10 @@ namespace aggregator.cli
             return InstancePrefix + instanceName;
         }
 
+        string lastPublishCredentialsInstance = string.Empty;
         internal async Task<(string username, string password)> GetPublishCredentials(string instance)
         {
-            var webFunctionApp = azure.AppServices.FunctionApps.GetByResourceGroup(GetResourceGroupName(instance), instance);
+            var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(GetResourceGroupName(instance), instance);
             var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
             var username = ftpUsername.Split('\\').ToList()[1];
             var password = webFunctionApp.GetPublishingProfile().FtpPassword;

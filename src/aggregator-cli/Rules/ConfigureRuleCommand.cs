@@ -41,6 +41,9 @@ namespace aggregator.cli
             if (Disable || Enable)
             {
                 ok = await rules.EnableAsync(Instance, Name, Disable);
+            } else
+            {
+                ok = await rules.ConfigureAsync(Instance, Name);
             }
             return ok ? 0 : 1;
         }

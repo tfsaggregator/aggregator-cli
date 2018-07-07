@@ -140,10 +140,19 @@ namespace aggregator.cli
             if (ok)
             {
                 logger.WriteInfo($"Package {name} uploaded to {instance}.");
+                ok = await SetRuleConfiguration(instance);
+                if (ok)
+                {
+                    logger.WriteInfo($"Rule {name} configured.");
+                }
+                else
+                {
+                    logger.WriteError($"Failed to configure {name}!");
+                }
             }
             else
             {
-                logger.WriteError($"Failed to uplaod package {name} to {instance}!");
+                logger.WriteError($"Failed to upload package {name} to {instance}!");
             }
             return ok;
         }
@@ -266,6 +275,31 @@ namespace aggregator.cli
                 }
                 else
                     return false;
+            }
+        }
+
+        internal async Task<bool> ConfigureAsync(string instance, string name)
+        {
+            return await SetRuleConfiguration(instance);
+        }
+
+        private async Task<bool> SetRuleConfiguration(string instance)
+        {
+            var vstsLogonData = VstsLogon.Load();
+
+            var instances = new AggregatorInstances(azure, logger);
+            using (var client = new HttpClient())
+            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"/api/settings"))
+            {
+                if (vstsLogonData.Mode == VstsLogonMode.PAT)
+                {
+                    string json = $"{{ \"VSTS_PAT\": \"{vstsLogonData.Token}\" }}";
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                }
+                using (var response = await client.SendAsync(request))
+                {
+                    return response.IsSuccessStatusCode;
+                }
             }
         }
     }
