@@ -18,14 +18,18 @@ namespace aggregator
     /// <summary>
     /// Azure Function wrapper for Aggregator v3
     /// </summary>
-    public static class FunctionCore
+    internal class RequestProcessor
     {
-        [FunctionName("FunctionCore")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
-            HttpRequest req,
-            TraceWriter log,
-            ExecutionContext context)
+        private readonly TraceWriter log;
+        private readonly ExecutionContext context;
+
+        internal RequestProcessor(TraceWriter log, ExecutionContext context)
+        {
+            this.log = log;
+            this.context = context;
+        }
+
+        internal async Task<IActionResult> Run(HttpRequest req)
         {
             log.Info("C# HTTP trigger function processed a request.");
             log.Verbose($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
