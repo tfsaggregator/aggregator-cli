@@ -294,9 +294,12 @@ namespace aggregator.cli
             var vstsLogonData = VstsLogon.Load();
             if (vstsLogonData.Mode == VstsLogonMode.PAT)
             {
-                return await instances.ChangeAppSettings(instance, vstsLogonData.Token);
+                return await instances.ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
             }
-            return true;
+            else
+            {
+                return false;
+            }
         }
     }
 }

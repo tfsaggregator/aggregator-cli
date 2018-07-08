@@ -124,7 +124,7 @@ namespace aggregator.cli
             return (username: username, password: password);
         }
 
-        internal async Task<bool> ChangeAppSettings(string instance, string pat)
+        internal async Task<bool> ChangeAppSettings(string instance, string vstsToken, string vstsTokenType)
         {
             var webFunctionApp = await azure
                 .AppServices
@@ -134,7 +134,8 @@ namespace aggregator.cli
                     GetFunctionAppName(instance));
             webFunctionApp
                 .Update()
-                .WithAppSetting("VSTS_PAT", pat)
+                .WithAppSetting("Aggregator_VstsTokenType", vstsTokenType)
+                .WithAppSetting("Aggregator_VstsToken", vstsToken)
                 .Apply();
             return true;
         }

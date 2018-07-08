@@ -103,7 +103,11 @@
               "value": "false"
             },
             {
-              "name": "VSTS_PAT",
+              "name": "Aggregator_VstsTokenType",
+              "value": "to-be-replaced"
+            },
+            {
+              "name": "Aggregator_VstsToken",
               "value": "to-be-replaced"
             }
           ]

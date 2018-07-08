@@ -44,10 +44,19 @@ namespace aggregator
 
             string collectionUrl = data.resourceContainers.collection.baseUrl;
             int workItemId = data.resource.id;
-            string patToken = config["VSTS_PAT"];
 
-            logger.WriteVerbose($"Connecting to VSTS using PAT...");
-            var clientCredentials = new VssBasicCredential("pat", patToken);
+            string vstsTokenType = config["Aggregator_VstsTokenType"];
+            string vstsToken = config["Aggregator_VstsToken"];
+
+            logger.WriteVerbose($"Connecting to VSTS using {vstsTokenType}...");
+            var clientCredentials = default(VssCredentials);
+            if (string.Compare(vstsTokenType, "PAT", true) == 0)
+            {
+                clientCredentials = new VssBasicCredential(vstsTokenType, vstsToken);
+            } else
+            {
+                throw new ArgumentOutOfRangeException(nameof(vstsTokenType));
+            }
             var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
             await vsts.ConnectAsync();
             logger.WriteInfo($"Connected to VSTS");
