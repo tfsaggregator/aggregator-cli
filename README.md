@@ -32,3 +32,7 @@ Logon credentials are stored locally indefinitely: add a timeout.
 
 ### Code quality
 Is is not robust, lacks logging and is neither well factored.
+
+### Build complexity
+The `install.instance` command assume `function-bin.zip` is present in the same folder.
+That file is created by _Publishing_ the `aggregator-function` project.
