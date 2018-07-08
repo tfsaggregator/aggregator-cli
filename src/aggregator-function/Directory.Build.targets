@@ -13,6 +13,6 @@
       DestinationFiles="@(AzFunctionFiles->'..\aggregator-cli\function-bin\%(RecursiveDir)%(Filename)%(Extension)')" 
       />
     -->
-    <Exec Command="PowerShell -command Compress-Archive -Path $(PublishUrl)\* -DestinationPath ..\aggregator-cli\function-bin.zip -Force" />
+    <Exec Command="PowerShell -command Compress-Archive -Path $(PublishUrl)* -DestinationPath ..\aggregator-cli\function-bin.zip -Force" />
   </Target>
 </Project>
