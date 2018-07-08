@@ -26,12 +26,14 @@ namespace aggregator
     {
         private readonly IConfigurationRoot config;
         private readonly ILogger logger;
+        private readonly string ruleName;
         private readonly string functionDirectory;
 
-        public RuleWrapper(IConfigurationRoot config, ILogger logger, string functionDirectory)
+        public RuleWrapper(IConfigurationRoot config, ILogger logger, string ruleName, string functionDirectory)
         {
             this.config = config;
             this.logger = logger;
+            this.ruleName = ruleName;
             this.functionDirectory = functionDirectory;
         }
 
@@ -55,6 +57,7 @@ namespace aggregator
                 clientCredentials = new VssBasicCredential(vstsTokenType, vstsToken);
             } else
             {
+                logger.WriteError($"VSTS Token type {vstsTokenType} not supported!");
                 throw new ArgumentOutOfRangeException(nameof(vstsTokenType));
             }
             var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
@@ -64,14 +67,12 @@ namespace aggregator
             var self = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All);
             logger.WriteInfo($"Self retrieved");
 
-            string ruleFilePath;
-            string probedDir = functionDirectory;
-            do
+            string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
+            if (!File.Exists(ruleFilePath))
             {
-                ruleFilePath = Path.Combine(probedDir, "default.rule");
-                logger.WriteVerbose($"probing {ruleFilePath}");
-                probedDir = Directory.GetParent(probedDir).FullName;
-            } while (!File.Exists(ruleFilePath));
+                logger.WriteError($"Rule code not found at {ruleFilePath}");
+                return "Rule file not found!";
+            }
 
             logger.WriteVerbose($"Rule code found at {ruleFilePath}");
             string ruleCode = File.ReadAllText(ruleFilePath);

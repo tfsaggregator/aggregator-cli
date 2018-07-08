@@ -97,7 +97,12 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<string> GetInvocationUrl(string instance, string rule)
+        internal static string GetInvocationUrl(string instance, string rule)
+        {
+            return $"{AggregatorInstances.GetFunctionAppUrl(instance)}/api/{rule}";
+        }
+
+        internal async Task<(string url, string key)> GetInvocationUrlAndKey(string instance, string rule)
         {
             var instances = new AggregatorInstances(azure, logger);
 
@@ -115,19 +120,21 @@ namespace aggregator.cli
                         {
                             var js = new JsonSerializer();
                             var secret = js.Deserialize<KuduSecret>(jtr);
-                            return secret.trigger_url;
+
+                            (string url, string key) invocation = (GetInvocationUrl(instance, rule), secret.key);
+                            return invocation;
                         }
                     }
                     else
-                        return null;
+                        return default;
                 }
             }
         }
 
         internal async Task<bool> AddAsync(string instance, string name, string filePath)
         {
-            logger.WriteVerbose($"Packaging {filePath} into rule {name}");
-            byte[] zipContent = CreateTemporaryZipForRule(name, filePath);
+            logger.WriteVerbose($"Layout rule files");
+            string baseDirPath = LayoutRuleFiles(name, filePath);
             logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
             logger.WriteVerbose($"Requesting Publish credentials for {instance}");
@@ -135,83 +142,100 @@ namespace aggregator.cli
             (string username, string password) = await instances.GetPublishCredentials(instance);
             logger.WriteInfo($"Retrieved publish credentials for {instance}.");
 
-            logger.WriteVerbose($"Uploading package to {instance}");
-            bool ok = await UploadZipWithRule(instance, zipContent, username, password);
+            logger.WriteVerbose($"Uploading rule files to {instance}");
+            bool ok = await UploadRuleFiles(instance, name, baseDirPath);
             if (ok)
             {
-                logger.WriteInfo($"Package {name} uploaded to {instance}.");
-                ok = await SetRuleConfiguration(instance);
-                if (ok)
-                {
-                    logger.WriteInfo($"Rule {name} configured.");
-                }
-                else
-                {
-                    logger.WriteError($"Failed to configure {name}!");
-                }
+                logger.WriteInfo($"{name} files uploaded to {instance}.");
             }
-            else
-            {
-                logger.WriteError($"Failed to upload package {name} to {instance}!");
-            }
+            CleanupRuleFiles(baseDirPath);
             return ok;
         }
 
-        private static byte[] CreateTemporaryZipForRule(string name, string filePath)
+        private static string LayoutRuleFiles(string name, string filePath)
         {
-            // see https://docs.microsoft.com/en-us/azure/azure-functions/deployment-zip-push
-
             // working directory
             var rand = new Random((int)DateTime.UtcNow.Ticks);
             string baseDirPath = Path.Combine(
                 Path.GetTempPath(),
                 $"aggregator-{rand.Next().ToString()}");
-            string tempDirPath = baseDirPath;
-            /*
             string tempDirPath = Path.Combine(
                 baseDirPath,
                 name);
-            */
             Directory.CreateDirectory(tempDirPath);
 
-
-            // copy aggregator-function binaries
-            ZipFile.ExtractToDirectory("function-bin.zip", tempDirPath);
             // copy rule content to fixed file name
-            File.Copy(filePath, Path.Combine(tempDirPath, "default.rule"), true);
+            File.Copy(filePath, Path.Combine(tempDirPath, $"{name}.rule"));
 
-            // zip
-            string tempZipPath = Path.GetTempFileName();
-            File.Delete(tempZipPath);
-            ZipFile.CreateFromDirectory(baseDirPath, tempZipPath);
-            var zipContent = File.ReadAllBytes(tempZipPath);
+            // copy templates
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
+                // TODO this can be created by deserializing Kudu...
+            using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
+            {
+                reader.CopyTo(writer);
+            }
+            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
+            using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
+            {
+                reader.CopyTo(writer);
+            }
 
-            // clean-up: everything is in memory
-            Directory.Delete(tempDirPath, true);
-            File.Delete(tempZipPath);
-            return zipContent;
+            return baseDirPath;
         }
 
-        private async Task<bool> UploadZipWithRule(string instance, byte[] zipContent, string username, string password)
+        void CleanupRuleFiles(string baseDirPath)
         {
-            // POST /api/zipdeploy?isAsync=true
-            // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
+            // clean-up: everything is in memory
+            Directory.Delete(baseDirPath, true);
+        }
+
+        private async Task<bool> UploadRuleFiles(string instance, string name, string baseDirPath)
+        {
+            /*
+            PUT /api/vfs/{path}
+            Puts a file at path.
+
+            PUT /api/vfs/{path}/
+            Creates a directory at path. The path can be nested, e.g. `folder1/folder2`.
+            */
+            string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
+
             var instances = new AggregatorInstances(azure, logger);
-            var body = new ByteArrayContent(zipContent);
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"api/zipdeploy"))
             {
-                request.Content = body;
-                using (var response = await client.SendAsync(request))
+                using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Put, relativeUrl))
                 {
-                    bool ok = response.IsSuccessStatusCode;
-                    if (!ok)
+                    using (var response = await client.SendAsync(request))
                     {
-                        logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                        bool ok = response.IsSuccessStatusCode;
+                        if (!ok)
+                        {
+                            logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                            return ok;
+                        }
                     }
-                    return ok;
                 }
+                var files = Directory.EnumerateFiles(baseDirPath, "*", SearchOption.AllDirectories);
+                foreach (var file in files)
+                {
+                    string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
+                    using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Put, fileUrl))
+                    {
+                        request.Content = new StringContent(File.ReadAllText(file));
+                        using (var response = await client.SendAsync(request))
+                        {
+                            bool ok = response.IsSuccessStatusCode;
+                            if (!ok)
+                            {
+                                logger.WriteError($"Failed uploading {file} with {response.ReasonPhrase}");
+                                return ok;
+                            }
+                        }
+                    }
+                }//for
             }
+            return true;
         }
 
         internal async Task<bool> RemoveAsync(string instance, string name)
@@ -285,21 +309,7 @@ namespace aggregator.cli
 
         internal async Task<bool> ConfigureAsync(string instance, string name)
         {
-            return await SetRuleConfiguration(instance);
-        }
-
-        private async Task<bool> SetRuleConfiguration(string instance)
-        {
-            var instances = new AggregatorInstances(azure, logger);
-            var vstsLogonData = VstsLogon.Load();
-            if (vstsLogonData.Mode == VstsLogonMode.PAT)
-            {
-                return await instances.ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
-            }
-            else
-            {
-                return false;
-            }
+            throw new NotImplementedException(nameof(ConfigureAsync));
         }
     }
 }

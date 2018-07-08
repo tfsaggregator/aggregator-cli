@@ -8,8 +8,23 @@
     <ApplicationIcon>../../art/TfsAggregator.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Rules\function.json" />
+    <None Remove="Rules\run.csx" />
+  </ItemGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="Instances\instance-template.json" />
+    <EmbeddedResource Include="Rules\function.json" />
+    <EmbeddedResource Include="Rules\run.csx" />
   </ItemGroup>
 
   <ItemGroup>

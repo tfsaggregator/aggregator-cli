@@ -32,7 +32,8 @@ namespace aggregator.cli
                 .Result
                 .Where(s
                     => s.PublisherId == "tfs"
-                    && s.ConsumerInputs["url"].ToString().StartsWith($"https://{instance}.azurewebsites.net")
+                    && s.ConsumerInputs["url"].ToString().StartsWith(
+                        AggregatorInstances.GetFunctionAppUrl(instance))
                     );
 
             foreach (var subscription in subscriptions)
@@ -64,7 +65,7 @@ namespace aggregator.cli
             var project = await projectClient.GetProject(projectName);
 
             var rules = new AggregatorRules(azure, logger);
-            string ruleUrl = await rules.GetInvocationUrl(instance, ruleName);
+            (string ruleUrl, string ruleKey) invocation = await rules.GetInvocationUrlAndKey(instance, ruleName);
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
 
@@ -75,11 +76,10 @@ namespace aggregator.cli
                 ConsumerActionId = "httpRequest",
                 ConsumerInputs = new Dictionary<string, string>
                 {
-                    { "url", ruleUrl },
-                    { "httpHeaders", $"rule:{ruleName}" }, // HACK use this as metadata
-                    { "basicAuthUsername", "me"}, // TODO
-                    { "basicAuthPassword", "pass" }, // TODO
+                    { "url", invocation.ruleUrl },
+                    { "httpHeaders", $"x-functions-key:{invocation.ruleKey}" },
                     { "resourceDetailsToSend", "All" },
+                    // TODO these are not respected!!!
                     { "messagesToSend", "None" },
                     { "detailedMessagesToSend", "None" },
                 },
@@ -88,7 +88,7 @@ namespace aggregator.cli
                 PublisherInputs = new Dictionary<string, string>
                 {
                     { "projectId", project.Id.ToString() },
-                    /* TODO
+                    /* TODO consider offering these filters
                     { "tfsSubscriptionId", vsts.ServerId },
                     { "teamId", null },
                     // Filter events to include only work items under the specified area path.
@@ -123,15 +123,18 @@ namespace aggregator.cli
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync("tfs");
             var ruleSubs = subscriptions
                 // TODO can we trust this?
-                // && s.ActionDescription == $"To host {instance}.azurewebsites.net"
-                .Where(s => s.ConsumerInputs["url"].ToString().StartsWith($"https://{instance}.azurewebsites.net"));
+                // && s.ActionDescription == $"To host {AggregatorInstances.GetFunctionAppHostName(instance)}"
+                .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
+                    AggregatorInstances.GetFunctionAppUrl(instance)));
             if (@event != "*")
             {
                 ruleSubs = ruleSubs.Where(s => s.EventType == @event);
             }
             if (rule != "*")
             {
-                ruleSubs = ruleSubs.Where(s => s.ConsumerInputs["httpHeaders"].ToString() == $"rule:{rule}");
+                ruleSubs = ruleSubs
+                .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
+                    AggregatorRules.GetInvocationUrl(instance, rule)));
             }
             foreach (var ruleSub in ruleSubs)
             {

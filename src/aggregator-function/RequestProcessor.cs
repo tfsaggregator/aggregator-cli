@@ -18,20 +18,19 @@ namespace aggregator
     /// <summary>
     /// Azure Function wrapper for Aggregator v3
     /// </summary>
-    internal class RequestProcessor
+    public class RequestProcessor
     {
         private readonly TraceWriter log;
         private readonly ExecutionContext context;
 
-        internal RequestProcessor(TraceWriter log, ExecutionContext context)
+        public RequestProcessor(TraceWriter log, ExecutionContext context)
         {
             this.log = log;
             this.context = context;
         }
 
-        internal async Task<IActionResult> Run(HttpRequest req)
+        public async Task<HttpResponseMessage> Run(HttpRequestMessage req)
         {
-            log.Info("C# HTTP trigger function processed a request.");
             log.Verbose($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
 
             // TODO
@@ -39,10 +38,8 @@ namespace aggregator
 
             try
             {
-                string base64Auth = req.Headers["Authorization"].FirstOrDefault().Substring(6);
-                string user = Encoding.Default.GetString(Convert.FromBase64String(base64Auth)).Split(':')[0];
-                string rule = req.Headers["rule"].FirstOrDefault();
-                log.Info($"Welcome {user} to {rule}");
+                string rule = context.FunctionName;
+                log.Info($"Welcome to {rule}");
             }
             catch (Exception ex)
             {
@@ -50,15 +47,18 @@ namespace aggregator
             }
 
             // Get request body
-            string requestBody = new StreamReader(req.Body).ReadToEnd();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            string jsonContent = await req.Content.ReadAsStringAsync();
+            dynamic data = JsonConvert.DeserializeObject(jsonContent);
 
             // sanity check
             if ((data.eventType != "workitem.created"
                 && data.eventType != "workitem.updated")
                  || data.publisherId != "tfs")
             {
-                return new BadRequestObjectResult("Not a good VSTS post");
+                return req.CreateResponse(HttpStatusCode.BadRequest, new
+                {
+                    error = "Not a good VSTS post..."
+                });
             }
 
             var config = new ConfigurationBuilder()
@@ -72,12 +72,16 @@ namespace aggregator
              public string FunctionDirectory { get; set; }
              public string FunctionAppDirectory { get; set; }
             */
-            var wrapper = new RuleWrapper(config, logger, context.FunctionDirectory);
-            string result = await wrapper.Execute(aggregatorVersion, data);
+            var wrapper = new RuleWrapper(config, logger, context.FunctionName, context.FunctionDirectory);
+            string execResult = await wrapper.Execute(aggregatorVersion, data);
 
-            log.Info($"Returning {result}");
+            log.Info($"Returning {execResult}");
 
-            return (ActionResult)new OkObjectResult(result);
+            var resp = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(execResult)
+            };
+            return resp;
         }
     }
 }

@@ -71,6 +71,7 @@ namespace aggregator.cli
             if (parsedTemplate.SelectToken("parameters.appName") == null)
             {
                 // not good, blah
+                logger.WriteWarning($"Something is wrong with the ARM template");
             }
 
             string appName = GetFunctionAppName(name);
@@ -88,7 +89,7 @@ namespace aggregator.cli
                     .CreateAsync();
 
             // poll
-            const int PollIntervalInSeconds = 10;
+            const int PollIntervalInSeconds = 3;
             int totalDelay = 0;
             while (!(StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Succeeded") ||
                     StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Failed") ||
@@ -100,7 +101,49 @@ namespace aggregator.cli
                 await deployment.RefreshAsync();
             }
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
-            return true;
+
+            // upload
+            logger.WriteVerbose($"Uploading runtime package to {name}");
+            string zipPath = "function-bin.zip";
+            var zipContent = File.ReadAllBytes(zipPath);
+            bool ok = await UploadRuntimeZip(name, zipContent);
+            if (ok)
+            {
+                logger.WriteInfo($"Runtime package uploaded to {name}.");
+                // TODO requires VSTS logon!!!!!!!!!
+                var vstsLogonData = VstsLogon.Load();
+                if (vstsLogonData.Mode == VstsLogonMode.PAT)
+                {
+                    ok = await ChangeAppSettings(name, vstsLogonData.Token, vstsLogonData.Mode.ToString());
+                }
+                else
+                {
+                    return false;
+                }
+
+            }
+            return ok;
+        }
+
+        private async Task<bool> UploadRuntimeZip(string name, byte[] zipContent)
+        {
+            // POST /api/zipdeploy?isAsync=true
+            // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
+            var body = new ByteArrayContent(zipContent);
+            using (var client = new HttpClient())
+            using (var request = await GetKuduRequestAsync(name, HttpMethod.Post, $"api/zipdeploy"))
+            {
+                request.Content = body;
+                using (var response = await client.SendAsync(request))
+                {
+                    bool ok = response.IsSuccessStatusCode;
+                    if (!ok)
+                    {
+                        logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                    }
+                    return ok;
+                }
+            }
         }
 
         internal static string GetResourceGroupName(string instanceName)
@@ -113,15 +156,38 @@ namespace aggregator.cli
             return instanceName + FunctionAppInstanceSuffix;
         }
 
+        internal static string GetFunctionAppHostName(string instanceName)
+        {
+            return $"{AggregatorInstances.GetFunctionAppName(instanceName)}.azurewebsites.net";
+        }
+
+        internal static string GetFunctionAppUrl(string instanceName)
+        {
+            return $"https://{AggregatorInstances.GetFunctionAppHostName(instanceName)}";
+        }
+
+        internal static string GetFunctionAppKuduUrl(string instanceName)
+        {
+            return $"https://{AggregatorInstances.GetFunctionAppName(instanceName)}.scm.azurewebsites.net";
+        }
+
+
         string lastPublishCredentialsInstance = string.Empty;
+        (string username, string password) lastPublishCredentials = default;
         internal async Task<(string username, string password)> GetPublishCredentials(string instance)
         {
-            var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(GetResourceGroupName(instance), GetFunctionAppName(instance));
-            var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
-            var username = ftpUsername.Split('\\').ToList()[1];
-            var password = webFunctionApp.GetPublishingProfile().FtpPassword;
-            // TODO this should be cached
-            return (username: username, password: password);
+            if (lastPublishCredentialsInstance != instance)
+            {
+                string rg = GetResourceGroupName(instance);
+                string fn = GetFunctionAppName(instance);
+                var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rg, fn);
+                var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
+                var username = ftpUsername.Split('\\').ToList()[1];
+                var password = webFunctionApp.GetPublishingProfile().FtpPassword;
+
+                lastPublishCredentials = (username, password);
+            }
+            return lastPublishCredentials;
         }
 
         internal async Task<bool> ChangeAppSettings(string instance, string vstsToken, string vstsTokenType)
@@ -149,7 +215,7 @@ namespace aggregator.cli
 
         internal async Task<string> GetAzureFunctionJWTAsync(string instance)
         {
-            var kuduUrl = $"https://{GetFunctionAppName(instance)}.scm.azurewebsites.net/api";
+            var kuduUrl = $"{GetFunctionAppKuduUrl(instance)}/api";
             string JWT;
             using (var client = new HttpClient())
             {
@@ -177,7 +243,7 @@ namespace aggregator.cli
 
         internal async Task<HttpRequestMessage> GetKuduRequestAsync(string instance, HttpMethod method, string restApi)
         {
-            var kuduUrl = new Uri($"https://{GetFunctionAppName(instance)}.scm.azurewebsites.net");
+            var kuduUrl = new Uri(GetFunctionAppKuduUrl(instance));
             var request = new HttpRequestMessage(method, $"{kuduUrl}{restApi}");
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
             request.Headers.Authorization = await GetKuduAuthentication(instance);
