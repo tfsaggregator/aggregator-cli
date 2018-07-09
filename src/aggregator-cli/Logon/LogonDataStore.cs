@@ -48,9 +48,10 @@ namespace aggregator.cli
         }
 
         public T Load<T>()
+            where T : class
         {
             if (!File.Exists(LogonDataPath))
-                return default(T);
+                return null;
 
             var entropy = new byte[16];
             byte[] outBuffer;

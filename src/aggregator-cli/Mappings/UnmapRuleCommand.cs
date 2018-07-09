@@ -20,22 +20,9 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var vsts = await VstsLogon.Load()?.LogonAsync();
-            if (vsts == null)
-            {
-                WriteError($"Must logon.vsts first.");
-                return 2;
-            }
-
-            var azure = await AzureLogon.Load()?.LogonAsync();
-            if (azure == null)
-            {
-                WriteError($"Must logon.azure first.");
-                return 2;
-            }
-
+            var logon = await Logon<AzureLogon, VstsLogon>();
             var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(vsts, azure, this);
+            var mappings = new AggregatorMappings(logon.vsts, logon.azure, this);
             bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Rule);
             return ok ? 0 : 1;
         }

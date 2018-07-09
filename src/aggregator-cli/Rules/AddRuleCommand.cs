@@ -20,19 +20,9 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var azure = await AzureLogon.Load()?.LogonAsync();
-            if (azure == null)
-            {
-                WriteError($"Must logon.azure first.");
-                return 2;
-            }
-            if (Name == "xxx")
-            {
-                WriteError($"{Name} is reserved, cannot be used as rule name");
-                return 2;
-            }
+            var logon = await Logon<AzureLogon, bool>();
             var instance = new InstanceName(Instance);
-            var rules = new AggregatorRules(azure, this);
+            var rules = new AggregatorRules(logon.azure, this);
             bool ok = await rules.AddAsync(instance, Name, File);
             return ok ? 0 : 1;
         }

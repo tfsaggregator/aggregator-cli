@@ -1,7 +1,9 @@
 ﻿using CommandLine;
+using Microsoft.Azure.Management.Fluent;
+using Microsoft.VisualStudio.Services.WebApi;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -42,6 +44,33 @@ namespace aggregator.cli
         {
             logger.WriteError(message);
         }
+
+        protected async Task<(IAzure azure, VssConnection vsts)> Logon<T,U>()
+        {
+            (IAzure azure, VssConnection vsts) result = default;
+            if (typeof(T) == typeof(AzureLogon))
+            {
+                WriteInfo($"Authenticating to Azure...");
+                var logon = AzureLogon.Load();
+                if (logon == null)
+                {
+                    throw new ApplicationException($"No cached Azure credential: use the logon.azure command.");
+                }
+                result.azure = await logon.LogonAsync();
+            }
+
+            if (typeof(U) == typeof(VstsLogon))
+            {
+                WriteInfo($"Authenticating to VSTS...");
+                var logon = VstsLogon.Load();
+                if (logon == null)
+                {
+                    throw new ApplicationException($"No cached VSTS credential: use the logon.vsts command.");
+                }
+                result.vsts = await logon.LogonAsync();
+            }
+            return result;
+        }
     }
 
     static class CommandBaseExtension
@@ -56,7 +85,10 @@ namespace aggregator.cli
                 var logger = new ConsoleLogger();
                 if (rc != 0)
                 {
-                    logger.WriteError("Failed");
+                    logger.WriteError("Failed!");
+                } else
+                {
+                    logger.WriteError("Succeeded");
                 }
                 return rc;
             }

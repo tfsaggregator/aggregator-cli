@@ -14,14 +14,9 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var azure = await AzureLogon.Load()?.LogonAsync();
-            if (azure == null)
-            {
-                WriteError($"Must logon.azure first.");
-                return 2;
-            }
+            var logon = await Logon<AzureLogon, bool>();
             var instance = new InstanceName(Instance);
-            var rules = new AggregatorRules(azure, this);
+            var rules = new AggregatorRules(logon.azure, this);
             bool any = false;
             foreach (var item in await rules.List(instance))
             {

@@ -15,15 +15,9 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var vsts = await VstsLogon.Load()?.LogonAsync();
-            if (vsts == null)
-            {
-                WriteError($"Must logon.vsts first.");
-                return 2;
-            }
-
+            var logon = await Logon<bool, VstsLogon>();
             var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(vsts, null, this);
+            var mappings = new AggregatorMappings(logon.vsts, null, this);
             bool any = false;
             foreach (var item in mappings.List(instance))
             {
