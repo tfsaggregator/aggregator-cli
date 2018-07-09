@@ -30,12 +30,13 @@ namespace aggregator.cli
                 WriteError($"Must logon.vsts first.");
                 return 2;
             }
+            var instance = new InstanceName(Name);
 
             var mappings = new AggregatorMappings(vsts, azure, this);
-            bool ok = await mappings.RemoveInstanceAsync(Name);
+            bool ok = await mappings.RemoveInstanceAsync(instance);
 
             var instances = new AggregatorInstances(azure, this);
-            ok = await instances.Remove(Name, Location);
+            ok = await instances.Remove(instance, Location);
             return ok ? 0 : 1;
         }
     }

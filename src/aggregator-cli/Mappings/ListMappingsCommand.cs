@@ -22,9 +22,10 @@ namespace aggregator.cli
                 return 2;
             }
 
+            var instance = new InstanceName(Instance);
             var mappings = new AggregatorMappings(vsts, null, this);
             bool any = false;
-            foreach (var item in mappings.List(Instance))
+            foreach (var item in mappings.List(instance))
             {
                 WriteOutput(
                     item,

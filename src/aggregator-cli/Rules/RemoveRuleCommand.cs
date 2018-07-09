@@ -31,12 +31,13 @@ namespace aggregator.cli
                 return 2;
             }
 
+            var instance = new InstanceName(Instance);
             var mappings = new AggregatorMappings(vsts, azure, this);
-            bool ok = await mappings.RemoveRuleAsync(Instance, Name);
+            bool ok = await mappings.RemoveRuleAsync(instance, Name);
 
             var rules = new AggregatorRules(azure, this);
             //rules.Progress += Instances_Progress;
-            ok = ok && await rules.RemoveAsync(Instance, Name);
+            ok = ok && await rules.RemoveAsync(instance, Name);
             return ok ? 0 : 1;
         }
     }

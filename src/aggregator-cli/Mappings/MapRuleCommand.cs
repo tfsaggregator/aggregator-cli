@@ -44,7 +44,8 @@ namespace aggregator.cli
                 WriteError($"Invalid event type.");
                 return 2;
             }
-            var id = await mappings.Add(Project, Event, Instance, Rule);
+            var instance = new InstanceName(Instance);
+            var id = await mappings.Add(Project, Event, instance, Rule);
             return id.Equals(Guid.Empty) ? 1 : 0;
         }
     }

@@ -23,8 +23,9 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
+            var instance = new InstanceName(Name);
             var instances = new AggregatorInstances(azure, this);
-            bool ok = await instances.Add(Name, Location);
+            bool ok = await instances.Add(instance, Location);
             return ok ? 0 : 1;
         }
     }

@@ -31,8 +31,9 @@ namespace aggregator.cli
                 WriteError($"{Name} is reserved, cannot be used as rule name");
                 return 2;
             }
+            var instance = new InstanceName(Instance);
             var rules = new AggregatorRules(azure, this);
-            bool ok = await rules.AddAsync(Instance, Name, File);
+            bool ok = await rules.AddAsync(instance, Name, File);
             return ok ? 0 : 1;
         }
     }

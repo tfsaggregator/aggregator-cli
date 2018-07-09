@@ -34,8 +34,9 @@ namespace aggregator.cli
                 return 2;
             }
 
+            var instance = new InstanceName(Instance);
             var mappings = new AggregatorMappings(vsts, azure, this);
-            bool ok = await mappings.RemoveRuleEventAsync(Event, Instance, Rule);
+            bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Rule);
             return ok ? 0 : 1;
         }
     }

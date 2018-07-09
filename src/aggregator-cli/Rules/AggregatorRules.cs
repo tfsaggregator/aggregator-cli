@@ -28,56 +28,13 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-#pragma warning disable IDE1006
-        public class KuduFunctionKey
-        {
-            [JsonProperty(PropertyName = "name")]
-            public string Name { get; set; }
-            [JsonProperty(PropertyName = "value")]
-            public string Value { get; set; }
-        }
 
-        public class KuduFunctionKeys
-        {
-            public KuduFunctionKey[] keys { get; set; }
-            // links
-        }
-
-        public class KuduFunctionBinding
-        {
-            public string name { get; set; }
-            public string type { get; set; }
-            public string direction { get; set; }
-            public string webHookType { get; set; }
-        }
-
-        public class KuduFunctionConfig
-        {
-            public KuduFunctionBinding[] bindings { get; set; }
-            public bool disabled { get; set; }
-        }
-
-        public class KuduFunction
-        {
-            public string url { get; set; }
-
-            public string name { get; set; }
-
-            public KuduFunctionConfig config { get; set; }
-        }
-
-        public class KuduSecret
-        {
-            public string key { get; set; }
-            public string trigger_url { get; set; }
-        }
-#pragma warning restore IDE1006
-
-        internal async Task<IEnumerable<KuduFunction>> List(string instance)
+        internal async Task<IEnumerable<KuduFunction>> List(InstanceName instance)
         {
             var instances = new AggregatorInstances(azure, logger);
+            var kudu = new KuduApi(instance, azure, logger);
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, $"api/functions"))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions"))
             using (var response = await client.SendAsync(request))
             {
                 var stream = await response.Content.ReadAsStreamAsync();
@@ -97,18 +54,19 @@ namespace aggregator.cli
             }
         }
 
-        internal static string GetInvocationUrl(string instance, string rule)
+        internal static string GetInvocationUrl(InstanceName instance, string rule)
         {
-            return $"{AggregatorInstances.GetFunctionAppUrl(instance)}/api/{rule}";
+            return $"{instance.FunctionAppUrl}/api/{rule}";
         }
 
-        internal async Task<(string url, string key)> GetInvocationUrlAndKey(string instance, string rule)
+        internal async Task<(string url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule)
         {
             var instances = new AggregatorInstances(azure, logger);
+            var kudu = new KuduApi(instance, azure, logger);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Post, $"api/functions/{rule}/listsecrets"))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets"))
             {
                 using (var response = await client.SendAsync(request))
                 {
@@ -121,7 +79,7 @@ namespace aggregator.cli
                             var js = new JsonSerializer();
                             var secret = js.Deserialize<KuduSecret>(jtr);
 
-                            (string url, string key) invocation = (GetInvocationUrl(instance, rule), secret.key);
+                            (string url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
                             return invocation;
                         }
                     }
@@ -131,22 +89,19 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> AddAsync(string instance, string name, string filePath)
+        internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath)
         {
+            var kudu = new KuduApi(instance, azure, logger);
+
             logger.WriteVerbose($"Layout rule files");
             string baseDirPath = LayoutRuleFiles(name, filePath);
             logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
-            logger.WriteVerbose($"Requesting Publish credentials for {instance}");
-            var instances = new AggregatorInstances(azure, logger);
-            (string username, string password) = await instances.GetPublishCredentials(instance);
-            logger.WriteInfo($"Retrieved publish credentials for {instance}.");
-
-            logger.WriteVerbose($"Uploading rule files to {instance}");
+            logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
             bool ok = await UploadRuleFiles(instance, name, baseDirPath);
             if (ok)
             {
-                logger.WriteInfo($"{name} files uploaded to {instance}.");
+                logger.WriteInfo($"{name} files uploaded to {instance.PlainName}.");
             }
             CleanupRuleFiles(baseDirPath);
             return ok;
@@ -190,7 +145,7 @@ namespace aggregator.cli
             Directory.Delete(baseDirPath, true);
         }
 
-        private async Task<bool> UploadRuleFiles(string instance, string name, string baseDirPath)
+        private async Task<bool> UploadRuleFiles(InstanceName instance, string name, string baseDirPath)
         {
             /*
             PUT /api/vfs/{path}
@@ -199,12 +154,13 @@ namespace aggregator.cli
             PUT /api/vfs/{path}/
             Creates a directory at path. The path can be nested, e.g. `folder1/folder2`.
             */
+            var kudu = new KuduApi(instance, azure, logger);
             string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
             var instances = new AggregatorInstances(azure, logger);
             using (var client = new HttpClient())
             {
-                using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Put, relativeUrl))
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
                 {
                     using (var response = await client.SendAsync(request))
                     {
@@ -220,7 +176,7 @@ namespace aggregator.cli
                 foreach (var file in files)
                 {
                     string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
-                    using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Put, fileUrl))
+                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
                     {
                         request.Content = new StringContent(File.ReadAllText(file));
                         using (var response = await client.SendAsync(request))
@@ -238,12 +194,13 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> RemoveAsync(string instance, string name)
+        internal async Task<bool> RemoveAsync(InstanceName instance, string name)
         {
+            var kudu = new KuduApi(instance, azure, logger);
             var instances = new AggregatorInstances(azure, logger);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
-            using (var request = await instances.GetKuduRequestAsync(instance, HttpMethod.Delete, $"api/functions/{name}"))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}"))
             using (var response = await client.SendAsync(request))
             {
                 return response.IsSuccessStatusCode;
@@ -270,7 +227,7 @@ namespace aggregator.cli
         }
 #pragma warning restore IDE1006
 
-        internal async Task<bool> EnableAsync(string instance, string name, bool disable)
+        internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable)
         {
             var instances = new AggregatorInstances(azure, logger);
 

@@ -20,18 +20,19 @@ namespace aggregator.cli
                 WriteError($"Must logon.azure first.");
                 return 2;
             }
+            var instance = new InstanceName(Instance);
             var rules = new AggregatorRules(azure, this);
             bool any = false;
-            foreach (var item in await rules.List(Instance))
+            foreach (var item in await rules.List(instance))
             {
                 WriteOutput(
                     item,
-                    (data) => $"Rule {item.name} {(item.config.disabled ? "(disabled)" : string.Empty)}");
+                    (data) => $"Rule {item.Name} {(item.Config.Disabled ? "(disabled)" : string.Empty)}");
                 any = true;
             }
             if (!any)
             {
-                WriteInfo($"No rules found in aggregator instance {Instance}.");
+                WriteInfo($"No rules found in aggregator instance {instance.PlainName}.");
             }
             return 0;
         }

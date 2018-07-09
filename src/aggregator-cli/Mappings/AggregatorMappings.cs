@@ -24,7 +24,7 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        internal IEnumerable<(string rule, string project, string events)> List(string instance)
+        internal IEnumerable<(string rule, string project, string events)> List(InstanceName instance)
         {
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = serviceHooksClient
@@ -33,7 +33,7 @@ namespace aggregator.cli
                 .Where(s
                     => s.PublisherId == "tfs"
                     && s.ConsumerInputs["url"].ToString().StartsWith(
-                        AggregatorInstances.GetFunctionAppUrl(instance))
+                        instance.FunctionAppUrl)
                     );
 
             foreach (var subscription in subscriptions)
@@ -59,7 +59,7 @@ namespace aggregator.cli
             return validValues.Contains(@event);
         }
 
-        internal async Task<Guid> Add(string projectName, string @event, string instance, string ruleName)
+        internal async Task<Guid> Add(string projectName, string @event, InstanceName instance, string ruleName)
         {
             var projectClient = vsts.GetClient<ProjectHttpClient>();
             var project = await projectClient.GetProject(projectName);
@@ -107,25 +107,25 @@ namespace aggregator.cli
             return newSubscription.Id;
         }
 
-        internal async Task<bool> RemoveInstanceAsync(string instance)
+        internal async Task<bool> RemoveInstanceAsync(InstanceName instance)
         {
             return await RemoveRuleEventAsync("*", instance, "*");
         }
 
-        internal async Task<bool> RemoveRuleAsync(string instance, string rule)
+        internal async Task<bool> RemoveRuleAsync(InstanceName instance, string rule)
         {
             return await RemoveRuleEventAsync("*", instance, rule);
         }
 
-        internal async Task<bool> RemoveRuleEventAsync(string @event, string instance, string rule)
+        internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string rule)
         {
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync("tfs");
             var ruleSubs = subscriptions
                 // TODO can we trust this?
-                // && s.ActionDescription == $"To host {AggregatorInstances.GetFunctionAppHostName(instance)}"
+                // && s.ActionDescription == $"To host {instance.DnsHostName}"
                 .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
-                    AggregatorInstances.GetFunctionAppUrl(instance)));
+                    instance.FunctionAppUrl));
             if (@event != "*")
             {
                 ruleSubs = ruleSubs.Where(s => s.EventType == @event);

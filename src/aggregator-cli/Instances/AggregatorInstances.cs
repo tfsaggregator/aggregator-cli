@@ -18,8 +18,6 @@ namespace aggregator.cli
 {
     class AggregatorInstances
     {
-        const string ResourceGroupInstancePrefix = "aggregator-";
-        const string FunctionAppInstanceSuffix = "aggregator";
         private readonly IAzure azure;
         private readonly ILogger logger;
 
@@ -33,19 +31,19 @@ namespace aggregator.cli
         {
             var rgs = await azure.ResourceGroups.ListAsync();
             var result = new List<(string name, string region)>();
-            foreach (var rg in rgs.Where(rg => rg.Name.StartsWith(ResourceGroupInstancePrefix)))
+            foreach (var rg in rgs.Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)))
             {
                 result.Add((
-                    rg.Name.Remove(0, ResourceGroupInstancePrefix.Length),
+                    rg.Name.Remove(0, InstanceName.ResourceGroupInstancePrefix.Length),
                     rg.RegionName)
                 );
             }
             return result;
         }
 
-        internal async Task<bool> Add(string name, string location)
+        internal async Task<bool> Add(InstanceName instance, string location)
         {
-            string rgName = GetResourceGroupName(name);
+            string rgName = instance.ResourceGroupName;
             if (!await azure.ResourceGroups.ContainAsync(rgName))
             {
                 logger.WriteVerbose($"Creating resource group {rgName}");
@@ -74,7 +72,7 @@ namespace aggregator.cli
                 logger.WriteWarning($"Something is wrong with the ARM template");
             }
 
-            string appName = GetFunctionAppName(name);
+            string appName = instance.FunctionAppName;
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
                     {"appName", new Dictionary<string, object>{{"value", appName } }}
             };
@@ -103,18 +101,18 @@ namespace aggregator.cli
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
 
             // upload
-            logger.WriteVerbose($"Uploading runtime package to {name}");
+            logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
             string zipPath = "function-bin.zip";
             var zipContent = File.ReadAllBytes(zipPath);
-            bool ok = await UploadRuntimeZip(name, zipContent);
+            bool ok = await UploadRuntimeZip(instance, zipContent);
             if (ok)
             {
-                logger.WriteInfo($"Runtime package uploaded to {name}.");
+                logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
                 // TODO requires VSTS logon!!!!!!!!!
                 var vstsLogonData = VstsLogon.Load();
                 if (vstsLogonData.Mode == VstsLogonMode.PAT)
                 {
-                    ok = await ChangeAppSettings(name, vstsLogonData.Token, vstsLogonData.Mode.ToString());
+                    ok = await ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
                 }
                 else
                 {
@@ -125,13 +123,14 @@ namespace aggregator.cli
             return ok;
         }
 
-        private async Task<bool> UploadRuntimeZip(string name, byte[] zipContent)
+        private async Task<bool> UploadRuntimeZip(InstanceName instance, byte[] zipContent)
         {
+            var kudu = new KuduApi(instance, azure, logger);
             // POST /api/zipdeploy?isAsync=true
             // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
             var body = new ByteArrayContent(zipContent);
             using (var client = new HttpClient())
-            using (var request = await GetKuduRequestAsync(name, HttpMethod.Post, $"api/zipdeploy"))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy"))
             {
                 request.Content = body;
                 using (var response = await client.SendAsync(request))
@@ -146,58 +145,14 @@ namespace aggregator.cli
             }
         }
 
-        internal static string GetResourceGroupName(string instanceName)
-        {
-            return ResourceGroupInstancePrefix + instanceName;
-        }
-
-        internal static string GetFunctionAppName(string instanceName)
-        {
-            return instanceName + FunctionAppInstanceSuffix;
-        }
-
-        internal static string GetFunctionAppHostName(string instanceName)
-        {
-            return $"{AggregatorInstances.GetFunctionAppName(instanceName)}.azurewebsites.net";
-        }
-
-        internal static string GetFunctionAppUrl(string instanceName)
-        {
-            return $"https://{AggregatorInstances.GetFunctionAppHostName(instanceName)}";
-        }
-
-        internal static string GetFunctionAppKuduUrl(string instanceName)
-        {
-            return $"https://{AggregatorInstances.GetFunctionAppName(instanceName)}.scm.azurewebsites.net";
-        }
-
-
-        string lastPublishCredentialsInstance = string.Empty;
-        (string username, string password) lastPublishCredentials = default;
-        internal async Task<(string username, string password)> GetPublishCredentials(string instance)
-        {
-            if (lastPublishCredentialsInstance != instance)
-            {
-                string rg = GetResourceGroupName(instance);
-                string fn = GetFunctionAppName(instance);
-                var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rg, fn);
-                var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
-                var username = ftpUsername.Split('\\').ToList()[1];
-                var password = webFunctionApp.GetPublishingProfile().FtpPassword;
-
-                lastPublishCredentials = (username, password);
-            }
-            return lastPublishCredentials;
-        }
-
-        internal async Task<bool> ChangeAppSettings(string instance, string vstsToken, string vstsTokenType)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, string vstsToken, string vstsTokenType)
         {
             var webFunctionApp = await azure
                 .AppServices
                 .WebApps
                 .GetByResourceGroupAsync(
-                    GetResourceGroupName(instance),
-                    GetFunctionAppName(instance));
+                    instance.ResourceGroupName,
+                    instance.FunctionAppName);
             webFunctionApp
                 .Update()
                 .WithAppSetting("Aggregator_VstsTokenType", vstsTokenType)
@@ -206,32 +161,9 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<AuthenticationHeaderValue> GetKuduAuthentication(string instance)
+        internal async Task<bool> Remove(InstanceName instance, string location)
         {
-            (string username, string password) = await GetPublishCredentials(instance);
-            var base64Auth = Convert.ToBase64String(Encoding.Default.GetBytes($"{username}:{password}"));
-            return new AuthenticationHeaderValue("Basic", base64Auth);
-        }
-
-        internal async Task<string> GetAzureFunctionJWTAsync(string instance)
-        {
-            var kuduUrl = $"{GetFunctionAppKuduUrl(instance)}/api";
-            string JWT;
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                client.DefaultRequestHeaders.Authorization = await GetKuduAuthentication(instance);
-
-                var result = await client.GetAsync($"{kuduUrl}/functions/admin/token");
-                JWT = await result.Content.ReadAsStringAsync(); //get  JWT for call function key
-                JWT = JWT.Trim('"');
-            }
-            return JWT;
-        }
-
-        internal async Task<bool> Remove(string name, string location)
-        {
-            string rgName = GetResourceGroupName(name);
+            string rgName = instance.ResourceGroupName;
             if (await azure.ResourceGroups.ContainAsync(rgName))
             {
                 logger.WriteVerbose($"Deleting resource group {rgName}");
@@ -239,15 +171,6 @@ namespace aggregator.cli
                 logger.WriteInfo($"Resource group {rgName} deleted.");
             }
             return true;
-        }
-
-        internal async Task<HttpRequestMessage> GetKuduRequestAsync(string instance, HttpMethod method, string restApi)
-        {
-            var kuduUrl = new Uri(GetFunctionAppKuduUrl(instance));
-            var request = new HttpRequestMessage(method, $"{kuduUrl}{restApi}");
-            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-            request.Headers.Authorization = await GetKuduAuthentication(instance);
-            return request;
         }
     }
 }

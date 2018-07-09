@@ -36,14 +36,12 @@ namespace aggregator.cli
                 return 2;
             }
 
+            var instance = new InstanceName(Instance);
             var rules = new AggregatorRules(azure, this);
             bool ok = false;
             if (Disable || Enable)
             {
-                ok = await rules.EnableAsync(Instance, Name, Disable);
-            } else
-            {
-                ok = await rules.ConfigureAsync(Instance, Name);
+                ok = await rules.EnableAsync(instance, Name, Disable);
             }
             return ok ? 0 : 1;
         }
