@@ -18,12 +18,12 @@ namespace aggregator
     /// <summary>
     /// Azure Function wrapper for Aggregator v3
     /// </summary>
-    public class RequestProcessor
+    public class AzureFunctionHandler
     {
         private readonly TraceWriter log;
         private readonly ExecutionContext context;
 
-        public RequestProcessor(TraceWriter log, ExecutionContext context)
+        public AzureFunctionHandler(TraceWriter log, ExecutionContext context)
         {
             this.log = log;
             this.context = context;

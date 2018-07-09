@@ -4,6 +4,6 @@ using aggregator;
 
 public static async Task<object> Run(HttpRequestMessage req, TraceWriter log, ExecutionContext context)
 {
-    var processor = new RequestProcessor(log, context);
-    return await processor.Run(req);
+    var handler = new AzureFunctionHandler(log, context);
+    return await handler.Run(req);
 }
