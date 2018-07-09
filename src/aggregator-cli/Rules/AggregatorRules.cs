@@ -229,44 +229,18 @@ namespace aggregator.cli
 
         internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable)
         {
-            var instances = new AggregatorInstances(azure, logger);
+            var webFunctionApp = await azure
+                .AppServices
+                .WebApps
+                .GetByResourceGroupAsync(
+                    instance.ResourceGroupName,
+                    instance.FunctionAppName);
+            webFunctionApp
+                .Update()
+                .WithAppSetting($"AzureWebJobs.{name}.Disabled", disable.ToString().ToLower())
+                .Apply();
 
-            FunctionSettings settings;
-            string settingsUrl = $"/api/vfs/site/wwwroot/{name}/function.json";
-
-            using (var client = new HttpClient())
-            using (var request1 = await instances.GetKuduRequestAsync(instance, HttpMethod.Get, settingsUrl))
-            using (var response1 = await client.SendAsync(request1))
-            {
-                if (response1.IsSuccessStatusCode)
-                {
-                    string settingsString = await response1.Content.ReadAsStringAsync();
-                    settings = JsonConvert.DeserializeObject<FunctionSettings>(settingsString);
-                    settings.disabled = disable;
-
-                    using (var request2 = await instances.GetKuduRequestAsync(instance, HttpMethod.Put, settingsUrl))
-                    {
-                        request2.Headers.Add("If-Match", "*"); // we are updating a file
-                        var jset = new JsonSerializerSettings() {
-                            Formatting = Formatting.Indented,
-                            NullValueHandling = NullValueHandling.Ignore
-                        };
-                        settingsString = JsonConvert.SerializeObject(settings, jset);
-                        request2.Content = new StringContent(settingsString);
-                        using (var response2 = await client.SendAsync(request2))
-                        {
-                            return response2.IsSuccessStatusCode;
-                        }
-                    }
-                }
-                else
-                    return false;
-            }
-        }
-
-        internal async Task<bool> ConfigureAsync(string instance, string name)
-        {
-            throw new NotImplementedException(nameof(ConfigureAsync));
+            return true;
         }
     }
 }
