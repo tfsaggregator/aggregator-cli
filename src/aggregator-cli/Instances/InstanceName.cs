@@ -17,6 +17,11 @@ namespace aggregator.cli
             this.name = name;
         }
 
+        public static InstanceName FromResourceGroupName(string rgName)
+        {
+            return new InstanceName(rgName.Remove(0, ResourceGroupInstancePrefix.Length));
+        }
+
         public string PlainName => name;
 
         internal string ResourceGroupName => resourceGroupPrefix + name;

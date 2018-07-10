@@ -119,6 +119,7 @@ namespace aggregator.cli
 
         internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string rule)
         {
+            logger.WriteInfo($"Querying the VSTS subscriptions for rule(s) {instance.PlainName}/{rule}");
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync("tfs");
             var ruleSubs = subscriptions
@@ -138,7 +139,9 @@ namespace aggregator.cli
             }
             foreach (var ruleSub in ruleSubs)
             {
+                logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription}...");
                 await serviceHooksClient.DeleteSubscriptionAsync(ruleSub.Id);
+                logger.WriteInfo($"Subscription {ruleSub.EventDescription} deleted.");
             }
 
             return true;

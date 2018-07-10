@@ -27,16 +27,33 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        public async Task<IEnumerable<(string name, string region)>> ListAsync()
+        public async Task<IEnumerable<(string name, string region)>> ListAllAsync()
         {
             var rgs = await azure.ResourceGroups.ListAsync();
+            var filter = rgs
+                .Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix));
             var result = new List<(string name, string region)>();
-            foreach (var rg in rgs.Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)))
+            foreach (var rg in filter)
             {
                 result.Add((
-                    rg.Name.Remove(0, InstanceName.ResourceGroupInstancePrefix.Length),
+                    InstanceName.FromResourceGroupName(rg.Name).PlainName,
                     rg.RegionName)
                 );
+            }
+            return result;
+        }
+
+        public async Task<IEnumerable<string>> ListByLocationAsync(string location)
+        {
+            var rgs = await azure.ResourceGroups.ListAsync();
+            var filter = rgs.Where(rg =>
+                    rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
+                    && rg.RegionName.CompareTo(location) == 0);
+            var result = new List<string>();
+            foreach (var rg in filter)
+            {
+                result.Add(
+                    InstanceName.FromResourceGroupName(rg.Name).PlainName);
             }
             return result;
         }
@@ -112,11 +129,14 @@ namespace aggregator.cli
                 var vstsLogonData = VstsLogon.Load();
                 if (vstsLogonData.Mode == VstsLogonMode.PAT)
                 {
+                    logger.WriteVerbose($"Saving VSTS token");
                     ok = await ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
+                    logger.WriteInfo($"VSTS token saved");
                 }
                 else
                 {
-                    return false;
+                    logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
+                    ok = false;
                 }
 
             }
@@ -164,11 +184,16 @@ namespace aggregator.cli
         internal async Task<bool> Remove(InstanceName instance, string location)
         {
             string rgName = instance.ResourceGroupName;
+            logger.WriteVerbose($"Searching instance {instance.PlainName}...");
             if (await azure.ResourceGroups.ContainAsync(rgName))
             {
                 logger.WriteVerbose($"Deleting resource group {rgName}");
                 await azure.ResourceGroups.DeleteByNameAsync(rgName);
                 logger.WriteInfo($"Resource group {rgName} deleted.");
+            }
+            else
+            {
+                logger.WriteWarning($"Instance {instance.PlainName} not found in {location}.");
             }
             return true;
         }
