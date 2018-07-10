@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    class AzureLogon
+    class AzureLogon : LogonDataBase
     {
         private static readonly string LogonDataTag = "daaz";
 

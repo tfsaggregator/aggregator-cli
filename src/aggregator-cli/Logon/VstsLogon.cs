@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    class VstsLogon
+    class VstsLogon : LogonDataBase
     {
         private static readonly string LogonDataTag = "davs";
 

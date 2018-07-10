@@ -9,6 +9,9 @@ namespace aggregator.cli
 {
     class LogonDataStore
     {
+        // TODO is this the right number?
+        public static int MaxHoursForCachedCredential = 2;
+
         public LogonDataStore(string tag) => this.Tag = tag;
 
         public string Tag { get; private set; }
@@ -25,7 +28,10 @@ namespace aggregator.cli
         }
 
         public string Save<T>(T data)
+            where T : LogonDataBase
         {
+            data.Timestamp = DateTime.UtcNow;
+
             string logonDataString = JsonConvert.SerializeObject(data);
             var logonData = UnicodeEncoding.UTF8.GetBytes(logonDataString);
 
@@ -48,7 +54,7 @@ namespace aggregator.cli
         }
 
         public T Load<T>()
-            where T : class
+            where T : LogonDataBase
         {
             if (!File.Exists(LogonDataPath))
                 return null;
@@ -68,7 +74,17 @@ namespace aggregator.cli
             }
             var logonAzureDataString = UnicodeEncoding.UTF8.GetString(outBuffer);
             var result = JsonConvert.DeserializeObject<T>(logonAzureDataString);
-            return result;
+            var elapsed = DateTime.UtcNow - result.Timestamp;
+            if (elapsed.TotalHours > MaxHoursForCachedCredential)
+            {
+                File.Delete(LogonDataPath);
+                return null;
+            }
+            else
+            {
+                return result;
+            }
+
         }
     }
 }
