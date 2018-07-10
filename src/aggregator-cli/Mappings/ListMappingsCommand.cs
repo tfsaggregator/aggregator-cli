@@ -15,20 +15,22 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var logon = await Logon<bool, VstsLogon>();
+            var context = await Context
+                .WithVstsLogon()
+                .Build();
             var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(logon.vsts, null, this);
+            var mappings = new AggregatorMappings(context.Vsts, /*HACK*/null, context.Logger);
             bool any = false;
             foreach (var item in mappings.List(instance))
             {
-                WriteOutput(
+                context.Logger.WriteOutput(
                     item,
                     (data) => $"Rule {item.rule} in {item.project} for {item.events}");
                 any = true;
             }
             if (!any)
             {
-                WriteInfo("No rule mappings found.");
+                context.Logger.WriteInfo("No rule mappings found.");
             }
             return 0;
         }

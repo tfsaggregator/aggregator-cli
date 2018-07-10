@@ -23,12 +23,15 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var logon = await Logon<AzureLogon, VstsLogon>();
-            var mappings = new AggregatorMappings(logon.vsts, logon.azure, this);
+            var context = await Context
+                .WithAzureLogon()
+                .WithVstsLogon()
+                .Build();
+            var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
             bool ok = mappings.ValidateEvent(Event);
             if (!ok)
             {
-                WriteError($"Invalid event type.");
+                context.Logger.WriteError($"Invalid event type.");
                 return 2;
             }
             var instance = new InstanceName(Instance);

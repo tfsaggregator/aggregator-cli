@@ -14,20 +14,22 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var logon = await Logon<AzureLogon, bool>();
+            var context = await Context
+                .WithAzureLogon()
+                .Build();
             var instance = new InstanceName(Instance);
-            var rules = new AggregatorRules(logon.azure, this);
+            var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;
             foreach (var item in await rules.List(instance))
             {
-                WriteOutput(
+                context.Logger.WriteOutput(
                     item,
                     (data) => $"Rule {item.Name} {(item.Config.Disabled ? "(disabled)" : string.Empty)}");
                 any = true;
             }
             if (!any)
             {
-                WriteInfo($"No rules found in aggregator instance {instance.PlainName}.");
+                context.Logger.WriteInfo($"No rules found in aggregator instance {instance.PlainName}.");
             }
             return 0;
         }

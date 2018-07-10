@@ -10,20 +10,22 @@ namespace aggregator.cli
     {
         internal override async Task<int> RunAsync()
         {
-            var logon = await Logon<AzureLogon, bool>();
-            var instances = new AggregatorInstances(logon.azure, this);
+            var context = await Context
+                .WithAzureLogon()
+                .Build();
+            var instances = new AggregatorInstances(context.Azure, context.Logger);
             var found = await instances.ListAsync();
             bool any = false;
             foreach (var item in found)
             {
-                WriteOutput(
+                context.Logger.WriteOutput(
                     item,
-                    (data) => $"Instance {item.name} in {item.region}");
+                    (data) => $"Instance {item.name} in {item.region} region");
                 any = true;
             }
             if (!any)
             {
-                WriteInfo("No aggregator instances found.");
+                context.Logger.WriteInfo("No aggregator instances found.");
             }
             return 0;
         }

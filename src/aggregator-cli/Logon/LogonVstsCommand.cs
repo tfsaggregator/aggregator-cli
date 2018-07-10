@@ -29,6 +29,9 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
+            var context = await Context.Build();
+
+
             var data = new VstsLogon()
             {
                 Url = this.Url,
@@ -40,7 +43,7 @@ namespace aggregator.cli
             var vsts = await data.LogonAsync();
             if (vsts == null)
             {
-                WriteError("Invalid VSTS credentials");
+                context.Logger.WriteError("Invalid VSTS credentials");
                 return 2;
             }
             return 0;

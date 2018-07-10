@@ -19,6 +19,8 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
+            var context = await Context.Build();
+
             var data = new AzureLogon()
             {
                 SubscriptionId = this.SubscriptionId,
@@ -31,7 +33,7 @@ namespace aggregator.cli
             var azure = await data.LogonAsync();
             if (azure == null)
             {
-                WriteError("Invalid azure credentials");
+                context.Logger.WriteError("Invalid azure credentials");
                 return 2;
             }
             return 0;

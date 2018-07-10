@@ -22,9 +22,11 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync()
         {
-            var logon = await Logon<AzureLogon, VstsLogon>();
+            var context = await Context
+                .WithAzureLogon()
+                .Build();
             var instance = new InstanceName(Instance);
-            var rules = new AggregatorRules(logon.azure, this);
+            var rules = new AggregatorRules(context.Azure, context.Logger);
             bool ok = false;
             if (Disable || Enable)
             {

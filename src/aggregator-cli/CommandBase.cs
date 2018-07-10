@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    abstract class CommandBase : ILogger
+    abstract class CommandBase
     {
         ILogger logger = new ConsoleLogger();
 
@@ -16,61 +16,10 @@ namespace aggregator.cli
         [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
+        protected ContextBuilder Context => new ContextBuilder(logger);
+
         internal abstract Task<int> RunAsync();
 
-        public void WriteOutput(object data, Func<object, string> humanOutput)
-        {
-            logger.WriteOutput(data, humanOutput);
-        }
-
-        public void WriteVerbose(string message)
-        {
-            if (!Verbose)
-                return;
-            logger.WriteVerbose(message);
-        }
-
-        public void WriteInfo(string message)
-        {
-            logger.WriteInfo(message);
-        }
-
-        public void WriteWarning(string message)
-        {
-            logger.WriteWarning(message);
-        }
-
-        public void WriteError(string message)
-        {
-            logger.WriteError(message);
-        }
-
-        protected async Task<(IAzure azure, VssConnection vsts)> Logon<T,U>()
-        {
-            (IAzure azure, VssConnection vsts) result = default;
-            if (typeof(T) == typeof(AzureLogon))
-            {
-                WriteInfo($"Authenticating to Azure...");
-                var logon = AzureLogon.Load();
-                if (logon == null)
-                {
-                    throw new ApplicationException($"No cached Azure credential: use the logon.azure command.");
-                }
-                result.azure = await logon.LogonAsync();
-            }
-
-            if (typeof(U) == typeof(VstsLogon))
-            {
-                WriteInfo($"Authenticating to VSTS...");
-                var logon = VstsLogon.Load();
-                if (logon == null)
-                {
-                    throw new ApplicationException($"No cached VSTS credential: use the logon.vsts command.");
-                }
-                result.vsts = await logon.LogonAsync();
-            }
-            return result;
-        }
     }
 
     static class CommandBaseExtension
@@ -88,7 +37,7 @@ namespace aggregator.cli
                     logger.WriteError("Failed!");
                 } else
                 {
-                    logger.WriteError("Succeeded");
+                    logger.WriteInfo("Succeeded");
                 }
                 return rc;
             }
