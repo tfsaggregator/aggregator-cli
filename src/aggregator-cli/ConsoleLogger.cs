@@ -25,6 +25,14 @@ namespace aggregator.cli
             Console.WriteLine(message);
         }
 
+        public void WriteSuccess(string message)
+        {
+            var save = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(message);
+            Console.ForegroundColor = save;
+        }
+
         public void WriteWarning(string message)
         {
             var save = Console.ForegroundColor;

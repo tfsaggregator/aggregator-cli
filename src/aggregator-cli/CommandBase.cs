@@ -37,7 +37,7 @@ namespace aggregator.cli
                     logger.WriteError("Failed!");
                 } else
                 {
-                    logger.WriteInfo("Succeeded");
+                    logger.WriteSuccess("Succeeded");
                 }
                 return rc;
             }
