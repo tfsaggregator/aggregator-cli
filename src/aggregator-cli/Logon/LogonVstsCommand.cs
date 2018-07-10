@@ -40,6 +40,7 @@ namespace aggregator.cli
             };
             string path = data.Save();
             // now check for validity
+            context.Logger.WriteInfo($"Connecting to VSTS using {Mode} credential...");
             var vsts = await data.LogonAsync();
             if (vsts == null)
             {

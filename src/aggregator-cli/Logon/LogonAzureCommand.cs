@@ -30,6 +30,7 @@ namespace aggregator.cli
             };
             string path = data.Save();
             // now check for validity
+            context.Logger.WriteInfo("Connecting to Azure...");
             var azure = await data.LogonAsync();
             if (azure == null)
             {
