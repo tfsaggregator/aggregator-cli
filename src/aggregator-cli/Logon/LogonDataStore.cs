@@ -61,7 +61,7 @@ namespace aggregator.cli
                 stream.Read(magicBuffer, 0, magicBuffer.Length);
                 if (magicBuffer == Magic)
                     throw new InvalidDataException("Invalid credential file");
-                var inBuffer = new byte[stream.Length];
+                var inBuffer = new byte[stream.Length - entropy.Length];
                 stream.Read(entropy, 0, entropy.Length);
                 stream.Read(inBuffer, 0, inBuffer.Length);
                 outBuffer = ProtectedData.Unprotect(inBuffer, entropy, DataProtectionScope.CurrentUser);
