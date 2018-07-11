@@ -21,11 +21,11 @@ namespace aggregator.cli
             var instance = new InstanceName(Instance);
             var mappings = new AggregatorMappings(context.Vsts, /*HACK*/null, context.Logger);
             bool any = false;
-            foreach (var item in mappings.List(instance))
+            foreach (var item in await mappings.ListAsync(instance))
             {
                 context.Logger.WriteOutput(
                     item,
-                    (data) => $"Rule {item.rule} in {item.project} for {item.events}");
+                    (data) => $"Project {item.project} invokes rule {instance.PlainName}/{item.rule} for {item.@event}");
                 any = true;
             }
             if (!any)

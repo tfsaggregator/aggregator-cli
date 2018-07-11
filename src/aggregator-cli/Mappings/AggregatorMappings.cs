@@ -24,26 +24,31 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        internal IEnumerable<(string rule, string project, string events)> List(InstanceName instance)
+        internal async Task<IEnumerable<(string rule, string project, string @event)>> ListAsync(InstanceName instance)
         {
+            logger.WriteVerbose($"Searching aggregator mappings in VSTS...");
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
-            var subscriptions = serviceHooksClient
-                .QuerySubscriptionsAsync()
-                .Result
-                .Where(s
+            var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync();
+            var filteredSubs = subscriptions.Where(s
                     => s.PublisherId == "tfs"
                     && s.ConsumerInputs["url"].ToString().StartsWith(
                         instance.FunctionAppUrl)
                     );
+            var projectClient = vsts.GetClient<ProjectHttpClient>();
+            var projects = await projectClient.GetProjects();
+            var projectsDict = projects.ToDictionary(p => p.Id);
 
-            foreach (var subscription in subscriptions)
+            var result = new List<(string rule, string project, string @event)>();
+            foreach (var subscription in filteredSubs)
             {
-                yield return (
-                    subscription.ConsumerInputs["url"],
-                    subscription.PublisherInputs["projectId"],
-                    subscription.EventType
+                var foundProject = projectsDict[
+                    new Guid(subscription.PublisherInputs["projectId"])
+                    ];
+                result.Add(
+                    (instance.PlainName, foundProject.Name, subscription.EventType)
                     );
             }
+            return result;
         }
 
         internal bool ValidateEvent(string @event)
@@ -61,11 +66,15 @@ namespace aggregator.cli
 
         internal async Task<Guid> Add(string projectName, string @event, InstanceName instance, string ruleName)
         {
+            logger.WriteVerbose($"Connecting to VSTS...");
             var projectClient = vsts.GetClient<ProjectHttpClient>();
             var project = await projectClient.GetProject(projectName);
+            logger.WriteInfo($"{projectName} data read.");
 
             var rules = new AggregatorRules(azure, logger);
+            logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
             (string ruleUrl, string ruleKey) invocation = await rules.GetInvocationUrlAndKey(instance, ruleName);
+            logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
 
@@ -103,7 +112,9 @@ namespace aggregator.cli
                 },
             };
 
+            logger.WriteVerbose($"Adding mapping for {@event}...");
             var newSubscription = await serviceHooksClient.CreateSubscriptionAsync(subscriptionParameters);
+            logger.WriteInfo($"Event subscription {newSubscription.Id} setup.");
             return newSubscription.Id;
         }
 

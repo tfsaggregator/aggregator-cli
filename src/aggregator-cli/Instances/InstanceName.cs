@@ -22,6 +22,13 @@ namespace aggregator.cli
             return new InstanceName(rgName.Remove(0, ResourceGroupInstancePrefix.Length));
         }
 
+        public static InstanceName FromFunctionAppUrl(string url)
+        {
+            string host = new Uri(url).Host;
+            host = host.Substring(0, host.IndexOf('.'));
+            return new InstanceName(host.Remove(host.Length - functionAppSuffix.Length));
+        }
+
         public string PlainName => name;
 
         internal string ResourceGroupName => resourceGroupPrefix + name;
