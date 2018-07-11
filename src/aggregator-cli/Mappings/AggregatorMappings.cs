@@ -69,7 +69,7 @@ namespace aggregator.cli
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
 
-            // TODO see https://docs.microsoft.com/en-us/vsts/service-hooks/events?toc=%2Fvsts%2Fintegrate%2Ftoc.json&bc=%2Fvsts%2Fintegrate%2Fbreadcrumb%2Ftoc.json&view=vsts#work-item-created
+            // see https://docs.microsoft.com/en-us/vsts/service-hooks/consumers?toc=%2Fvsts%2Fintegrate%2Ftoc.json&bc=%2Fvsts%2Fintegrate%2Fbreadcrumb%2Ftoc.json&view=vsts#web-hooks
             var subscriptionParameters = new Subscription()
             {
                 ConsumerId = "webHooks",
@@ -78,10 +78,10 @@ namespace aggregator.cli
                 {
                     { "url", invocation.ruleUrl },
                     { "httpHeaders", $"x-functions-key:{invocation.ruleKey}" },
-                    { "resourceDetailsToSend", "All" },
-                    // TODO these are not respected!!!
-                    { "messagesToSend", "None" },
-                    { "detailedMessagesToSend", "None" },
+                    // careful with casing!
+                    { "resourceDetailsToSend", "all" },
+                    { "messagesToSend", "none" },
+                    { "detailedMessagesToSend", "none" },
                 },
                 EventType = @event,
                 PublisherId = "tfs",
