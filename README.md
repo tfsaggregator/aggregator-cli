@@ -11,7 +11,7 @@ sharing the same VSTS token.
 
 An Aggregator Rule is an Azure Function in the above instance.
 
-A Aggregator Rule Mapping is a VSTS Service Hook Subscription that invokes the above Function.
+An Aggregator Rule Mapping is a VSTS Service Hook Subscription that invokes the above Function.
 
 ## Authentication
 
@@ -34,7 +34,7 @@ Logon credentials are stored locally indefinitely: add a timeout.
 Is is not robust, lacks logging and is neither well factored.
 
 ### Build complexity
-The `install.instance` command assume `function-bin.zip` is present in the same folder.
+The `install.instance` command assumes `function-bin.zip` is present in the same folder.
 That file is created by _Publishing_ the `aggregator-function` project.
 
 ### Support for HA
