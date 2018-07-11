@@ -6,6 +6,9 @@
     <RootNamespace>aggregator.cli</RootNamespace>
     <StartupObject>aggregator.cli.Program</StartupObject>
     <ApplicationIcon>../../art/TfsAggregator.ico</ApplicationIcon>
+    <AssemblyTitle>Aggregator CLI</AssemblyTitle>
+    <Version>0.2.0</Version>
+    <Copyright>TFS Aggregator Team</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
