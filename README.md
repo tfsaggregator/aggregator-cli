@@ -36,3 +36,7 @@ Is is not robust, lacks logging and is neither well factored.
 ### Build complexity
 The `install.instance` command assume `function-bin.zip` is present in the same folder.
 That file is created by _Publishing_ the `aggregator-function` project.
+
+### Support for HA
+Slots and Availability zones.
+List Outbound IP Addresses `azure.AppServices.WebApps.GetByResourceGroup(instance.ResourceGroupName,instance.FunctionAppName).OutboundIPAddresses`
