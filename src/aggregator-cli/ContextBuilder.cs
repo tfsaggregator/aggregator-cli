@@ -48,25 +48,43 @@ namespace aggregator.cli
             {
                 logger.WriteInfo($"Authenticating to Azure...");
                 var logon = AzureLogon.Load();
-                if (logon == null)
+                if (logon.reason != LogonResult.Succeeded)
                 {
-                    throw new ApplicationException($"No cached Azure credential: use the logon.azure command.");
+                    string msg = TranslateResult(logon.reason);
+                    throw new ApplicationException(string.Format(msg, "Azure","logon.azure"));
                 }
-                azure = await logon.LogonAsync();
+                azure = await logon.connection.LogonAsync();
             }
 
             if (vstsLogon)
             {
                 logger.WriteInfo($"Authenticating to VSTS...");
                 var logon = VstsLogon.Load();
-                if (logon == null)
+                if (logon.reason != LogonResult.Succeeded)
                 {
-                    throw new ApplicationException($"No cached VSTS credential: use the logon.vsts command.");
+                    string msg = TranslateResult(logon.reason);
+                    throw new ApplicationException(string.Format(msg, "VSTS", "logon.vsts"));
                 }
-                vsts = await logon.LogonAsync();
+                vsts = await logon.connection.LogonAsync();
             }
 
             return new CommandContext(logger, azure, vsts);
+        }
+
+        private string TranslateResult(LogonResult reason)
+        {
+            switch (reason)
+            {
+                case LogonResult.Succeeded:
+                    // this should never happen!!!
+                    return "Valid credential, logon succeeded";
+                case LogonResult.NoLogonData:
+                    return "No cached {0} credential: use the {1} command.";
+                case LogonResult.LogonExpired:
+                    return "Cached {0} credential expired: use the {1} command.";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(reason));
+            }
         }
     }
 }

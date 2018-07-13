@@ -21,9 +21,10 @@ namespace aggregator.cli
             return new LogonDataStore(LogonDataTag).Save(this);
         }
 
-        public static VstsLogon Load()
+        public static (VstsLogon connection, LogonResult reason) Load()
         {
-            return new LogonDataStore(LogonDataTag).Load<VstsLogon>();
+            var result = new LogonDataStore(LogonDataTag).Load<VstsLogon>();
+            return (result.connection, result.reason);
         }
 
         public async Task<VssConnection> LogonAsync()

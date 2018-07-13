@@ -26,9 +26,10 @@ namespace aggregator.cli
             return new LogonDataStore(LogonDataTag).Save(this);
         }
 
-        public static AzureLogon Load()
+        public static (AzureLogon connection, LogonResult reason) Load()
         {
-            return new LogonDataStore(LogonDataTag).Load<AzureLogon>();
+            var result = new LogonDataStore(LogonDataTag).Load<AzureLogon>();
+            return (result.connection, result.reason);
         }
 
 #pragma warning disable CS1998

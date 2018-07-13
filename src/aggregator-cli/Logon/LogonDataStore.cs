@@ -7,6 +7,13 @@ using System.Text;
 
 namespace aggregator.cli
 {
+    public enum LogonResult
+    {
+        Succeeded = 0,
+        NoLogonData = 1,
+        LogonExpired = 2,
+    }
+
     class LogonDataStore
     {
         // TODO is this the right number?
@@ -53,11 +60,11 @@ namespace aggregator.cli
             return logonADataPath;
         }
 
-        public T Load<T>()
+        public (T connection, LogonResult reason) Load<T>()
             where T : LogonDataBase
         {
             if (!File.Exists(LogonDataPath))
-                return null;
+                return (null, LogonResult.NoLogonData);
 
             var entropy = new byte[16];
             byte[] outBuffer;
@@ -78,11 +85,11 @@ namespace aggregator.cli
             if (elapsed.TotalHours > MaxHoursForCachedCredential)
             {
                 File.Delete(LogonDataPath);
-                return null;
+                return (null, LogonResult.LogonExpired);
             }
             else
             {
-                return result;
+                return (result, LogonResult.Succeeded);
             }
 
         }
