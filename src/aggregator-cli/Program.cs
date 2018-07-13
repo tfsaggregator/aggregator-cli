@@ -3,12 +3,18 @@ using System;
 
 namespace aggregator.cli
 {
+    /*
+    Ideas for verbs and options:
+
+    add.rule --verbose --instance INSTANCE --name RULE --file FILE --slot SLOT
+    configure.instance --swap SLOT
+    invoke.rule --verbose --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --doNotFakeVsts
+    invoke.rule --verbose --local --ruleSource FILE --event EVENT --workItemId WORK_ITEM_ID
+    logon.vsts --url URL --mode MODE --token TOKEN --secondary
+
+    */
     class Program
     {
-        /*
-- configure.instance
-- run.local
-         */
         static int Main(string[] args)
         {
             int rc = Parser.Default.ParseArguments<
@@ -23,6 +29,7 @@ namespace aggregator.cli
                     (ListInstancesCommand cmd) => cmd.Run(),
                     (InstallInstanceCommand cmd) => cmd.Run(),
                     (UninstallInstanceCommand cmd) => cmd.Run(),
+                    (ConfigureInstanceCommand cmd) => cmd.Run(),
                     (ListRulesCommand cmd) => cmd.Run(),
                     (AddRuleCommand cmd) => cmd.Run(),
                     (RemoveRuleCommand cmd) => cmd.Run(),

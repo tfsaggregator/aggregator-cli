@@ -197,5 +197,24 @@ namespace aggregator.cli
             }
             return true;
         }
+
+        internal async Task<bool> SetAuthentication(InstanceName instance, string location)
+        {
+            bool ok;
+            var vstsLogonData = VstsLogon.Load().connection;
+            if (vstsLogonData.Mode == VstsLogonMode.PAT)
+            {
+                logger.WriteVerbose($"Saving VSTS token");
+                ok = await ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
+                logger.WriteInfo($"VSTS token saved");
+            }
+            else
+            {
+                logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
+                ok = false;
+            }
+            return ok;
+        }
+
     }
 }
