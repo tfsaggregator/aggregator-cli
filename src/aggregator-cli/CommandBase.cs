@@ -21,15 +21,10 @@ namespace aggregator.cli
 
         internal abstract Task<int> RunAsync();
 
-    }
-
-    static class CommandBaseExtension
-    {
-        static internal int Run(this CommandBase cmd)
+        internal int Run()
         {
             try
             {
-                var logger = new ConsoleLogger();
                 var title = GetCustomAttribute<AssemblyTitleAttribute>();
                 var config = GetCustomAttribute<AssemblyConfigurationAttribute>();
                 var fileVersion = GetCustomAttribute<AssemblyFileVersionAttribute>();
@@ -39,7 +34,7 @@ namespace aggregator.cli
                 // Hello World
                 logger.WriteInfo($"{title.Title} v{infoVersion.InformationalVersion} (build: {fileVersion.Version} {config.Configuration}) (c) {copyright.Copyright}");
 
-                var t = cmd.RunAsync();
+                var t = this.RunAsync();
                 t.Wait();
                 int rc = t.Result;
                 if (rc != 0)
@@ -53,7 +48,6 @@ namespace aggregator.cli
             }
             catch (Exception ex)
             {
-                var logger = new ConsoleLogger();
                 logger.WriteError(ex.Message);
                 return 99;
             }
