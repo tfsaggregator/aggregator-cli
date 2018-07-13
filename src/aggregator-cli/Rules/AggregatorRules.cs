@@ -29,10 +29,11 @@ namespace aggregator.cli
         }
 
 
-        internal async Task<IEnumerable<KuduFunction>> List(InstanceName instance)
+        internal async Task<IEnumerable<KuduFunction>> ListAsync(InstanceName instance)
         {
             var instances = new AggregatorInstances(azure, logger);
             var kudu = new KuduApi(instance, azure, logger);
+            logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions"))
             using (var response = await client.SendAsync(request))
@@ -50,7 +51,10 @@ namespace aggregator.cli
                     }
                 }
                 else
+                {
+                    logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
                     return new KuduFunction[0];
+                }
             }
         }
 
@@ -64,6 +68,7 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(azure, logger);
             var kudu = new KuduApi(instance, azure, logger);
 
+            logger.WriteVerbose($"Querying Function key...");
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets"))
@@ -80,6 +85,7 @@ namespace aggregator.cli
                             var secret = js.Deserialize<KuduSecret>(jtr);
 
                             (string url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
+                            logger.WriteInfo($"Function key retrieved.");
                             return invocation;
                         }
                     }
@@ -104,6 +110,7 @@ namespace aggregator.cli
                 logger.WriteInfo($"{name} files uploaded to {instance.PlainName}.");
             }
             CleanupRuleFiles(baseDirPath);
+            logger.WriteInfo($"Cleaned local working directory.");
             return ok;
         }
 
@@ -158,6 +165,7 @@ namespace aggregator.cli
             string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
             var instances = new AggregatorInstances(azure, logger);
+            logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
             {
                 using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
@@ -172,9 +180,11 @@ namespace aggregator.cli
                         }
                     }
                 }
+                logger.WriteInfo($"Function {name} created.");
                 var files = Directory.EnumerateFiles(baseDirPath, "*", SearchOption.AllDirectories);
                 foreach (var file in files)
                 {
+                    logger.WriteVerbose($"Uploading {Path.GetFileName(file)} to {instance.PlainName}...");
                     string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
                     {
@@ -189,6 +199,7 @@ namespace aggregator.cli
                             }
                         }
                     }
+                    logger.WriteInfo($"{Path.GetFileName(file)} uploaded to {instance.PlainName}.");
                 }//for
             }
             return true;
@@ -199,33 +210,20 @@ namespace aggregator.cli
             var kudu = new KuduApi(instance, azure, logger);
             var instances = new AggregatorInstances(azure, logger);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
+            logger.WriteInfo($"Removing Function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}"))
             using (var response = await client.SendAsync(request))
             {
-                return response.IsSuccessStatusCode;
+                bool ok = response.IsSuccessStatusCode;
+                if (!ok)
+                {
+                    logger.WriteError($"Failed removing Function {name} from {instance.PlainName} with {response.ReasonPhrase}");
+                }
+                return ok;
             }
         }
 
-#pragma warning disable IDE1006
-        internal class Binding
-        {
-            public string type { get; set; }
-            public string direction { get; set; }
-            public string webHookType { get; set; }
-            public string name { get; set; }
-            public string queueName { get; set; }
-            public string connection { get; set; }
-            public string accessRights { get; set; }
-            public string schedule { get; set; }
-        }
-
-        internal class FunctionSettings
-        {
-            public List<Binding> bindings { get; set; }
-            public bool disabled { get; set; }
-        }
-#pragma warning restore IDE1006
 
         internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable)
         {

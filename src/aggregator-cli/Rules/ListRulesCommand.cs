@@ -20,11 +20,11 @@ namespace aggregator.cli
             var instance = new InstanceName(Instance);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;
-            foreach (var item in await rules.List(instance))
+            foreach (var item in await rules.ListAsync(instance))
             {
                 context.Logger.WriteOutput(
                     item,
-                    (data) => $"Rule {item.Name} {(item.Config.Disabled ? "(disabled)" : string.Empty)}");
+                    (data) => $"Rule {instance.PlainName}/{item.Name} {(item.Config.Disabled ? "(disabled)" : string.Empty)}");
                 any = true;
             }
             if (!any)
