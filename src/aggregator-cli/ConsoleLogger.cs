@@ -6,6 +6,10 @@ namespace aggregator.cli
 {
     class ConsoleLogger : ILogger
     {
+        protected void WriteMessagePrefix(System.IO.TextWriter w)
+        {
+            w.Write($"[{DateTime.Now.ToString("u")}] ");
+        }
         public void WriteOutput(object data, Func<object, string> humanOutput)
         {
             string message = humanOutput(data);
@@ -15,6 +19,7 @@ namespace aggregator.cli
         public void WriteVerbose(string message)
         {
             var save = Console.ForegroundColor;
+            WriteMessagePrefix(Console.Out);
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(message);
             Console.ForegroundColor = save;
@@ -22,12 +27,14 @@ namespace aggregator.cli
 
         public void WriteInfo(string message)
         {
+            WriteMessagePrefix(Console.Out);
             Console.WriteLine(message);
         }
 
         public void WriteSuccess(string message)
         {
             var save = Console.ForegroundColor;
+            WriteMessagePrefix(Console.Out);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine(message);
             Console.ForegroundColor = save;
@@ -36,16 +43,18 @@ namespace aggregator.cli
         public void WriteWarning(string message)
         {
             var save = Console.ForegroundColor;
+            WriteMessagePrefix(Console.Error);
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(message);
+            Console.Error.WriteLine(message);
             Console.ForegroundColor = save;
         }
 
         public void WriteError(string message)
         {
             var save = Console.ForegroundColor;
+            WriteMessagePrefix(Console.Error);
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
+            Console.Error.WriteLine(message);
             Console.ForegroundColor = save;
         }
     }
