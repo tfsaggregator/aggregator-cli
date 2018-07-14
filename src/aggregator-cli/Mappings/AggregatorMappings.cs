@@ -51,19 +51,6 @@ namespace aggregator.cli
             return result;
         }
 
-        internal bool ValidateEvent(string @event)
-        {
-            // TODO this table should be visible in the help
-            var validValues = new string[] {
-                "workitem.created",
-                "workitem.deleted",
-                "workitem.restored",
-                "workitem.updated",
-                "workitem.commented"
-            };
-            return validValues.Contains(@event);
-        }
-
         internal async Task<Guid> Add(string projectName, string @event, InstanceName instance, string ruleName)
         {
             logger.WriteVerbose($"Connecting to VSTS...");

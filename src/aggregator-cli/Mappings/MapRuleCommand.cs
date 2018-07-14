@@ -28,7 +28,7 @@ namespace aggregator.cli
                 .WithVstsLogon()
                 .Build();
             var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
-            bool ok = mappings.ValidateEvent(Event);
+            bool ok = VstsEvents.IsValidEvent(Event);
             if (!ok)
             {
                 context.Logger.WriteError($"Invalid event type.");

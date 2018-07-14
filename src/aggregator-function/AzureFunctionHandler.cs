@@ -51,8 +51,7 @@ namespace aggregator
             dynamic data = JsonConvert.DeserializeObject(jsonContent);
 
             // sanity check
-            if ((data.eventType != "workitem.created"
-                && data.eventType != "workitem.updated")
+            if (!VstsEvents.IsValidEvent(data.eventType)
                 // TODO more generic check... shared with CLI !
                  || data.publisherId != "tfs")
             {
