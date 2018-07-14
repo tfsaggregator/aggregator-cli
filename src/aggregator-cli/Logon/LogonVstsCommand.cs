@@ -6,14 +6,6 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    public enum VstsLogonMode
-    {
-        // HACK: CommandLineParser is case sensitive, sigh!
-        integrated = 0,
-        Integrated = integrated,
-        pat = 1,
-        PAT = pat,
-    }
 
     [Verb("logon.vsts", HelpText = "Logon into Visual Studio Team Services.")]
     class LogonVstsCommand : CommandBase
@@ -22,7 +14,7 @@ namespace aggregator.cli
         public string Url { get; set; }
 
         [Option('m', "mode", Required = true, HelpText = "Logon mode.")]
-        public VstsLogonMode Mode { get; set; }
+        public VstsTokenType Mode { get; set; }
 
         [Option('t', "token", SetName = "PAT", HelpText = "VSTS Personal Authentication Token.")]
         public string Token { get; set; }

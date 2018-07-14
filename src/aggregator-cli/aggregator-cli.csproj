@@ -43,7 +43,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aggregator-core\aggregator-core.csproj" />
-    <ProjectReference Include="..\aggregator-function\aggregator-function.csproj" />
   </ItemGroup>
 
   <ItemGroup>

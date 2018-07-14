@@ -13,7 +13,7 @@ namespace aggregator.cli
         private static readonly string LogonDataTag = "davs";
 
         public string Url { get; set; }
-        public VstsLogonMode Mode { get; set; }
+        public VstsTokenType Mode { get; set; }
         public string Token { get; set; }
 
         public string Save()
@@ -32,10 +32,10 @@ namespace aggregator.cli
             var clientCredentials = default(VssCredentials);
             switch (Mode)
             {
-                case VstsLogonMode.Integrated:
+                case VstsTokenType.Integrated:
                     clientCredentials = new VssCredentials();
                     break;
-                case VstsLogonMode.PAT:
+                case VstsTokenType.PAT:
                     clientCredentials=new VssBasicCredential("pat", Token);
                     break;
                 default:

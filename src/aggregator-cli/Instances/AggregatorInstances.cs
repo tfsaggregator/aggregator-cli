@@ -127,10 +127,10 @@ namespace aggregator.cli
                 logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
                 // TODO requires VSTS logon!!!!!!!!!
                 var vstsLogonData = VstsLogon.Load().connection;
-                if (vstsLogonData.Mode == VstsLogonMode.PAT)
+                if (vstsLogonData.Mode == VstsTokenType.PAT)
                 {
                     logger.WriteVerbose($"Saving VSTS token");
-                    ok = await ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
+                    ok = await ChangeAppSettings(instance, vstsLogonData);
                     logger.WriteInfo($"VSTS token saved");
                 }
                 else
@@ -165,7 +165,7 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> ChangeAppSettings(InstanceName instance, string vstsToken, string vstsTokenType)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, VstsLogon vstsLogonData)
         {
             var webFunctionApp = await azure
                 .AppServices
@@ -173,11 +173,10 @@ namespace aggregator.cli
                 .GetByResourceGroupAsync(
                     instance.ResourceGroupName,
                     instance.FunctionAppName);
-            webFunctionApp
-                .Update()
-                .WithAppSetting("Aggregator_VstsTokenType", vstsTokenType)
-                .WithAppSetting("Aggregator_VstsToken", vstsToken)
-                .Apply();
+            var configuration = new AggregatorConfiguration();
+            configuration.VstsTokenType = vstsLogonData.Mode;
+            configuration.VstsToken = vstsLogonData.Token;
+            configuration.Write(webFunctionApp);
             return true;
         }
 
@@ -202,10 +201,10 @@ namespace aggregator.cli
         {
             bool ok;
             var vstsLogonData = VstsLogon.Load().connection;
-            if (vstsLogonData.Mode == VstsLogonMode.PAT)
+            if (vstsLogonData.Mode == VstsTokenType.PAT)
             {
                 logger.WriteVerbose($"Saving VSTS token");
-                ok = await ChangeAppSettings(instance, vstsLogonData.Token, vstsLogonData.Mode.ToString());
+                ok = await ChangeAppSettings(instance, vstsLogonData);
                 logger.WriteInfo($"VSTS token saved");
             }
             else

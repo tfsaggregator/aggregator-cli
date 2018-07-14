@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.Extensions.Configuration;
@@ -24,14 +20,14 @@ namespace aggregator
     /// </summary>
     internal class RuleWrapper
     {
-        private readonly IConfigurationRoot config;
+        private readonly AggregatorConfiguration configuration;
         private readonly ILogger logger;
         private readonly string ruleName;
         private readonly string functionDirectory;
 
-        public RuleWrapper(IConfigurationRoot config, ILogger logger, string ruleName, string functionDirectory)
+        public RuleWrapper(AggregatorConfiguration configuration, ILogger logger, string ruleName, string functionDirectory)
         {
-            this.config = config;
+            this.configuration = configuration;
             this.logger = logger;
             this.ruleName = ruleName;
             this.functionDirectory = functionDirectory;
@@ -47,18 +43,15 @@ namespace aggregator
             string collectionUrl = data.resourceContainers.collection.baseUrl;
             int workItemId = data.resource.id;
 
-            string vstsTokenType = config["Aggregator_VstsTokenType"];
-            string vstsToken = config["Aggregator_VstsToken"];
-
-            logger.WriteVerbose($"Connecting to VSTS using {vstsTokenType}...");
+            logger.WriteVerbose($"Connecting to VSTS using {configuration.VstsTokenType}...");
             var clientCredentials = default(VssCredentials);
-            if (string.Compare(vstsTokenType, "PAT", true) == 0)
+            if (configuration.VstsTokenType == VstsTokenType.PAT)
             {
-                clientCredentials = new VssBasicCredential(vstsTokenType, vstsToken);
+                clientCredentials = new VssBasicCredential(configuration.VstsTokenType.ToString(), configuration.VstsToken);
             } else
             {
-                logger.WriteError($"VSTS Token type {vstsTokenType} not supported!");
-                throw new ArgumentOutOfRangeException(nameof(vstsTokenType));
+                logger.WriteError($"VSTS Token type {configuration.VstsTokenType} not supported!");
+                throw new ArgumentOutOfRangeException(nameof(configuration.VstsTokenType));
             }
             var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
             await vsts.ConnectAsync();

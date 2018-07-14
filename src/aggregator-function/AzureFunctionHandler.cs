@@ -53,6 +53,7 @@ namespace aggregator
             // sanity check
             if ((data.eventType != "workitem.created"
                 && data.eventType != "workitem.updated")
+                // TODO more generic check... shared with CLI !
                  || data.publisherId != "tfs")
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
@@ -66,13 +67,10 @@ namespace aggregator
                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
+            var configuration = AggregatorConfiguration.Read(config);
 
             var logger = new TraceWriterLogger(log);
-            /*
-             public string FunctionDirectory { get; set; }
-             public string FunctionAppDirectory { get; set; }
-            */
-            var wrapper = new RuleWrapper(config, logger, context.FunctionName, context.FunctionDirectory);
+            var wrapper = new RuleWrapper(configuration, logger, context.FunctionName, context.FunctionDirectory);
             string execResult = await wrapper.Execute(aggregatorVersion, data);
 
             log.Info($"Returning {execResult}");
