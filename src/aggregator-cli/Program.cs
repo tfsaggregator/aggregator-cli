@@ -17,7 +17,12 @@ namespace aggregator.cli
     {
         static int Main(string[] args)
         {
-            int rc = Parser.Default.ParseArguments<
+            var parser = new Parser(settings =>
+            {
+                settings.CaseSensitive = false;
+                settings.CaseInsensitiveEnumValues = true;
+            });
+            int rc = parser.ParseArguments<
                 LogonAzureCommand, LogonVstsCommand,
                 ListInstancesCommand, InstallInstanceCommand, UninstallInstanceCommand,
                 ListRulesCommand, AddRuleCommand, RemoveRuleCommand, ConfigureRuleCommand,
