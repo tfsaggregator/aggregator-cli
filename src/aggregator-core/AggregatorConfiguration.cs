@@ -15,8 +15,7 @@ namespace aggregator
         static public AggregatorConfiguration Read(Microsoft.Extensions.Configuration.IConfiguration config)
         {
             var ac = new AggregatorConfiguration();
-            VstsTokenType vtt;
-            Enum.TryParse<VstsTokenType>(config["Aggregator_VstsTokenType"], out vtt);
+            Enum.TryParse(config["Aggregator_VstsTokenType"], out VstsTokenType vtt);
             ac.VstsTokenType = vtt;
             ac.VstsToken = config["Aggregator_VstsToken"];
             return ac;

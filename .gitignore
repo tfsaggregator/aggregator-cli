@@ -334,3 +334,4 @@ ASALocalRun/
 .mfractor/
 secrets/
 src/aggregator-cli/function-bin.zip
+*.exe
