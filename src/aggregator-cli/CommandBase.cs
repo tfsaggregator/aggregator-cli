@@ -11,7 +11,7 @@ namespace aggregator.cli
 {
     abstract class CommandBase
     {
-        ILogger logger = new ConsoleLogger();
+        ILogger logger = null;
 
         // Omitting long name, defaults to name of property, ie "--verbose"
         [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
@@ -23,6 +23,7 @@ namespace aggregator.cli
 
         internal int Run()
         {
+            this.logger = new ConsoleLogger(Verbose);
             try
             {
                 var title = GetCustomAttribute<AssemblyTitleAttribute>();

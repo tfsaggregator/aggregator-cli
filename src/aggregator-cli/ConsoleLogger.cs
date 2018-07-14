@@ -6,6 +6,13 @@ namespace aggregator.cli
 {
     class ConsoleLogger : ILogger
     {
+        private readonly bool verbose;
+
+        public ConsoleLogger(bool verbose)
+        {
+            this.verbose = verbose;
+        }
+
         protected void WriteMessagePrefix(System.IO.TextWriter w)
         {
             w.Write($"[{DateTime.Now.ToString("u")}] ");
@@ -18,6 +25,8 @@ namespace aggregator.cli
 
         public void WriteVerbose(string message)
         {
+            if (!verbose) { return; }
+
             var save = Console.ForegroundColor;
             WriteMessagePrefix(Console.Out);
             Console.ForegroundColor = ConsoleColor.Cyan;
