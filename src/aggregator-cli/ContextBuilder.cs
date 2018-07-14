@@ -47,25 +47,25 @@ namespace aggregator.cli
             if (azureLogon)
             {
                 logger.WriteInfo($"Authenticating to Azure...");
-                var logon = AzureLogon.Load();
-                if (logon.reason != LogonResult.Succeeded)
+                var (connection, reason) = AzureLogon.Load();
+                if (reason != LogonResult.Succeeded)
                 {
-                    string msg = TranslateResult(logon.reason);
+                    string msg = TranslateResult(reason);
                     throw new ApplicationException(string.Format(msg, "Azure","logon.azure"));
                 }
-                azure = await logon.connection.LogonAsync();
+                azure = await connection.LogonAsync();
             }
 
             if (vstsLogon)
             {
                 logger.WriteInfo($"Authenticating to VSTS...");
-                var logon = VstsLogon.Load();
-                if (logon.reason != LogonResult.Succeeded)
+                var (connection, reason) = VstsLogon.Load();
+                if (reason != LogonResult.Succeeded)
                 {
-                    string msg = TranslateResult(logon.reason);
+                    string msg = TranslateResult(reason);
                     throw new ApplicationException(string.Format(msg, "VSTS", "logon.vsts"));
                 }
-                vsts = await logon.connection.LogonAsync();
+                vsts = await connection.LogonAsync();
             }
 
             return new CommandContext(logger, azure, vsts);

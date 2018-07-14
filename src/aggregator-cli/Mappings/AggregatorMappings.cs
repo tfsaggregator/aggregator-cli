@@ -73,7 +73,7 @@ namespace aggregator.cli
 
             var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (string ruleUrl, string ruleKey) invocation = await rules.GetInvocationUrlAndKey(instance, ruleName);
+            (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
@@ -85,8 +85,8 @@ namespace aggregator.cli
                 ConsumerActionId = "httpRequest",
                 ConsumerInputs = new Dictionary<string, string>
                 {
-                    { "url", invocation.ruleUrl },
-                    { "httpHeaders", $"x-functions-key:{invocation.ruleKey}" },
+                    { "url", ruleUrl },
+                    { "httpHeaders", $"x-functions-key:{ruleKey}" },
                     // careful with casing!
                     { "resourceDetailsToSend", "all" },
                     { "messagesToSend", "none" },
