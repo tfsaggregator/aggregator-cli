@@ -30,7 +30,7 @@ namespace aggregator.cli
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync();
             var filteredSubs = subscriptions.Where(s
-                    => s.PublisherId == "tfs"
+                    => s.PublisherId == VstsEvents.PublisherId
                     && s.ConsumerInputs["url"].ToString().StartsWith(
                         instance.FunctionAppUrl)
                     );
@@ -80,7 +80,7 @@ namespace aggregator.cli
                     { "detailedMessagesToSend", "none" },
                 },
                 EventType = @event,
-                PublisherId = "tfs",
+                PublisherId = VstsEvents.PublisherId,
                 PublisherInputs = new Dictionary<string, string>
                 {
                     { "projectId", project.Id.ToString() },
@@ -119,7 +119,7 @@ namespace aggregator.cli
         {
             logger.WriteInfo($"Querying the VSTS subscriptions for rule(s) {instance.PlainName}/{rule}");
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
-            var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync("tfs");
+            var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync(VstsEvents.PublisherId);
             var ruleSubs = subscriptions
                 // TODO can we trust this?
                 // && s.ActionDescription == $"To host {instance.DnsHostName}"

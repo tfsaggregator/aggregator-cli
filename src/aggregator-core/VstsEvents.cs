@@ -20,5 +20,7 @@ namespace aggregator
         {
             return validValues.Contains(@event);
         }
+
+        public static string PublisherId => "tfs";
     }
 }

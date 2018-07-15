@@ -52,8 +52,7 @@ namespace aggregator
 
             // sanity check
             if (!VstsEvents.IsValidEvent(data.eventType)
-                // TODO more generic check... shared with CLI !
-                 || data.publisherId != "tfs")
+                || data.publisherId != VstsEvents.PublisherId)
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
                 {
