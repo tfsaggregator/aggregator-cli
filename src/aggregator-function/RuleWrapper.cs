@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -43,38 +44,57 @@ namespace aggregator
             string collectionUrl = data.resourceContainers.collection.baseUrl;
             int workItemId = data.resource.id;
 
-            logger.WriteVerbose($"Connecting to VSTS using {configuration.VstsTokenType}...");
-            var clientCredentials = default(VssCredentials);
-            if (configuration.VstsTokenType == VstsTokenType.PAT)
+            var vsts = Cache.Instance.GetVstsConnection(async () =>
             {
-                clientCredentials = new VssBasicCredential(configuration.VstsTokenType.ToString(), configuration.VstsToken);
-            } else
-            {
-                logger.WriteError($"VSTS Token type {configuration.VstsTokenType} not supported!");
-                throw new ArgumentOutOfRangeException(nameof(configuration.VstsTokenType));
-            }
-            var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
-            await vsts.ConnectAsync();
-            logger.WriteInfo($"Connected to VSTS");
+                logger.WriteVerbose($"Connecting to VSTS using {configuration.VstsTokenType}...");
+                var clientCredentials = default(VssCredentials);
+                if (configuration.VstsTokenType == VstsTokenType.PAT)
+                {
+                    clientCredentials = new VssBasicCredential(configuration.VstsTokenType.ToString(), configuration.VstsToken);
+                }
+                else
+                {
+                    logger.WriteError($"VSTS Token type {configuration.VstsTokenType} not supported!");
+                    throw new ArgumentOutOfRangeException(nameof(configuration.VstsTokenType));
+                }
+                var connection = new VssConnection(new Uri(collectionUrl), clientCredentials);
+                await connection.ConnectAsync();
+                logger.WriteInfo($"Connected to VSTS");
+                return connection;
+            });
+
             var witClient = vsts.GetClient<WorkItemTrackingHttpClient>();
             var self = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All);
             logger.WriteInfo($"Self retrieved");
 
-            string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
-            if (!File.Exists(ruleFilePath))
+            var script = Cache.Instance.GetScript(() => {
+                string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
+                if (!File.Exists(ruleFilePath))
+                {
+                    logger.WriteError($"Rule code not found at {ruleFilePath}");
+                    return null;
+                }
+
+                logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+                string ruleCode = File.ReadAllText(ruleFilePath);
+
+                logger.WriteVerbose($"Compiling rule code");
+                var options = ScriptOptions.Default;
+                var csscript = CSharpScript.Create<string>(ruleCode, options: options, globalsType: typeof(Globals));
+                var errors = csscript.Compile();
+                return csscript;
+            });
+            if (script == null)
             {
-                logger.WriteError($"Rule code not found at {ruleFilePath}");
                 return "Rule file not found!";
             }
 
-            logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-            string ruleCode = File.ReadAllText(ruleFilePath);
-
+            // END TODO
             logger.WriteVerbose($"Executing Rule...");
             var globals = new Globals { self = self };
-            var result = await CSharpScript.EvaluateAsync<string>(ruleCode, globals: globals);
-            logger.WriteVerbose($"Rule returned {result}");
-            return result;
+            var result = await script.RunAsync(globals);
+            logger.WriteVerbose($"Rule returned {result.ReturnValue}");
+            return result.ReturnValue;
         }
     }
 }
