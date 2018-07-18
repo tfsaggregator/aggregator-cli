@@ -7,9 +7,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.8.2" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.14" />
-    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.136.1-preview" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.136.1-preview" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.ExtensionManagement.WebApi" Version="16.136.1-preview" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.137.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.137.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.ExtensionManagement.WebApi" Version="16.137.0-preview" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>

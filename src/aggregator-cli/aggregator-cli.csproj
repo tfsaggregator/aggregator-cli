@@ -32,12 +32,12 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.2.1" />
-    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.11.1" />
-    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.11.1" />
-    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.136.1-preview" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.136.1-preview" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.136.1-preview" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.ServiceHooks.WebApi" Version="16.136.1-preview" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.13.0" />
+    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.13.0" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.137.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.137.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.137.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.ServiceHooks.WebApi" Version="16.137.0-preview" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
