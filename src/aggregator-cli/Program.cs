@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using CommandLine.Text;
 using System;
 
 namespace aggregator.cli
@@ -22,27 +23,33 @@ namespace aggregator.cli
                 settings.CaseSensitive = false;
                 settings.CaseInsensitiveEnumValues = true;
             });
-            int rc = parser.ParseArguments<
-                LogonAzureCommand, LogonVstsCommand,
-                ListInstancesCommand, InstallInstanceCommand, UninstallInstanceCommand,
-                ListRulesCommand, AddRuleCommand, RemoveRuleCommand, ConfigureRuleCommand,
-                ListMappingsCommand, MapRuleCommand, UnmapRuleCommand
-                >(args)
-                .MapResult(
-                    (LogonAzureCommand cmd) => cmd.Run(),
-                    (LogonVstsCommand cmd) => cmd.Run(),
-                    (ListInstancesCommand cmd) => cmd.Run(),
-                    (InstallInstanceCommand cmd) => cmd.Run(),
-                    (UninstallInstanceCommand cmd) => cmd.Run(),
-                    (ConfigureInstanceCommand cmd) => cmd.Run(),
-                    (ListRulesCommand cmd) => cmd.Run(),
-                    (AddRuleCommand cmd) => cmd.Run(),
-                    (RemoveRuleCommand cmd) => cmd.Run(),
-                    (ConfigureRuleCommand cmd) => cmd.Run(),
-                    (ListMappingsCommand cmd) => cmd.Run(),
-                    (MapRuleCommand cmd) => cmd.Run(),
-                    (UnmapRuleCommand cmd) => cmd.Run(),
-                    errs => 1);
+            var parserResult = parser.ParseArguments(args,
+                typeof(LogonAzureCommand), typeof(LogonVstsCommand),
+                typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
+                typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand), typeof(ConfigureRuleCommand),
+                typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
+                );
+            int rc = -1;
+            parserResult
+                .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())
+                .WithParsed<LogonVstsCommand>(cmd => rc = cmd.Run())
+                .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run())
+                .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run())
+                .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run())
+                .WithParsed<ConfigureInstanceCommand>(cmd => rc = cmd.Run())
+                .WithParsed<ListRulesCommand>(cmd => rc = cmd.Run())
+                .WithParsed<AddRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run())
+                .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run())
+                .WithNotParsed(errs =>
+                {
+                    var helpText = HelpText.AutoBuild(parserResult);
+                    Console.Error.Write(helpText);
+                    rc = 1;
+                });
             return rc;
         }
     }

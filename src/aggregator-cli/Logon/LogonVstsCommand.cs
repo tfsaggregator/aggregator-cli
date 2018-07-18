@@ -13,7 +13,7 @@ namespace aggregator.cli
         [Option('u', "url", Required = true, HelpText = "Account/server URL, e.g. myaccount.visualstudio.com .")]
         public string Url { get; set; }
 
-        [Option('m', "mode", Required = true, HelpText = "Logon mode.")]
+        [Option('m', "mode", Required = true, HelpText = "Logon mode (valid modes: PAT).")]
         public VstsTokenType Mode { get; set; }
 
         [Option('t', "token", SetName = "PAT", HelpText = "VSTS Personal Authentication Token.")]
