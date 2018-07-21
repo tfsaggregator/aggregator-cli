@@ -15,6 +15,9 @@ namespace aggregator.cli
         [Option('n', "name", Required = true, HelpText = "Aggregator rule name.")]
         public string Name { get; set; }
 
+        [Option('u', "update", SetName = "update", HelpText = "Update the runtime and rule code.")]
+        public string Update { get; set; }
+
         [Option('d', "disable", SetName = "disable", HelpText = "Disable the rule.")]
         public bool Disable { get; set; }
         [Option('e', "enable", SetName = "enable", HelpText = "Enable the rule.")]
@@ -31,6 +34,10 @@ namespace aggregator.cli
             if (Disable || Enable)
             {
                 ok = await rules.EnableAsync(instance, Name, Disable);
+            }
+            if (!string.IsNullOrEmpty(Update))
+            {
+                ok = await rules.UpdateAsync(instance, Name, Update);
             }
             return ok ? 0 : 1;
         }

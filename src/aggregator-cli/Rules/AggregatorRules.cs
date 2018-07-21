@@ -224,7 +224,6 @@ namespace aggregator.cli
             }
         }
 
-
         internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable)
         {
             var webFunctionApp = await azure
@@ -239,6 +238,27 @@ namespace aggregator.cli
                 .Apply();
 
             return true;
+        }
+
+        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath)
+        {
+            // check runtime package
+            logger.WriteVerbose($"Checking runtime package version");
+            var package = new FunctionRuntimePackage();
+            string zipPath = package.RuntimePackageFile;
+            string url = await package.FindVersion();
+            await package.Download(url);
+            logger.WriteInfo($"Runtime package downloaded.");
+
+            logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
+            bool ok = await package.UploadRuntimeZip(instance, azure, logger);
+            if (ok)
+            {
+                logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
+
+                ok = await AddAsync(instance, name, filePath);
+            }
+            return ok;
         }
     }
 }

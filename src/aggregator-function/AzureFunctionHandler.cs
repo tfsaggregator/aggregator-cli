@@ -49,9 +49,10 @@ namespace aggregator
             // Get request body
             string jsonContent = await req.Content.ReadAsStringAsync();
             dynamic data = JsonConvert.DeserializeObject(jsonContent);
+            string eventType = data.eventType;
 
             // sanity check
-            if (!VstsEvents.IsValidEvent(data.eventType)
+            if (!VstsEvents.IsValidEvent(eventType)
                 || data.publisherId != VstsEvents.PublisherId)
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new

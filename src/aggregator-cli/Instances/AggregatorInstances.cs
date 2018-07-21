@@ -117,11 +117,18 @@ namespace aggregator.cli
             }
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
 
+            // check runtime package
+            logger.WriteVerbose($"Checking runtime package version");
+            var package = new FunctionRuntimePackage();
+            string zipPath = package.RuntimePackageFile;
+            string url = await package.FindVersion();
+            logger.WriteVerbose($"Downloading runtime package");
+            await package.Download(url);
+            logger.WriteInfo($"Runtime package downloaded.");
+
             // upload
             logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
-            string zipPath = "function-bin.zip";
-            var zipContent = File.ReadAllBytes(zipPath);
-            bool ok = await UploadRuntimeZip(instance, zipContent);
+            bool ok = await package.UploadRuntimeZip(instance, azure, logger);
             if (ok)
             {
                 logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
@@ -138,31 +145,8 @@ namespace aggregator.cli
                     logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
                     ok = false;
                 }
-
             }
             return ok;
-        }
-
-        private async Task<bool> UploadRuntimeZip(InstanceName instance, byte[] zipContent)
-        {
-            var kudu = new KuduApi(instance, azure, logger);
-            // POST /api/zipdeploy?isAsync=true
-            // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
-            var body = new ByteArrayContent(zipContent);
-            using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy"))
-            {
-                request.Content = body;
-                using (var response = await client.SendAsync(request))
-                {
-                    bool ok = response.IsSuccessStatusCode;
-                    if (!ok)
-                    {
-                        logger.WriteError($"Upload failed with {response.ReasonPhrase}");
-                    }
-                    return ok;
-                }
-            }
         }
 
         internal async Task<bool> ChangeAppSettings(InstanceName instance, VstsLogon vstsLogonData)

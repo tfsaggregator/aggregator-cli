@@ -21,6 +21,7 @@ namespace aggregator.cli
             var parser = new Parser(settings =>
             {
                 settings.CaseSensitive = false;
+                // fails see https://github.com/commandlineparser/commandline/issues/198
                 settings.CaseInsensitiveEnumValues = true;
             });
             var parserResult = parser.ParseArguments(args,
