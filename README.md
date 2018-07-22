@@ -1,5 +1,7 @@
 # aggregator-cli
 
+![](https://tfsaggregator.visualstudio.com/_apis/public/build/definitions/1cca877b-3e26-4880-b5b8-79e4b10fbfb4/16/badge)
+
 This is the successor to TFS Aggregator.
 
 The main scenario will be support for VSTS.

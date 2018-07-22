@@ -31,7 +31,7 @@ namespace aggregator.cli
 
         internal string RuntimePackageFile => "FunctionRuntime.zip";
 
-        internal async Task<string> FindVersion(string tag = "latest")
+        internal async Task<(string name, DateTimeOffset? when, string url)> FindVersion(string tag = "latest")
         {
             var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", infoVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");
@@ -43,10 +43,10 @@ namespace aggregator.cli
             }
             if (release == null)
             {
-                return "not found";
+                return default;
             }
             var asset = release.Assets.Where(a => a.Name == RuntimePackageFile).FirstOrDefault();
-            return asset.BrowserDownloadUrl;
+            return (name: release.Name, when: release.PublishedAt, url: asset.BrowserDownloadUrl);
         }
 
         internal async Task<string> Download(string downloadUrl)

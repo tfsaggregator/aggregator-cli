@@ -246,8 +246,9 @@ namespace aggregator.cli
             logger.WriteVerbose($"Checking runtime package version");
             var package = new FunctionRuntimePackage();
             string zipPath = package.RuntimePackageFile;
-            string url = await package.FindVersion();
-            await package.Download(url);
+            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await package.FindVersion();
+            logger.WriteVerbose($"Downloading runtime package {rel_name}");
+            await package.Download(rel_url);
             logger.WriteInfo($"Runtime package downloaded.");
 
             logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
