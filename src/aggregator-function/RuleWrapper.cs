@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -10,11 +14,6 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator
 {
-    public class Globals
-    {
-        public WorkItem self;
-    }
-
     /// <summary>
     /// Contains Aggregator specific code with no reference to Rule triggering
     /// </summary>
@@ -57,8 +56,10 @@ namespace aggregator
             await vsts.ConnectAsync();
             logger.WriteInfo($"Connected to VSTS");
             var witClient = vsts.GetClient<WorkItemTrackingHttpClient>();
-            var self = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All);
-            logger.WriteInfo($"Self retrieved");
+            var context = new Engine.EngineContext(witClient);
+            var store = new Engine.WorkItemStore(context);
+            var self = store.GetWorkItem(workItemId);
+            logger.WriteInfo($"Initial WorkItem retrieved");
 
             string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
             if (!File.Exists(ruleFilePath))
@@ -70,10 +71,36 @@ namespace aggregator
             logger.WriteVerbose($"Rule code found at {ruleFilePath}");
             string ruleCode = File.ReadAllText(ruleFilePath);
 
-            logger.WriteVerbose($"Executing Rule...");
-            var globals = new Globals { self = self };
-            var result = await CSharpScript.EvaluateAsync<string>(ruleCode, globals: globals);
-            logger.WriteVerbose($"Rule returned {result}");
+            logger.WriteInfo($"Executing Rule...");
+            var globals = new Engine.Globals {
+                self = self,
+                store = store
+            };
+
+            var types = new List<Type>() {
+                typeof(object),
+                typeof(System.Linq.Enumerable),
+                typeof(System.Collections.Generic.CollectionExtensions)
+            };
+            var references = types.ConvertAll(t => t.Assembly);
+
+            var scriptOptions = ScriptOptions.Default
+                .WithEmitDebugInformation(true)
+                .WithReferences(references)
+                // Add namespaces
+                .WithImports("System")
+                .WithImports("System.Linq")
+                .WithImports("System.Collections.Generic");
+            var result = await CSharpScript.EvaluateAsync<string>(
+                code: ruleCode,
+                options: scriptOptions,
+                globals: globals, globalsType: typeof(Engine.Globals));
+            logger.WriteInfo($"Rule returned {result}");
+
+            logger.WriteVerbose($"Post-execution, save all changes...");
+            context.SaveChanges();
+            logger.WriteInfo($"Changes saved to VSTS");
+
             return result;
         }
     }
