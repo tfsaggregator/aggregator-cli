@@ -42,7 +42,7 @@ The Rule Engine code is just at the beginning.
 Pushing PAT token in the App configuration works, but creates maintenance issues.
 
 ### Code quality
-Is is not robust, lacks logging and is neither well factored, esp. the Function side.
+It is not robust, lacks logging and is neither well factored, esp. the Function side.
 
 ### Build complexity
 The `install.instance` command assumes `function-bin.zip` is present in the same folder.
