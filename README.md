@@ -17,7 +17,9 @@ An Aggregator Rule Mapping is a VSTS Service Hook Subscription that invokes the 
 
 ## Authentication
 
-See [Use portal to create an Azure Active Directory application and service principal that can access resources](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal) and [Create personal access tokens to authenticate access](https://docs.microsoft.com/en-us/vsts/git/_shared/personal-access-tokens?view=vsts).
+See    
+* [Use portal to create an Azure Active Directory application and service principal that can access resources](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal)        
+* [Create personal access tokens to authenticate access](https://docs.microsoft.com/en-us/vsts/organizations/accounts/use-personal-access-tokens-to-authenticate?view=vsts#create-personal-access-tokens-to-authenticate-access).
 
 
 ## Solved Issues
