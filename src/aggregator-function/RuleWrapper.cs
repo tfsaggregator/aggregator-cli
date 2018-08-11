@@ -57,7 +57,7 @@ namespace aggregator
             await vsts.ConnectAsync();
             logger.WriteInfo($"Connected to VSTS");
             var witClient = vsts.GetClient<WorkItemTrackingHttpClient>();
-            var context = new Engine.EngineContext(witClient);
+            var context = new Engine.EngineContext(witClient, logger);
             var store = new Engine.WorkItemStore(context);
             var self = store.GetWorkItem(workItemId);
             logger.WriteInfo($"Initial WorkItem {workItemId} retrieved from {collectionUrl}");

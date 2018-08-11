@@ -8,12 +8,14 @@ namespace aggregator.Engine
 {
     public class EngineContext
     {
-        internal EngineContext(WorkItemTrackingHttpClient client)
+        internal EngineContext(WorkItemTrackingHttpClient client, ILogger logger)
         {
             Client = client;
+            Logger = logger;
         }
 
         internal WorkItemTrackingHttpClient Client { get; }
+        internal ILogger Logger { get; }
 
         List<WorkItemWrapper> wrappers = new List<WorkItemWrapper>();
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace aggregator.Engine
 {
@@ -16,6 +16,8 @@ namespace aggregator.Engine
 
         public WorkItemWrapper GetWorkItem(int id)
         {
+            _context.Logger.WriteInfo($"Loading workitem {id}");
+
             var item = _context.Client.GetWorkItemAsync(id, expand: WorkItemExpand.All).Result;
             return new WorkItemWrapper(_context, item);
         }
@@ -30,6 +32,9 @@ namespace aggregator.Engine
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
         {
+            string idList = ids.Aggregate("", (s, i) => s += $",{i}");
+            _context.Logger.WriteInfo($"Loading workitems {idList.Substring(1)}");
+
             var items = _context.Client.GetWorkItemsAsync(ids).Result;
             return items.ConvertAll(i => new WorkItemWrapper(_context, i));
         }
