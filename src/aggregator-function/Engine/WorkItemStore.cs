@@ -35,7 +35,7 @@ namespace aggregator.Engine
             string idList = ids.Aggregate("", (s, i) => s += $",{i}");
             _context.Logger.WriteInfo($"Loading workitems {idList.Substring(1)}");
 
-            var items = _context.Client.GetWorkItemsAsync(ids).Result;
+            var items = _context.Client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All).Result;
             return items.ConvertAll(i => new WorkItemWrapper(_context, i));
         }
 
