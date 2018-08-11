@@ -13,7 +13,7 @@ namespace aggregator.Engine
     {
         private WorkItemWrapper _pivotWorkItem;
         private IList<WorkItemRelationWrapper> _original;
-        private IList<WorkItemRelationWrapper> _current = new List<WorkItemRelationWrapper>();
+        private IList<WorkItemRelationWrapper> _current;
 
         internal WorkItemRelationWrapperCollection(WorkItemWrapper workItem, IList<WorkItemRelation> relations)
         {
@@ -22,6 +22,8 @@ namespace aggregator.Engine
                 ? new List<WorkItemRelationWrapper>()
                 : new List<WorkItemRelationWrapper>(relations.Select(relation =>
                     new WorkItemRelationWrapper(_pivotWorkItem, relation)));
+            // do we need deep cloning?
+            _current = new List<WorkItemRelationWrapper>(_original);
         }
 
         private void AddRelation(WorkItemRelationWrapper item)

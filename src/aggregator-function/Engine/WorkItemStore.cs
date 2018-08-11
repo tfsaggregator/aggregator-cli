@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,7 +16,7 @@ namespace aggregator.Engine
 
         public WorkItemWrapper GetWorkItem(int id)
         {
-            var item = _context.Client.GetWorkItemAsync(id).Result;
+            var item = _context.Client.GetWorkItemAsync(id, expand: WorkItemExpand.All).Result;
             return new WorkItemWrapper(_context, item);
         }
 

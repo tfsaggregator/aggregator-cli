@@ -126,7 +126,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "Hierarchy-Forward");
+                    .Where(rel => rel.Rel == "System.LinkTypes.Hierarchy-Forward");
             }
         }
 
@@ -135,7 +135,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "Related");
+                    .Where(rel => rel.Rel == "System.LinkTypes.Related");
             }
         }
 
@@ -144,7 +144,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "Hyperlink");
+                    .Where(rel => rel.Rel == "System.LinkTypes.Hyperlink");
             }
         }
 
@@ -153,7 +153,8 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "Hierarchy-Reverse").SingleOrDefault();
+                    .Where(rel => rel.Rel == "System.LinkTypes.Hierarchy-Reverse")
+                    .SingleOrDefault();
             }
         }
 

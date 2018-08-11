@@ -40,7 +40,8 @@ namespace aggregator
             }
 
             string collectionUrl = data.resourceContainers.collection.baseUrl;
-            int workItemId = data.resource.id;
+            string eventType = data.eventType;
+            int workItemId = (eventType != "workitem.updated") ? data.resource.id : data.resource.workItemId;
 
             logger.WriteVerbose($"Connecting to VSTS using {configuration.VstsTokenType}...");
             var clientCredentials = default(VssCredentials);
@@ -59,7 +60,7 @@ namespace aggregator
             var context = new Engine.EngineContext(witClient);
             var store = new Engine.WorkItemStore(context);
             var self = store.GetWorkItem(workItemId);
-            logger.WriteInfo($"Initial WorkItem retrieved");
+            logger.WriteInfo($"Initial WorkItem {workItemId} retrieved from {collectionUrl}");
 
             string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
             if (!File.Exists(ruleFilePath))
@@ -82,26 +83,31 @@ namespace aggregator
                 typeof(System.Linq.Enumerable),
                 typeof(System.Collections.Generic.CollectionExtensions)
             };
-            var references = types.ConvertAll(t => t.Assembly);
+            var references = types.ConvertAll(t => t.Assembly).Distinct();
 
             var scriptOptions = ScriptOptions.Default
                 .WithEmitDebugInformation(true)
                 .WithReferences(references)
                 // Add namespaces
-                .WithImports("System")
-                .WithImports("System.Linq")
-                .WithImports("System.Collections.Generic");
-            var result = await CSharpScript.EvaluateAsync<string>(
+                .WithImports("System","System.Linq","System.Collections.Generic");
+            var roslynScript = CSharpScript.Create<string>(
                 code: ruleCode,
                 options: scriptOptions,
-                globals: globals, globalsType: typeof(Engine.Globals));
-            logger.WriteInfo($"Rule returned {result}");
+                globalsType: typeof(Engine.Globals));
+            var result = await roslynScript.RunAsync(globals);
+            if (result.Exception != null)
+            {
+                logger.WriteError($"Rule failed with {result.Exception}");
+            } else
+            {
+                logger.WriteInfo($"Rule succeeded with {result.ReturnValue}");
+            }
 
             logger.WriteVerbose($"Post-execution, save all changes...");
             context.SaveChanges();
             logger.WriteInfo($"Changes saved to VSTS");
 
-            return result;
+            return result.ReturnValue;
         }
     }
 }
