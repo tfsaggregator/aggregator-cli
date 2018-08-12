@@ -12,43 +12,11 @@ namespace aggregator.Engine
         {
             Client = client;
             Logger = logger;
+            Tracker = new Tracker();
         }
 
         internal WorkItemTrackingHttpClient Client { get; }
         internal ILogger Logger { get; }
-
-        List<WorkItemWrapper> wrappers = new List<WorkItemWrapper>();
-
-        internal EngineContext Track(WorkItemWrapper workItemWrapper)
-        {
-            wrappers.Add(workItemWrapper);
-            return this;
-        }
-
-        internal void SaveChanges()
-        {
-            var todo = wrappers.Where(w => !w.IsReadOnly && w.IsDirty);
-
-            var toCreate = todo.Where(w => w.IsNew);
-            foreach (var item in toCreate)
-            {
-                Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
-                Client.CreateWorkItemAsync(
-                    item.Changes,
-                    item.TeamProject,
-                    item.WorkItemType
-                );
-            }
-
-            var toUpdate = todo.Where(w => w.IsDirty);
-            foreach (var item in toUpdate)
-            {
-                Logger.WriteInfo($"Updating workitem {item.Id}");
-                Client.UpdateWorkItemAsync(
-                    item.Changes,
-                    item.Id.Value
-                );
-            }
-        }
+        internal Tracker Tracker { get; }
     }
 }

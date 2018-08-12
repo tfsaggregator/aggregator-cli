@@ -104,7 +104,7 @@ namespace aggregator
             }
 
             logger.WriteVerbose($"Post-execution, save all changes...");
-            context.SaveChanges();
+            store.SaveChanges();
             logger.WriteInfo($"Changes saved to VSTS");
 
             return result.ReturnValue;

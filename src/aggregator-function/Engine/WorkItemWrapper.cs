@@ -17,7 +17,7 @@ namespace aggregator.Engine
 
         internal WorkItemWrapper(EngineContext context, WorkItem item)
         {
-            _context = context.Track(this);
+            _context = context;
 
             if (item.Id.HasValue)
             {
@@ -41,11 +41,12 @@ namespace aggregator.Engine
             }
 
             _item = item;
+            _context.Tracker.Track(this);
         }
 
         public WorkItemWrapper(EngineContext context, string project, string type)
         {
-            _context = context.Track(this);
+            _context = context;
 
             Id = new TemporaryWorkItemId();
 
@@ -60,11 +61,12 @@ namespace aggregator.Engine
                 Path = "/id",
                 Value = Id
             });
+            _context.Tracker.Track(this);
         }
 
         public WorkItemWrapper(EngineContext context, WorkItemWrapper template, string type)
         {
-            _context = context.Track(this);
+            _context = context;
 
             Id = new TemporaryWorkItemId();
 
@@ -79,6 +81,7 @@ namespace aggregator.Engine
                 Path = "/id",
                 Value = Id
             });
+            _context.Tracker.Track(this);
         }
 
         internal WorkItemWrapper(EngineContext context, WorkItem item, bool isReadOnly)

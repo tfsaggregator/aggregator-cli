@@ -16,10 +16,14 @@ namespace aggregator.Engine
 
         public WorkItemWrapper GetWorkItem(int id)
         {
-            _context.Logger.WriteInfo($"Loading workitem {id}");
+            _context.Logger.WriteVerbose($"Getting workitem {id}");
 
-            var item = _context.Client.GetWorkItemAsync(id, expand: WorkItemExpand.All).Result;
-            return new WorkItemWrapper(_context, item);
+            return _context.Tracker.LoadWorkItem(id, (workItemId) =>
+                {
+                    _context.Logger.WriteInfo($"Loading workitem {workItemId}");
+                    var item = _context.Client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Result;
+                    return new WorkItemWrapper(_context, item);
+                });
         }
 
         public WorkItemWrapper GetWorkItem(WorkItemRelationWrapper item)
@@ -33,10 +37,14 @@ namespace aggregator.Engine
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
         {
             string idList = ids.Aggregate("", (s, i) => s += $",{i}");
-            _context.Logger.WriteInfo($"Loading workitems {idList.Substring(1)}");
-
-            var items = _context.Client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All).Result;
-            return items.ConvertAll(i => new WorkItemWrapper(_context, i));
+            _context.Logger.WriteVerbose($"Getting workitems {idList.Substring(1)}");
+            return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
+            {
+                string idList2 = workItemIds.Aggregate("", (s, i) => s += $",{i}");
+                _context.Logger.WriteVerbose($"Loading workitems {idList2.Substring(1)}");
+                var items = _context.Client.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
+                return items.ConvertAll(i => new WorkItemWrapper(_context, i));
+            });
         }
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<WorkItemRelationWrapper> collection)
@@ -51,6 +59,28 @@ namespace aggregator.Engine
             }
 
             return GetWorkItems(ids);
+        }
+
+        internal void SaveChanges()
+        {
+            foreach (var item in _context.Tracker.NewWorkItems)
+            {
+                _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
+                _context.Client.CreateWorkItemAsync(
+                    item.Changes,
+                    item.TeamProject,
+                    item.WorkItemType
+                );
+            }
+
+            foreach (var item in _context.Tracker.ChangedWorkItems)
+            {
+                _context.Logger.WriteInfo($"Updating workitem {item.Id}");
+                _context.Client.UpdateWorkItemAsync(
+                    item.Changes,
+                    item.Id.Value
+                );
+            }
         }
     }
 }
