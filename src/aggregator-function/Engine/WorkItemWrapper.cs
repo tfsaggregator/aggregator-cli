@@ -369,7 +369,9 @@ namespace aggregator.Engine
 
         private T GetFieldValue<T>(string field)
         {
-            return (T)_item.Fields[field];
+            return _item.Fields.ContainsKey(field)
+                ? (T)_item.Fields[field]
+                : default(T);
         }
     }
 }
