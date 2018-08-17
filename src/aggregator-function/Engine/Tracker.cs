@@ -7,26 +7,58 @@ namespace aggregator.Engine
 {
     class Tracker
     {
-        IDictionary<WorkItemId<int>, WorkItemWrapper> wrappers = new Dictionary<WorkItemId<int>, WorkItemWrapper>();
+        class TrackedWrapper
+        {
+            internal int Id { get; }
+
+            internal WorkItemWrapper Current { get; }
+
+            internal IDictionary<int, WorkItemWrapper> Revisions = new Dictionary<int, WorkItemWrapper>();
+
+            internal TrackedWrapper(int id, WorkItemWrapper wrapper)
+            {
+                Id = id;
+                Current = wrapper;
+            }
+        }
+
+        IDictionary<WorkItemId<int>, TrackedWrapper> tracked = new Dictionary<WorkItemId<int>, TrackedWrapper>();
 
         internal Tracker()
         {
         }
 
-        internal void Track(WorkItemWrapper workItemWrapper)
+        internal void TrackExisting(WorkItemWrapper workItemWrapper)
         {
             if (IsTracked(workItemWrapper))
             {
                 throw new InvalidOperationException($"Work item {workItemWrapper.Id} is already tracked");
             }
-            wrappers.Add(workItemWrapper.Id, workItemWrapper);
+            var t = new TrackedWrapper(workItemWrapper.Id.Value, workItemWrapper);
+            tracked.Add(workItemWrapper.Id, t);
+        }
+
+        internal void TrackNew(WorkItemWrapper workItemWrapper)
+        {
+            var t = new TrackedWrapper(workItemWrapper.Id.Value, workItemWrapper);
+            tracked.Add(workItemWrapper.Id, t);
+        }
+
+        internal void TrackRevision(WorkItemWrapper workItemWrapper)
+        {
+            if (!tracked.ContainsKey(workItemWrapper.Id))
+            {
+                // should never happen...
+                throw new InvalidOperationException($"Work item {workItemWrapper.Id} was never loaded");
+            }
+            tracked[workItemWrapper.Id].Revisions.Add(workItemWrapper.Rev, workItemWrapper);
         }
 
         internal WorkItemWrapper LoadWorkItem(int id, Func<int, WorkItemWrapper> loader)
         {
             var key = new PermanentWorkItemId(id);
-            return wrappers.ContainsKey(key)
-                ? wrappers[key]
+            return tracked.ContainsKey(key)
+                ? tracked[key].Current
                 : loader(id);
         }
 
@@ -36,10 +68,10 @@ namespace aggregator.Engine
         {
             var groups = ids
                 .Select(id => new PermanentWorkItemId(id))
-                .GroupBy(k => wrappers.ContainsKey(k))
+                .GroupBy(k => tracked.ContainsKey(k))
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            var inMemory = wrappers.Where(w => groups[true].Contains(w.Key)).Select(w => w.Value);
+            var inMemory = tracked.Where(w => groups[true].Contains(w.Key)).Select(w => w.Value.Current);
             var loaded = loader(groups[false].Select(k => k.Value));
 
             return inMemory.Union(loaded).ToList();
@@ -47,17 +79,17 @@ namespace aggregator.Engine
 
         internal bool IsTracked(WorkItemWrapper workItemWrapper)
         {
-            return wrappers.ContainsKey(workItemWrapper.Id);
+            return tracked.ContainsKey(workItemWrapper.Id);
         }
 
         internal IEnumerable<WorkItemWrapper> NewWorkItems
-            => wrappers
-            .Where(w => !w.Value.IsReadOnly && w.Value.IsDirty && w.Value.IsNew)
-            .Select(w=>w.Value);
+            => tracked
+            .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsDirty && w.Value.Current.IsNew)
+            .Select(w=>w.Value.Current);
 
         internal IEnumerable<WorkItemWrapper> ChangedWorkItems
-            => wrappers
-            .Where(w => !w.Value.IsReadOnly && w.Value.IsDirty && !w.Value.IsNew)
-            .Select(w => w.Value);
+            => tracked
+            .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsDirty && !w.Value.Current.IsNew)
+            .Select(w => w.Value.Current);
     }
 }

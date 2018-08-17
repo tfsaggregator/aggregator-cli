@@ -18,6 +18,7 @@ namespace aggregator.Engine
         internal WorkItemWrapper(EngineContext context, WorkItem item)
         {
             _context = context;
+            _item = item;
 
             if (item.Id.HasValue)
             {
@@ -28,6 +29,7 @@ namespace aggregator.Engine
                     Path = "/rev",
                     Value = item.Rev
                 });
+                _context.Tracker.TrackExisting(this);
             }
             else
             {
@@ -38,10 +40,8 @@ namespace aggregator.Engine
                     Path = "/id",
                     Value = Id
                 });
+                _context.Tracker.TrackNew(this);
             }
-
-            _item = item;
-            _context.Tracker.Track(this);
         }
 
         public WorkItemWrapper(EngineContext context, string project, string type)
@@ -61,7 +61,7 @@ namespace aggregator.Engine
                 Path = "/id",
                 Value = Id
             });
-            _context.Tracker.Track(this);
+            _context.Tracker.TrackNew(this);
         }
 
         public WorkItemWrapper(EngineContext context, WorkItemWrapper template, string type)
@@ -81,13 +81,25 @@ namespace aggregator.Engine
                 Path = "/id",
                 Value = Id
             });
-            _context.Tracker.Track(this);
+            _context.Tracker.TrackNew(this);
         }
 
         internal WorkItemWrapper(EngineContext context, WorkItem item, bool isReadOnly)
-            : this(context, item)
+            // we cannot reuse the code, because tracking is different
+            //: this(context, item)
         {
-            this._isReadOnly = isReadOnly;
+            _context = context;
+
+            Id = new PermanentWorkItemId(item.Id.Value);
+            Changes.Add(new JsonPatchOperation()
+            {
+                Operation = Operation.Test,
+                Path = "/rev",
+                Value = item.Rev
+            });
+            _isReadOnly = isReadOnly;
+            _item = item;
+            _context.Tracker.TrackRevision(this);
         }
 
         public WorkItemWrapper PreviousRevision
@@ -97,6 +109,7 @@ namespace aggregator.Engine
                 if (Rev > 0)
                 {
                     // TODO we shouldn't use the client in this class
+                    // TODO check if already loaded
                     var previousRevision = _context.Client.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, previousRevision, true);
                 }
@@ -109,6 +122,8 @@ namespace aggregator.Engine
         {
             get
             {
+                // TODO load a few revisions at a time
+                //var all = _context.Client.GetRevisionsAsync(this.Id.Value, expand: WorkItemExpand.All).Result;
                 var revision = this;
                 while ((revision = revision.PreviousRevision) != null)
                 {
