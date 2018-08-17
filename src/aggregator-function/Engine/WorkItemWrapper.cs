@@ -96,7 +96,8 @@ namespace aggregator.Engine
             {
                 if (Rev > 0)
                 {
-                    var previousRevision = _context.Client.GetRevisionAsync(this.Id.Value, this.Rev - 1).Result;
+                    // TODO we shouldn't use the client in this class
+                    var previousRevision = _context.Client.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, previousRevision, true);
                 }
 
@@ -129,7 +130,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "System.LinkTypes.Hierarchy-Forward");
+                    .Where(rel => rel.Rel == CoreRelationRefNames.Children);
             }
         }
 
@@ -138,7 +139,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "System.LinkTypes.Related");
+                    .Where(rel => rel.Rel == CoreRelationRefNames.Related);
             }
         }
 
@@ -147,7 +148,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "System.LinkTypes.Hyperlink");
+                    .Where(rel => rel.Rel == CoreRelationRefNames.Hyperlink);
             }
         }
 
@@ -156,7 +157,7 @@ namespace aggregator.Engine
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
-                    .Where(rel => rel.Rel == "System.LinkTypes.Hierarchy-Reverse")
+                    .Where(rel => rel.Rel == CoreRelationRefNames.Parent)
                     .SingleOrDefault();
             }
         }

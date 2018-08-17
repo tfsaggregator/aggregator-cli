@@ -104,7 +104,7 @@ namespace aggregator.Engine
         public void AddHyperlink(string url, string comment = null)
         {
             AddLink(
-                "Hyperlink",
+                CoreRelationRefNames.Hyperlink,
                 url,
                 comment
             );
@@ -119,7 +119,7 @@ namespace aggregator.Engine
         public void AddRelatedLink(string url, string comment = null)
         {
             AddLink(
-                "System.LinkTypes.Related",
+                CoreRelationRefNames.Related,
                 url,
                 comment
             );
