@@ -84,7 +84,7 @@ namespace aggregator.cli
                 PublisherInputs = new Dictionary<string, string>
                 {
                     { "projectId", project.Id.ToString() },
-                    /* TODO consider offering these filters
+                    /* TODO consider offering additional filters using the following
                     { "tfsSubscriptionId", vsts.ServerId },
                     { "teamId", null },
                     // Filter events to include only work items under the specified area path.
@@ -121,7 +121,7 @@ namespace aggregator.cli
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync(VstsEvents.PublisherId);
             var ruleSubs = subscriptions
-                // TODO can we trust this?
+                // TODO can we trust this equality?
                 // && s.ActionDescription == $"To host {instance.DnsHostName}"
                 .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
                     instance.FunctionAppUrl));

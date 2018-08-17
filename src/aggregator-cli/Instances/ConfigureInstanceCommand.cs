@@ -17,7 +17,7 @@ namespace aggregator.cli
 
         [Option('a', "authentication", SetName = "auth", Required = true, HelpText = "Refresh authentication data.")]
         public bool Authentication { get; set; }
-        // TODO --swap.slot
+        // TODO add --swap.slot to support App Service Deployment Slots
 
 
         internal override async Task<int> RunAsync()

@@ -132,7 +132,7 @@ namespace aggregator.cli
             // copy templates
             var assembly = Assembly.GetExecutingAssembly();
             using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
-                // TODO this can be created by deserializing Kudu...
+            // TODO we can deserialize a KuduFunctionConfig instead of using a fixed file...
             using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
             {
                 reader.CopyTo(writer);

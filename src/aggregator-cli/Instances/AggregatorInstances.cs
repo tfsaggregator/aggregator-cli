@@ -132,7 +132,6 @@ namespace aggregator.cli
             if (ok)
             {
                 logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
-                // TODO requires VSTS logon!!!!!!!!!
                 var vstsLogonData = VstsLogon.Load().connection;
                 if (vstsLogonData.Mode == VstsTokenType.PAT)
                 {

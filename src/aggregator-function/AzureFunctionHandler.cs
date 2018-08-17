@@ -33,7 +33,7 @@ namespace aggregator
         {
             log.Verbose($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
 
-            // TODO
+            // TODO check expected version
             string aggregatorVersion = null;
 
             try
