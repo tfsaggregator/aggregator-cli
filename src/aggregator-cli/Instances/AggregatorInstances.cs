@@ -118,17 +118,8 @@ namespace aggregator.cli
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
 
             // check runtime package
-            logger.WriteVerbose($"Checking runtime package version");
-            var package = new FunctionRuntimePackage();
-            string zipPath = package.RuntimePackageFile;
-            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await package.FindVersion();
-            logger.WriteVerbose($"Downloading runtime package {rel_name}");
-            await package.Download(rel_url);
-            logger.WriteInfo($"Runtime package downloaded.");
-
-            // upload
-            logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
-            bool ok = await package.UploadRuntimeZip(instance, azure, logger);
+            var package = new FunctionRuntimePackage(logger);
+            bool ok = await package.UpdateVersion(instance, azure);
             if (ok)
             {
                 logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");

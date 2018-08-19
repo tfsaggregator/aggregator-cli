@@ -13,14 +13,15 @@ namespace aggregator.cli
 {
     class FunctionRuntimePackage
     {
-        private string fileVersion;
-        private string infoVersion;
+        private readonly string fileVersion;
+        private readonly string infoVersion;
+        private readonly ILogger logger;
 
-        internal FunctionRuntimePackage()
+        internal FunctionRuntimePackage(ILogger logger)
         {
+            this.logger = logger;
             // check this assembly version
-            var here = Assembly
-                .GetExecutingAssembly();
+            var here = Assembly.GetExecutingAssembly();
             fileVersion = here
                 .GetCustomAttribute<AssemblyFileVersionAttribute>()
                 .Version;
@@ -31,7 +32,20 @@ namespace aggregator.cli
 
         internal string RuntimePackageFile => "FunctionRuntime.zip";
 
-        internal async Task<(string name, DateTimeOffset? when, string url)> FindVersion(string tag = "latest")
+        internal async Task<bool> UpdateVersion(InstanceName instance, IAzure azure)
+        {
+            logger.WriteVerbose($"Checking runtime package version");
+            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersion();
+            logger.WriteVerbose($"Downloading runtime package {rel_name}");
+            await Download(rel_url);
+            logger.WriteInfo($"Runtime package downloaded.");
+
+            logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
+            bool ok = await UploadRuntimeZip(instance, azure);
+            return ok;
+        }
+
+        private async Task<(string name, DateTimeOffset? when, string url)> FindVersion(string tag = "latest")
         {
             var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", infoVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");
@@ -49,7 +63,7 @@ namespace aggregator.cli
             return (name: release.Name, when: release.PublishedAt, url: asset.BrowserDownloadUrl);
         }
 
-        internal async Task<string> Download(string downloadUrl)
+        private async Task<string> Download(string downloadUrl)
         {
             using (var httpClient = new WebClient())
             {
@@ -58,7 +72,7 @@ namespace aggregator.cli
             return RuntimePackageFile;
         }
 
-        internal async Task<bool> UploadRuntimeZip(InstanceName instance, IAzure azure, ILogger logger)
+        private async Task<bool> UploadRuntimeZip(InstanceName instance, IAzure azure)
         {
             var zipContent = File.ReadAllBytes(RuntimePackageFile);
             var kudu = new KuduApi(instance, azure, logger);
