@@ -1,8 +1,9 @@
 ﻿using Microsoft.Azure.Management.Fluent;
 using Octokit;
+using Semver;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -30,19 +31,62 @@ namespace aggregator.cli
                 .InformationalVersion;
         }
 
-        internal string RuntimePackageFile => "FunctionRuntime.zip";
+        private string RuntimePackageFile => "FunctionRuntime.zip";
 
         internal async Task<bool> UpdateVersion(InstanceName instance, IAzure azure)
         {
             logger.WriteVerbose($"Checking runtime package version");
             (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersion();
-            logger.WriteVerbose($"Downloading runtime package {rel_name}");
-            await Download(rel_url);
-            logger.WriteInfo($"Runtime package downloaded.");
+            if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
+            logger.WriteInfo($"Latest Runtime package version is {rel_name} (released on {rel_when}).");
+            logger.WriteInfo($"CLI version is {fileVersion} ({infoVersion}).");
+
+            var lastRuntimeVer = SemVersion.Parse(rel_name);
+            string localPackageVersion = GetLocalPackageVersion(RuntimePackageFile);
+            var hereRuntimeVer = SemVersion.Parse(localPackageVersion);
+            if (ShouldUpdate(lastRuntimeVer, hereRuntimeVer))
+            {
+                logger.WriteVerbose($"Downloading runtime package {rel_name}");
+                await Download(rel_url);
+                logger.WriteInfo($"Runtime package downloaded.");
+            }
 
             logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
             bool ok = await UploadRuntimeZip(instance, azure);
+            if (ok)
+            {
+                logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
+            }
+            else
+            {
+                logger.WriteError($"Failed uploading Runtime to {instance.DnsHostName}.");
+            }
             return ok;
+        }
+
+        private string GetLocalPackageVersion(string runtimePackageFile)
+        {
+            string manifestVersion = string.Empty;
+            var zip = ZipFile.OpenRead(runtimePackageFile);
+            var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
+            using (var byteStream = manifestEntry.Open())
+            using (var reader = new StreamReader(byteStream))
+            {
+                while (!reader.EndOfStream)
+                {
+                    string line = reader.ReadLine();
+                    var parts = line.Split('=');
+                    if (parts[0] == "version")
+                        manifestVersion = parts[1];
+                }
+            }
+
+            return manifestVersion;
+        }
+
+        private bool ShouldUpdate(SemVersion lastRuntimeVer, SemVersion currentCliVer)
+        {
+             return lastRuntimeVer > currentCliVer;
         }
 
         private async Task<(string name, DateTimeOffset? when, string url)> FindVersion(string tag = "latest")

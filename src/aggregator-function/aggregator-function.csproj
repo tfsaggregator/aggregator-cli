@@ -16,6 +16,9 @@
     <ProjectReference Include="..\aggregator-core\aggregator-core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="aggregator-manifest.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
