@@ -1,17 +1,11 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System.Text;
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace aggregator
 {
@@ -70,15 +64,28 @@ namespace aggregator
 
             var logger = new TraceWriterLogger(log);
             var wrapper = new RuleWrapper(configuration, logger, context.FunctionName, context.FunctionDirectory);
-            string execResult = await wrapper.Execute(aggregatorVersion, data);
-
-            log.Info($"Returning {execResult}");
-
-            var resp = new HttpResponseMessage(HttpStatusCode.OK)
+            try
             {
-                Content = new StringContent(execResult)
-            };
-            return resp;
+                string execResult = await wrapper.Execute(aggregatorVersion, data);
+
+                log.Info($"Returning {execResult}");
+
+                var resp = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(execResult)
+                };
+                return resp;
+            }
+            catch (Exception ex)
+            {
+                log.Warning($"Rule failed: {ex.Message}");
+
+                var resp = new HttpResponseMessage(HttpStatusCode.NotImplemented)
+                {
+                    Content = new StringContent(ex.Message)
+                };
+                return resp;
+            }
         }
     }
 }

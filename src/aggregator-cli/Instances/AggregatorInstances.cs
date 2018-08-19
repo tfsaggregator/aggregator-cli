@@ -156,9 +156,11 @@ namespace aggregator.cli
                 .GetByResourceGroupAsync(
                     instance.ResourceGroupName,
                     instance.FunctionAppName);
-            var configuration = new AggregatorConfiguration();
-            configuration.VstsTokenType = vstsLogonData.Mode;
-            configuration.VstsToken = vstsLogonData.Token;
+            var configuration = new AggregatorConfiguration
+            {
+                VstsTokenType = vstsLogonData.Mode,
+                VstsToken = vstsLogonData.Token
+            };
             configuration.Write(webFunctionApp);
             return true;
         }
