@@ -14,7 +14,6 @@ namespace aggregator.cli
 {
     class FunctionRuntimePackage
     {
-        private readonly string fileVersion;
         private readonly string infoVersion;
         private readonly ILogger logger;
 
@@ -23,9 +22,6 @@ namespace aggregator.cli
             this.logger = logger;
             // check this assembly version
             var here = Assembly.GetExecutingAssembly();
-            fileVersion = here
-                .GetCustomAttribute<AssemblyFileVersionAttribute>()
-                .Version;
             infoVersion = here
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 .InformationalVersion;
@@ -66,21 +62,23 @@ namespace aggregator.cli
 
         private string GetLocalPackageVersion(string runtimePackageFile)
         {
-            string manifestVersion = string.Empty;
-            var zip = ZipFile.OpenRead(runtimePackageFile);
-            var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
-            using (var byteStream = manifestEntry.Open())
-            using (var reader = new StreamReader(byteStream))
+            string manifestVersion = "0.0"; // this default allows SemVer to parse and compare
+            if (File.Exists(runtimePackageFile))
             {
-                while (!reader.EndOfStream)
+                var zip = ZipFile.OpenRead(runtimePackageFile);
+                var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
+                using (var byteStream = manifestEntry.Open())
+                using (var reader = new StreamReader(byteStream))
                 {
-                    string line = reader.ReadLine();
-                    var parts = line.Split('=');
-                    if (parts[0] == "version")
-                        manifestVersion = parts[1];
+                    while (!reader.EndOfStream)
+                    {
+                        string line = reader.ReadLine();
+                        var parts = line.Split('=');
+                        if (parts[0] == "version")
+                            manifestVersion = parts[1];
+                    }
                 }
             }
-
             return manifestVersion;
         }
 
