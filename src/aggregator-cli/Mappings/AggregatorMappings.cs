@@ -24,7 +24,7 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        internal async Task<IEnumerable<(string rule, string project, string @event)>> ListAsync(InstanceName instance)
+        internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance)
         {
             logger.WriteVerbose($"Searching aggregator mappings in VSTS...");
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
@@ -38,14 +38,18 @@ namespace aggregator.cli
             var projects = await projectClient.GetProjects();
             var projectsDict = projects.ToDictionary(p => p.Id);
 
-            var result = new List<(string rule, string project, string @event)>();
+            var result = new List<(string rule, string project, string @event, string status)>();
             foreach (var subscription in filteredSubs)
             {
                 var foundProject = projectsDict[
                     new Guid(subscription.PublisherInputs["projectId"])
                     ];
+                // HACK need to factor the URL<->rule_name
+                string ruleUrl = subscription.ConsumerInputs["url"].ToString();
+                string ruleName = ruleUrl.Substring(ruleUrl.LastIndexOf('/'));
+                string ruleFullName = instance.PlainName + ruleName;
                 result.Add(
-                    (instance.PlainName, foundProject.Name, subscription.EventType)
+                    (ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
             }
             return result;
@@ -53,10 +57,10 @@ namespace aggregator.cli
 
         internal async Task<Guid> Add(string projectName, string @event, InstanceName instance, string ruleName)
         {
-            logger.WriteVerbose($"Connecting to VSTS...");
+            logger.WriteVerbose($"Reading VSTS project data...");
             var projectClient = vsts.GetClient<ProjectHttpClient>();
             var project = await projectClient.GetProject(projectName);
-            logger.WriteInfo($"{projectName} data read.");
+            logger.WriteInfo($"Project {projectName} data read.");
 
             var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
@@ -64,6 +68,30 @@ namespace aggregator.cli
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
+
+            // check if the subscription already exists and bail out
+            var query = new SubscriptionsQuery {
+                PublisherId = VstsEvents.PublisherId,
+                ConsumerInputFilters = new InputFilter[] {
+                    new InputFilter {
+                        Conditions = new List<InputFilterCondition> {
+                            new InputFilterCondition
+                            {
+                                InputId = "url",
+                                InputValue  = ruleUrl,
+                                Operator = InputFilterOperator.Equals,
+                                CaseSensitive = false
+                            }
+                        }
+                    }
+                }
+            };
+            var queryResult = await serviceHooksClient.QuerySubscriptionsAsync(query);
+            if (queryResult.Results.Any())
+            {
+                logger.WriteWarning($"There is already such a mapping.");
+                return Guid.Empty;
+            }
 
             // see https://docs.microsoft.com/en-us/vsts/service-hooks/consumers?toc=%2Fvsts%2Fintegrate%2Ftoc.json&bc=%2Fvsts%2Fintegrate%2Fbreadcrumb%2Ftoc.json&view=vsts#web-hooks
             var subscriptionParameters = new Subscription()

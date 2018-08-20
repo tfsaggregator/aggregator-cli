@@ -37,7 +37,7 @@ namespace aggregator.cli
                 {
                     webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rg, fn);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     logger.WriteError($"Instance {instance.PlainName} not found.");
                     throw;

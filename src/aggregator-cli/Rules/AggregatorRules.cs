@@ -68,7 +68,6 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(azure, logger);
             var kudu = new KuduApi(instance, azure, logger);
 
-            logger.WriteVerbose($"Querying Function key...");
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets"))
@@ -85,12 +84,15 @@ namespace aggregator.cli
                             var secret = js.Deserialize<KuduSecret>(jtr);
 
                             (string url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
-                            logger.WriteInfo($"Function key retrieved.");
                             return invocation;
                         }
                     }
                     else
-                        return default;
+                    {
+                        string error = await response.Content.ReadAsStringAsync();
+                        logger.WriteError($"Failed to retrieve function key: {error}");
+                        throw new ApplicationException("Failed to retrieve function key.");
+                    }
                 }
             }
         }

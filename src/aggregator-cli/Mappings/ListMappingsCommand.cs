@@ -25,7 +25,7 @@ namespace aggregator.cli
             {
                 context.Logger.WriteOutput(
                     item,
-                    (data) => $"Project {item.project} invokes rule {instance.PlainName}/{item.rule} for {item.@event}");
+                    (data) => $"Project {item.project} invokes rule {item.rule} for {item.@event} (status {item.status})");
                 any = true;
             }
             if (!any)
