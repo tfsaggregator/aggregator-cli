@@ -39,11 +39,11 @@ namespace aggregator.cli
             (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersion();
             if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
             logger.WriteInfo($"Latest Runtime package version is {rel_name} (released on {rel_when}).");
-            logger.WriteInfo($"CLI version is {fileVersion} ({infoVersion}).");
 
             var lastRuntimeVer = SemVersion.Parse(rel_name);
             string localPackageVersion = GetLocalPackageVersion(RuntimePackageFile);
             var hereRuntimeVer = SemVersion.Parse(localPackageVersion);
+            logger.WriteInfo($"Cached Runtime package version is {hereRuntimeVer}.");
             if (ShouldUpdate(lastRuntimeVer, hereRuntimeVer))
             {
                 logger.WriteVerbose($"Downloading runtime package {rel_name}");

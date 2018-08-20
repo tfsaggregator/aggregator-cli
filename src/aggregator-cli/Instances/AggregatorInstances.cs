@@ -122,7 +122,6 @@ namespace aggregator.cli
             bool ok = await package.UpdateVersion(instance, azure);
             if (ok)
             {
-                logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
                 var vstsLogonData = VstsLogon.Load().connection;
                 if (vstsLogonData.Mode == VstsTokenType.PAT)
                 {

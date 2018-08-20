@@ -46,7 +46,7 @@ namespace aggregator.cli
 
             if (azureLogon)
             {
-                logger.WriteInfo($"Authenticating to Azure...");
+                logger.WriteVerbose($"Authenticating to Azure...");
                 var (connection, reason) = AzureLogon.Load();
                 if (reason != LogonResult.Succeeded)
                 {
@@ -54,11 +54,12 @@ namespace aggregator.cli
                     throw new ApplicationException(string.Format(msg, "Azure","logon.azure"));
                 }
                 azure = await connection.LogonAsync();
+                logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
             }
 
             if (vstsLogon)
             {
-                logger.WriteInfo($"Authenticating to VSTS...");
+                logger.WriteVerbose($"Authenticating to VSTS...");
                 var (connection, reason) = VstsLogon.Load();
                 if (reason != LogonResult.Succeeded)
                 {
@@ -66,6 +67,7 @@ namespace aggregator.cli
                     throw new ApplicationException(string.Format(msg, "VSTS", "logon.vsts"));
                 }
                 vsts = await connection.LogonAsync();
+                logger.WriteInfo($"Connected to {vsts.Uri.Host}");
             }
 
             return new CommandContext(logger, azure, vsts);

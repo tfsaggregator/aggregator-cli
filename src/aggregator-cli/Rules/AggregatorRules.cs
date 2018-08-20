@@ -247,8 +247,6 @@ namespace aggregator.cli
             bool ok = await package.UpdateVersion(instance, azure);
             if (ok)
             {
-                logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
-
                 ok = await AddAsync(instance, name, filePath);
             }
             return ok;

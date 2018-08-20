@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Management.Fluent;
+﻿using Microsoft.Azure.Management.AppService.Fluent;
+using Microsoft.Azure.Management.Fluent;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,11 +27,21 @@ namespace aggregator.cli
         (string username, string password) lastPublishCredentials = default;
         private async Task<(string username, string password)> GetPublishCredentials()
         {
+            // implements a trivial caching, adequate for command line use
             if (lastPublishCredentialsInstance != instance.PlainName)
             {
                 string rg = instance.ResourceGroupName;
                 string fn = instance.FunctionAppName;
-                var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rg, fn);
+                IFunctionApp webFunctionApp = null;
+                try
+                {
+                    webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rg, fn);
+                }
+                catch (Exception ex)
+                {
+                    logger.WriteError($"Instance {instance.PlainName} not found.");
+                    throw;
+                }
                 var ftpUsername = webFunctionApp.GetPublishingProfile().FtpUsername;
                 var username = ftpUsername.Split('\\').ToList()[1];
                 var password = webFunctionApp.GetPublishingProfile().FtpPassword;
