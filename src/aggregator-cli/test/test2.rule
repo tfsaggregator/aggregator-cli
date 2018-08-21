@@ -1,0 +1,17 @@
+﻿string message = "";
+if (self.Parent != null)
+{
+    var parent = store.GetWorkItem(self.Parent);
+    var children = store.GetWorkItems(parent.Children);
+    if (children.All(c => c.State == "Closed"))
+    {
+        parent.State = "Closed";
+        message = "Parent was closed";
+    }
+    else
+    {
+        message = "Parent was not closed";
+    }
+    parent.Description = parent.Description + " aggregator was here.";
+}
+return message;

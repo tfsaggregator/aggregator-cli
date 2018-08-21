@@ -58,7 +58,7 @@ The PAT is stored in the Azure Function settings: **whoever has access to the Re
 ## Usage
 
 Download and unzip the latest CLI.zip file from [Releases](https://github.com/tfsaggregator/aggregator-cli/releases).
-It requires [.Net Core 2.0](https://www.microsoft.com/net/download).
+It requires [.Net Core 2.1](https://www.microsoft.com/net/download).
 To run Aggregator use
 `dotnet aggregator-cli.dll` followed by the verb and the options.
 

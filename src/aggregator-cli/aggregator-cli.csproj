@@ -2,13 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>aggregator.cli</RootNamespace>
     <StartupObject>aggregator.cli.Program</StartupObject>
     <ApplicationIcon>../../art/TfsAggregator.ico</ApplicationIcon>
-    <AssemblyTitle>Aggregator CLI</AssemblyTitle>
-    <Version>0.2.0</Version>
-    <Copyright>TFS Aggregator Team</Copyright>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -17,6 +15,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>7.3</LangVersion>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,13 +30,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.2.1" />
-    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.13.0" />
-    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.13.0" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.14.0" />
+    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.14.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.ServiceHooks.WebApi" Version="16.137.0-preview" />
+    <PackageReference Include="CommandLineParser" Version="2.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Octokit" Version="0.31.0" />
     <PackageReference Include="semver" Version="2.0.4" />
@@ -51,7 +50,13 @@
     <None Update="function-bin.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="test.rule">
+    <None Update="test\test3.rule">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="test\test2.rule">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="test\test1.rule">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

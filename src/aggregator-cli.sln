@@ -13,9 +13,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-cli", "unittests-
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-function", "aggregator-function\aggregator-function.csproj", "{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1A84F5C1-ADA4-4DD1-A0D9-03635DF9FC56}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-ADA4-4DD1-A0D9-03635DF9FC56}"
 	ProjectSection(SolutionItems) = preProject
+		..\doc\command-examples.md = ..\doc\command-examples.md
 		..\README.md = ..\README.md
+		..\doc\rule-examples.md = ..\doc\rule-examples.md
 	EndProjectSection
 EndProject
 Global

@@ -1,0 +1,1 @@
+﻿return self.PreviousRevision.PreviousRevision.Description;
