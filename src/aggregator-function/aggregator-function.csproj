@@ -33,14 +33,14 @@
     <None Update="default.rule">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <Content Include="test\function.json">
+    <None Include="test\function.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="test\run.csx">
+    </None>
+    <None Include="test\run.csx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="test\test.rule">
+    </None>
+    <None Include="test\test.rule">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </None>
   </ItemGroup>
 </Project>
