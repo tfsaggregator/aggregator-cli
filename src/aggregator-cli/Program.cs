@@ -7,11 +7,18 @@ namespace aggregator.cli
     /*
     Ideas for verbs and options:
 
-    add.rule --verbose --instance INSTANCE --name RULE --file FILE --slot SLOT
-    configure.instance --swap SLOT
-    invoke.rule --verbose --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --doNotFakeVsts
+    logon.vsts --url URL --mode MODE --token TOKEN --slot SLOT
+        to use different credentials
+    configure.instance --slot SLOT --swap --avzone ZONE
+        add a deployment slot with the option to specify an availability zone, the swap option will set the new slot as primary
+    configure.instance --listOutboundIPs
+        use `azure.AppServices.WebApps.GetByResourceGroup(instance.ResourceGroupName,instance.FunctionAppName).OutboundIPAddresses`
+    configure.rule --verbose --instance INSTANCE --name RULE --file FILE --slot SLOT
+        change rule code on a single deployment slot
     invoke.rule --verbose --local --ruleSource FILE --event EVENT --workItemId WORK_ITEM_ID
-    logon.vsts --url URL --mode MODE --token TOKEN --secondary
+        runs rule code locally
+    invoke.rule --verbose --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --slot SLOT
+        emulates the event on the rule
 
     */
     class Program
