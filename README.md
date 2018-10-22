@@ -55,6 +55,10 @@ Logon credentials are stored locally and expire after 2 hours.
 
 The PAT is stored in the Azure Function settings: **whoever has access to the Resource Group can read it!**
 
+The Service Principal must have Contributor permission to the Azure Subscription.
+In alternative, pre-create the `aggregator-` Resource Group in Azure and give the service account Contributor permission to the Resource Group.
+The `instance` parameter prefixes `aggregator-` to identify the Resource Group.
+
 ## Usage
 
 Download and unzip the latest CLI.zip file from [Releases](https://github.com/tfsaggregator/aggregator-cli/releases).

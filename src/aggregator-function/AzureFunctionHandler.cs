@@ -1,6 +1,7 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Net;
@@ -14,18 +15,18 @@ namespace aggregator
     /// </summary>
     public class AzureFunctionHandler
     {
-        private readonly TraceWriter log;
+        private readonly Microsoft.Extensions.Logging.ILogger log;
         private readonly ExecutionContext context;
 
-        public AzureFunctionHandler(TraceWriter log, ExecutionContext context)
+        public AzureFunctionHandler(Microsoft.Extensions.Logging.ILogger logger, ExecutionContext context)
         {
-            this.log = log;
+            this.log = logger;
             this.context = context;
         }
 
         public async Task<HttpResponseMessage> Run(HttpRequestMessage req)
         {
-            log.Verbose($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
+            log.LogDebug($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
 
             // TODO check expected version
             string aggregatorVersion = null;
@@ -33,15 +34,25 @@ namespace aggregator
             try
             {
                 string rule = context.FunctionName;
-                log.Info($"Welcome to {rule}");
+                log.LogInformation($"Welcome to {rule}");
             }
             catch (Exception ex)
             {
-                log.Warning($"Failed parsing headers: {ex.Message}");
+                log.LogWarning($"Failed parsing request headers: {ex.Message}");
             }
 
             // Get request body
             string jsonContent = await req.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                log.LogWarning($"Failed parsing request body: empty");
+
+                var resp = new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("Request body is empty")
+                };
+                return resp;
+            }
             dynamic data = JsonConvert.DeserializeObject(jsonContent);
             string eventType = data.eventType;
 
@@ -62,23 +73,31 @@ namespace aggregator
                 .Build();
             var configuration = AggregatorConfiguration.Read(config);
 
-            var logger = new TraceWriterLogger(log);
+            var logger = new ForwarderLogger(log);
             var wrapper = new RuleWrapper(configuration, logger, context.FunctionName, context.FunctionDirectory);
             try
             {
                 string execResult = await wrapper.Execute(aggregatorVersion, data);
 
-                log.Info($"Returning {execResult}");
-
-                var resp = new HttpResponseMessage(HttpStatusCode.OK)
+                if (string.IsNullOrEmpty(execResult))
                 {
-                    Content = new StringContent(execResult)
-                };
-                return resp;
+                    var resp = new HttpResponseMessage(HttpStatusCode.OK);
+                    return resp;
+                }
+                else
+                {
+                    log.LogInformation($"Returning {execResult}");
+
+                    var resp = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(execResult)
+                    };
+                    return resp;
+                }
             }
             catch (Exception ex)
             {
-                log.Warning($"Rule failed: {ex.Message}");
+                log.LogWarning($"Rule failed: {ex.Message}");
 
                 var resp = new HttpResponseMessage(HttpStatusCode.NotImplemented)
                 {

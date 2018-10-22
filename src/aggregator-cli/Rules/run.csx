@@ -3,8 +3,8 @@
 
 using aggregator;
 
-public static async Task<object> Run(HttpRequestMessage req, TraceWriter log, ExecutionContext context)
+public static async Task<object> Run(HttpRequestMessage req, ILogger logger, ExecutionContext context)
 {
-    var handler = new AzureFunctionHandler(log, context);
+    var handler = new AzureFunctionHandler(logger, context);
     return await handler.Run(req);
 }

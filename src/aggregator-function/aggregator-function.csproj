@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.9.0" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.14" />
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.22" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.ExtensionManagement.WebApi" Version="16.137.0-preview" />

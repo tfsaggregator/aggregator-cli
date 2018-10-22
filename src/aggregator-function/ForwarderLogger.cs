@@ -1,34 +1,35 @@
 ﻿using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Extensions.Logging;
 
 namespace aggregator
 {
-    internal class TraceWriterLogger : ILogger
+    internal class ForwarderLogger : IAggregatorLogger
     {
-        private TraceWriter log;
+        private Microsoft.Extensions.Logging.ILogger log;
 
-        public TraceWriterLogger(TraceWriter log)
+        public ForwarderLogger(Microsoft.Extensions.Logging.ILogger log)
         {
             this.log = log;
         }
 
         public void WriteError(string message)
         {
-            log.Error(message);
+            log.LogError(message);
         }
 
         public void WriteInfo(string message)
         {
-            log.Info(message);
+            log.LogInformation(message);
         }
 
         public void WriteVerbose(string message)
         {
-            log.Verbose(message);
+            log.LogDebug(message);
         }
 
         public void WriteWarning(string message)
         {
-            log.Warning(message);
+            log.LogWarning(message);
         }
     }
 }

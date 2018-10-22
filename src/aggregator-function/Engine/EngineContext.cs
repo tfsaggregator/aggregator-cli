@@ -8,7 +8,7 @@ namespace aggregator.Engine
 {
     public class EngineContext
     {
-        internal EngineContext(WorkItemTrackingHttpClient client, ILogger logger)
+        internal EngineContext(WorkItemTrackingHttpClient client, IAggregatorLogger logger)
         {
             Client = client;
             Logger = logger;
@@ -16,7 +16,7 @@ namespace aggregator.Engine
         }
 
         internal WorkItemTrackingHttpClient Client { get; }
-        internal ILogger Logger { get; }
+        internal IAggregatorLogger Logger { get; }
         internal Tracker Tracker { get; }
     }
 }

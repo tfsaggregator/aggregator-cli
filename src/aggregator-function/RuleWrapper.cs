@@ -20,11 +20,11 @@ namespace aggregator
     internal class RuleWrapper
     {
         private readonly AggregatorConfiguration configuration;
-        private readonly ILogger logger;
+        private readonly IAggregatorLogger logger;
         private readonly string ruleName;
         private readonly string functionDirectory;
 
-        public RuleWrapper(AggregatorConfiguration configuration, ILogger logger, string ruleName, string functionDirectory)
+        public RuleWrapper(AggregatorConfiguration configuration, IAggregatorLogger logger, string ruleName, string functionDirectory)
         {
             this.configuration = configuration;
             this.logger = logger;
@@ -98,9 +98,14 @@ namespace aggregator
             if (result.Exception != null)
             {
                 logger.WriteError($"Rule failed with {result.Exception}");
-            } else
+            }
+            else if(result.ReturnValue != null)
             {
                 logger.WriteInfo($"Rule succeeded with {result.ReturnValue}");
+            }
+            else
+            {
+                logger.WriteInfo($"Rule succeeded, no return value");
             }
 
             logger.WriteVerbose($"Post-execution, save all changes...");
