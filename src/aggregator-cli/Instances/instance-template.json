@@ -91,6 +91,10 @@
               "value": "~2"
             },
             {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "dotnet"
+            },
+            {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
               "value": "6.5.0"
             },
@@ -109,6 +113,10 @@
             {
               "name": "Aggregator_VstsToken",
               "value": "to-be-replaced"
+            },
+            {
+              "name": "AzureWebJobsSecretStorageType",
+              "value": "Files"
             }
           ]
         }
