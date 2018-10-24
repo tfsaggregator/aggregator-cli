@@ -29,18 +29,22 @@ namespace aggregator.cli
 
         private string RuntimePackageFile => "FunctionRuntime.zip";
 
-        internal async Task<bool> UpdateVersion(InstanceName instance, IAzure azure)
+        internal async Task<bool> UpdateVersion(string requiredVersion, InstanceName instance, IAzure azure)
         {
-            logger.WriteVerbose($"Checking runtime package version");
-            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersion();
+            if (string.IsNullOrWhiteSpace(requiredVersion))
+            {
+                requiredVersion = "latest";
+            }
+            logger.WriteVerbose($"Checking runtime package versions in GitHub");
+            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(requiredVersion);
             if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
-            logger.WriteInfo($"Latest Runtime package version is {rel_name} (released on {rel_when}).");
+            var requiredRuntimeVer = SemVersion.Parse(rel_name);
+            logger.WriteInfo($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
 
-            var lastRuntimeVer = SemVersion.Parse(rel_name);
             string localPackageVersion = GetLocalPackageVersion(RuntimePackageFile);
-            var hereRuntimeVer = SemVersion.Parse(localPackageVersion);
-            logger.WriteInfo($"Cached Runtime package version is {hereRuntimeVer}.");
-            if (ShouldUpdate(lastRuntimeVer, hereRuntimeVer))
+            var localRuntimeVer = SemVersion.Parse(localPackageVersion);
+            logger.WriteInfo($"Cached Runtime package version is {localRuntimeVer}.");
+            if (ShouldUpdate(requiredRuntimeVer, localRuntimeVer))
             {
                 logger.WriteVerbose($"Downloading runtime package {rel_name}");
                 await Download(rel_url);
@@ -87,7 +91,7 @@ namespace aggregator.cli
              return lastRuntimeVer > currentCliVer;
         }
 
-        private async Task<(string name, DateTimeOffset? when, string url)> FindVersion(string tag = "latest")
+        private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHub(string tag = "latest")
         {
             var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", infoVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");

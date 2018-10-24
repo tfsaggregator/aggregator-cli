@@ -15,6 +15,9 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [Option("requiredVersion", Required = false, HelpText = "Version of Aggregator Runtime required.")]
+        public string RequiredVersion { get; set; }
+
         internal override async Task<int> RunAsync()
         {
             var context = await Context
@@ -23,7 +26,7 @@ namespace aggregator.cli
                 .Build();
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name);
-            bool ok = await instances.Add(instance, Location);
+            bool ok = await instances.Add(instance, Location, RequiredVersion);
             return ok ? 0 : 1;
         }
     }

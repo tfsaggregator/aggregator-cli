@@ -23,6 +23,9 @@ namespace aggregator.cli
         [Option('e', "enable", SetName = "enable", HelpText = "Enable the rule.")]
         public bool Enable { get; set; }
 
+        [Option("requiredVersion", Required = false, HelpText = "Version of Aggregator Runtime required.")]
+        public string RequiredVersion { get; set; }
+
         internal override async Task<int> RunAsync()
         {
             var context = await Context
@@ -37,7 +40,7 @@ namespace aggregator.cli
             }
             if (!string.IsNullOrEmpty(Update))
             {
-                ok = await rules.UpdateAsync(instance, Name, Update);
+                ok = await rules.UpdateAsync(instance, Name, Update, RequiredVersion);
             }
             return ok ? 0 : 1;
         }

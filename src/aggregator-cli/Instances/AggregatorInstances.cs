@@ -58,7 +58,7 @@ namespace aggregator.cli
             return result;
         }
 
-        internal async Task<bool> Add(InstanceName instance, string location)
+        internal async Task<bool> Add(InstanceName instance, string location, string requiredVersion)
         {
             string rgName = instance.ResourceGroupName;
             if (!await azure.ResourceGroups.ContainAsync(rgName))
@@ -119,7 +119,7 @@ namespace aggregator.cli
 
             // check runtime package
             var package = new FunctionRuntimePackage(logger);
-            bool ok = await package.UpdateVersion(instance, azure);
+            bool ok = await package.UpdateVersion(requiredVersion, instance, azure);
             if (ok)
             {
                 var vstsLogonData = VstsLogon.Load().connection;
