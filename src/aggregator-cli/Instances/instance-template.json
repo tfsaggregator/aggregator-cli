@@ -109,6 +109,10 @@
             {
               "name": "Aggregator_VstsToken",
               "value": "to-be-replaced"
+            },
+            {
+              "name": "AzureWebJobsSecretStorageType",
+              "value": "Files"
             }
           ]
         }
