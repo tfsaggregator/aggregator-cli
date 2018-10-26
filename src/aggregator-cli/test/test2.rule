@@ -10,7 +10,7 @@ if (self.Parent != null)
     }
     else
     {
-        message = "Parent was not closed";
+        message = "Parent was already closed";
     }
     parent.Description = parent.Description + " aggregator was here.";
 }

@@ -108,9 +108,16 @@ namespace aggregator
                 logger.WriteInfo($"Rule succeeded, no return value");
             }
 
-            logger.WriteVerbose($"Post-execution, save all changes...");
-            store.SaveChanges();
-            logger.WriteInfo($"Changes saved to VSTS");
+            logger.WriteVerbose($"Post-execution, save any change...");
+            var saveRes = store.SaveChanges();
+            if (saveRes.created + saveRes.updated > 0)
+            {
+                logger.WriteInfo($"Changes saved to VSTS: {saveRes.created} created, {saveRes.updated} updated.");
+            }
+            else
+            {
+                logger.WriteInfo($"No changes saved to VSTS.");
+            }
 
             return result.ReturnValue;
         }

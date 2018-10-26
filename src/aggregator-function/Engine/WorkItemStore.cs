@@ -61,8 +61,10 @@ namespace aggregator.Engine
             return GetWorkItems(ids);
         }
 
-        internal void SaveChanges()
+        internal (int created, int updated) SaveChanges()
         {
+            int created = 0;
+            int updated = 0;
             foreach (var item in _context.Tracker.NewWorkItems)
             {
                 _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
@@ -71,6 +73,7 @@ namespace aggregator.Engine
                     item.TeamProject,
                     item.WorkItemType
                 );
+                created++;
             }
 
             foreach (var item in _context.Tracker.ChangedWorkItems)
@@ -80,7 +83,9 @@ namespace aggregator.Engine
                     item.Changes,
                     item.Id.Value
                 );
+                updated++;
             }
+            return (created, updated);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace aggregator
             try
             {
                 string rule = context.FunctionName;
-                log.LogInformation($"Welcome to {rule}");
+                log.LogInformation($"Welcome to rule '{rule}'");
             }
             catch (Exception ex)
             {
@@ -86,7 +86,7 @@ namespace aggregator
                 }
                 else
                 {
-                    log.LogInformation($"Returning {execResult}");
+                    log.LogInformation($"Returning '{execResult}' from '{context.FunctionName}'");
 
                     var resp = new HttpResponseMessage(HttpStatusCode.OK)
                     {
@@ -97,7 +97,7 @@ namespace aggregator
             }
             catch (Exception ex)
             {
-                log.LogWarning($"Rule failed: {ex.Message}");
+                log.LogWarning($"Rule '{context.FunctionName}' failed: {ex.Message}");
 
                 var resp = new HttpResponseMessage(HttpStatusCode.NotImplemented)
                 {

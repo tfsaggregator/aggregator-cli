@@ -140,12 +140,21 @@ namespace aggregator.Engine
             }
         }
 
-        public IEnumerable<WorkItemRelationWrapper> Children
+        public IEnumerable<WorkItemRelationWrapper> ChildrenLinks
         {
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
                     .Where(rel => rel.Rel == CoreRelationRefNames.Children);
+            }
+        }
+
+        public IEnumerable<WorkItemWrapper> Children
+        {
+            get
+            {
+                var store = new WorkItemStore(_context);
+                return store.GetWorkItems(ChildrenLinks);
             }
         }
 
@@ -167,13 +176,22 @@ namespace aggregator.Engine
             }
         }
 
-        public WorkItemRelationWrapper Parent
+        public WorkItemRelationWrapper ParentLink
         {
             get
             {
                 return new WorkItemRelationWrapperCollection(this, _item.Relations)
                     .Where(rel => rel.Rel == CoreRelationRefNames.Parent)
                     .SingleOrDefault();
+            }
+        }
+
+        public WorkItemWrapper Parent
+        {
+            get
+            {
+                var store = new WorkItemStore(_context);
+                return store.GetWorkItem(ParentLink);
             }
         }
 
