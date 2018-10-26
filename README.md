@@ -89,3 +89,13 @@ version             | Display version information.
 
 You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-examples.md).
 You can see a few Rule examples in [Rule Examples](doc/rule-examples.md).
+
+## Troubleshooting
+
+### View live Aggregator log messages
+
+In Azure Portal, open the Resource Group hosting the Instance (`aggregator-` followed by name of instance).
+Open the App Service hosting the Instance (instance name followed by `aggregator`).
+Switch to the **Platform features** tab and click on _Log streaming_ like in the picture.
+![Log streaming](doc/log-streaming-from-azure-portal.png)
+

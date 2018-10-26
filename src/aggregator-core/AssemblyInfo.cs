@@ -8,8 +8,8 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("Release")]
 #endif
 [assembly: AssemblyCopyright("TFS Aggregator Team")]
-[assembly: AssemblyFileVersion("0.2.0.0")]
-[assembly: AssemblyInformationalVersion("0.2.0")]
+[assembly: AssemblyFileVersion("0.3.4.0")]
+[assembly: AssemblyInformationalVersion("0.3.4")]
 [assembly: AssemblyProduct("Aggregator CLI")]
 [assembly: AssemblyTitle("Aggregator Core")]
-[assembly: AssemblyVersion("0.2.0.0")]
+[assembly: AssemblyVersion("0.3.4.0")]

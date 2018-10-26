@@ -16,6 +16,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-ADA4-4DD1-A0D9-03635DF9FC56}"
 	ProjectSection(SolutionItems) = preProject
 		..\doc\command-examples.md = ..\doc\command-examples.md
+		..\doc\log-streaming-from-azure-portal.png = ..\doc\log-streaming-from-azure-portal.png
 		..\README.md = ..\README.md
 		..\doc\rule-examples.md = ..\doc\rule-examples.md
 	EndProjectSection
