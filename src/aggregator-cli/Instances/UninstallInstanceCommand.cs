@@ -15,7 +15,7 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
-        [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from VSTS (default is to remove them).")]
+        [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from Azure DevOps (default is to remove them).")]
         public bool Mappings { get; set; }
 
         internal override async Task<int> RunAsync()

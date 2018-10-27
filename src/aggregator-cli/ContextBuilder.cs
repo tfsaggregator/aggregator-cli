@@ -59,12 +59,12 @@ namespace aggregator.cli
 
             if (vstsLogon)
             {
-                logger.WriteVerbose($"Authenticating to VSTS...");
+                logger.WriteVerbose($"Authenticating to Azure DevOps...");
                 var (connection, reason) = VstsLogon.Load();
                 if (reason != LogonResult.Succeeded)
                 {
                     string msg = TranslateResult(reason);
-                    throw new ApplicationException(string.Format(msg, "VSTS", "logon.vsts"));
+                    throw new ApplicationException(string.Format(msg, "Azure DevOps", "logon.ado"));
                 }
                 vsts = await connection.LogonAsync();
                 logger.WriteInfo($"Connected to {vsts.Uri.Host}");

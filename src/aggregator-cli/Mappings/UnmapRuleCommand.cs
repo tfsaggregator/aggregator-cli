@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("unmap.rule", HelpText = "Unmaps an Aggregator Rule from a VSTS Project.")]
+    [Verb("unmap.rule", HelpText = "Unmaps an Aggregator Rule from a Azure DevOps Project.")]
     class UnmapRuleCommand : CommandBase
     {
-        [Option('e', "event", Required = true, HelpText = "VSTS event.")]
+        [Option('e', "event", Required = true, HelpText = "Azure DevOps event.")]
         public string Event { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]

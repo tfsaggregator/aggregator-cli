@@ -26,7 +26,7 @@ namespace aggregator.cli
 
         internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance)
         {
-            logger.WriteVerbose($"Searching aggregator mappings in VSTS...");
+            logger.WriteVerbose($"Searching aggregator mappings in Azure DevOps...");
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync();
             var filteredSubs = subscriptions.Where(s
@@ -145,7 +145,7 @@ namespace aggregator.cli
 
         internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string rule)
         {
-            logger.WriteInfo($"Querying the VSTS subscriptions for rule(s) {instance.PlainName}/{rule}");
+            logger.WriteInfo($"Querying the Azure DevOps subscriptions for rule(s) {instance.PlainName}/{rule}");
             var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync(VstsEvents.PublisherId);
             var ruleSubs = subscriptions

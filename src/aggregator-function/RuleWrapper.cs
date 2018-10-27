@@ -43,19 +43,19 @@ namespace aggregator
             string eventType = data.eventType;
             int workItemId = (eventType != "workitem.updated") ? data.resource.id : data.resource.workItemId;
 
-            logger.WriteVerbose($"Connecting to VSTS using {configuration.VstsTokenType}...");
+            logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.VstsTokenType}...");
             var clientCredentials = default(VssCredentials);
             if (configuration.VstsTokenType == VstsTokenType.PAT)
             {
                 clientCredentials = new VssBasicCredential(configuration.VstsTokenType.ToString(), configuration.VstsToken);
             } else
             {
-                logger.WriteError($"VSTS Token type {configuration.VstsTokenType} not supported!");
+                logger.WriteError($"Azure DevOps Token type {configuration.VstsTokenType} not supported!");
                 throw new ArgumentOutOfRangeException(nameof(configuration.VstsTokenType));
             }
             var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
             await vsts.ConnectAsync();
-            logger.WriteInfo($"Connected to VSTS");
+            logger.WriteInfo($"Connected to Azure DevOps");
             var witClient = vsts.GetClient<WorkItemTrackingHttpClient>();
             var context = new Engine.EngineContext(witClient, logger);
             var store = new Engine.WorkItemStore(context);
@@ -112,11 +112,11 @@ namespace aggregator
             var saveRes = store.SaveChanges();
             if (saveRes.created + saveRes.updated > 0)
             {
-                logger.WriteInfo($"Changes saved to VSTS: {saveRes.created} created, {saveRes.updated} updated.");
+                logger.WriteInfo($"Changes saved to Azure DevOps: {saveRes.created} created, {saveRes.updated} updated.");
             }
             else
             {
-                logger.WriteInfo($"No changes saved to VSTS.");
+                logger.WriteInfo($"No changes saved to Azure DevOps.");
             }
 
             return result.ReturnValue;

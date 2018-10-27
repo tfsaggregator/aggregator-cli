@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("map.rule", HelpText = "Maps an Aggregator Rule to existing VSTS Projects.")]
+    [Verb("map.rule", HelpText = "Maps an Aggregator Rule to existing Azure DevOps Projects.")]
     class MapRuleCommand : CommandBase
     {
-        [Option('p', "project", Required = true, HelpText = "VSTS project name.")]
+        [Option('p', "project", Required = true, HelpText = "Azure DevOps project name.")]
         public string Project { get; set; }
 
-        [Option('e', "event", Required = true, HelpText = "VSTS event.")]
+        [Option('e', "event", Required = true, HelpText = "Azure DevOps event.")]
         public string Event { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]

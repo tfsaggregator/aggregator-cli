@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace aggregator.cli
 {
 
-    [Verb("list.mappings", HelpText = "Lists mappings from existing VSTS Projects to Aggregator Rules.")]
+    [Verb("list.mappings", HelpText = "Lists mappings from existing Azure DevOps Projects to Aggregator Rules.")]
     class ListMappingsCommand : CommandBase
     {
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]

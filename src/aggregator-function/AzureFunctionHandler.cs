@@ -62,7 +62,7 @@ namespace aggregator
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
                 {
-                    error = "Not a good VSTS post..."
+                    error = "Not a good Azure DevOps post..."
                 });
             }
 

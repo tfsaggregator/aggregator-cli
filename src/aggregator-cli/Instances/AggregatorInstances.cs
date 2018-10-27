@@ -125,13 +125,13 @@ namespace aggregator.cli
                 var vstsLogonData = VstsLogon.Load().connection;
                 if (vstsLogonData.Mode == VstsTokenType.PAT)
                 {
-                    logger.WriteVerbose($"Saving VSTS token");
+                    logger.WriteVerbose($"Saving Azure DevOps token");
                     ok = await ChangeAppSettings(instance, vstsLogonData);
-                    logger.WriteInfo($"VSTS token saved");
+                    logger.WriteInfo($"Azure DevOps token saved");
                 }
                 else
                 {
-                    logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
+                    logger.WriteWarning($"Azure DevOps token type {vstsLogonData.Mode} is unsupported");
                     ok = false;
                 }
             }
@@ -178,13 +178,13 @@ namespace aggregator.cli
             var vstsLogonData = VstsLogon.Load().connection;
             if (vstsLogonData.Mode == VstsTokenType.PAT)
             {
-                logger.WriteVerbose($"Saving VSTS token");
+                logger.WriteVerbose($"Saving Azure DevOps token");
                 ok = await ChangeAppSettings(instance, vstsLogonData);
-                logger.WriteInfo($"VSTS token saved");
+                logger.WriteInfo($"Azure DevOps token saved");
             }
             else
             {
-                logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
+                logger.WriteWarning($"Azure DevOps token type {vstsLogonData.Mode} is unsupported");
                 ok = false;
             }
             return ok;
