@@ -5,6 +5,9 @@ using System.Text;
 
 namespace aggregator
 {
+    /// <summary>
+    /// This class tracks the VSTS/AzureDevOps Events exposed both in CLI and Rules
+    /// </summary>
     public class VstsEvents
     {
         // TODO this table should be visible in the help

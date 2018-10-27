@@ -1,5 +1,5 @@
 ﻿#r "../bin/aggregator-function.dll"
-#r "../bin/aggregator-core.dll"
+#r "../bin/aggregator-shared.dll"
 
 using aggregator;
 

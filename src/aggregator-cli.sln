@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-core", "aggregator-core\aggregator-core.csproj", "{B024DF56-E474-4A1A-BEA9-03A87F6D00F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-shared", "aggregator-shared\aggregator-shared.csproj", "{B024DF56-E474-4A1A-BEA9-03A87F6D00F3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-cli", "aggregator-cli\aggregator-cli.csproj", "{FFB65D93-8193-4DA7-820B-3CD4D1872ABA}"
 EndProject

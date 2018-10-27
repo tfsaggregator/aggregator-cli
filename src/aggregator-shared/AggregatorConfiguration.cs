@@ -8,6 +8,9 @@ namespace aggregator
         PAT = 1,
     }
 
+    /// <summary>
+    /// This class tracks the configuration data that CLI writes and Function runtime reads
+    /// </summary>
     public class AggregatorConfiguration
     {
         public AggregatorConfiguration() {}

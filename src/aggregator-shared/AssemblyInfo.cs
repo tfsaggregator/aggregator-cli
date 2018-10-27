@@ -11,5 +11,5 @@ using System.Reflection;
 [assembly: AssemblyFileVersion("0.3.4.0")]
 [assembly: AssemblyInformationalVersion("0.3.4")]
 [assembly: AssemblyProduct("Aggregator CLI")]
-[assembly: AssemblyTitle("Aggregator Core")]
+[assembly: AssemblyTitle("Aggregator Shared")]
 [assembly: AssemblyVersion("0.3.4.0")]

@@ -17,9 +17,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\aggregator-core\aggregator-core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
     <None Update="aggregator-manifest.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -42,5 +39,8 @@
     <None Include="test\test.rule">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
   </ItemGroup>
 </Project>

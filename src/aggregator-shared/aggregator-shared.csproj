@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>aggregator.core</RootNamespace>
+    <RootNamespace>aggregator</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>aggregator-shared</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
