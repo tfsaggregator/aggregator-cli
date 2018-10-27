@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -14,14 +15,84 @@ namespace aggregator.unittests
 {
     internal class FakeWorkItemTrackingHttpClient : WorkItemTrackingHttpClientBase
     {
+        Dictionary<int, Func<WorkItem>> workItemFactories = new Dictionary<int, Func<WorkItem>>();
 
         public FakeWorkItemTrackingHttpClient(Uri baseUrl, VssCredentials credentials)
             : base(baseUrl, credentials)
         {
+            string vase = baseUrl.AbsoluteUri;
+            workItemFactories.Add(1, () => new WorkItem()
+            {
+                Id = 1,
+                Fields = new Dictionary<string, object>()
+                {
+                    { "System.WorkItemType", "User Story" },
+                    { "System.State", "Open" },
+                    { "System.TeamProject", "example-project" },
+                    { "System.Title", "Hello" },
+                },
+                Rev = 12,
+                Relations = new List<WorkItemRelation>()
+                {
+                    new WorkItemRelation
+                    {
+                        Rel = "System.LinkTypes.Hierarchy-Forward",
+                        Url = $"{vase}/example-project/_apis/wit/workItems/42"
+                    },
+                    new WorkItemRelation
+                    {
+                        Rel = "System.LinkTypes.Hierarchy-Forward",
+                        Url = $"{vase}/example-project/_apis/wit/workItems/99"
+                    }
+                }
+            });
+
+            workItemFactories.Add(42, () => new WorkItem()
+            {
+                Id = 42,
+                Fields = new Dictionary<string, object>()
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.State", "Open" },
+                    { "System.TeamProject", "example-project" },
+                    { "System.Title", "Hello" },
+                },
+                Rev = 3,
+                Relations = new List<WorkItemRelation>()
+                {
+                    new WorkItemRelation
+                    {
+                        Rel = "System.LinkTypes.Hierarchy-Reverse",
+                        Url = $"{vase}/example-project/_apis/wit/workItems/1"
+                    }
+                }
+            });
+
+            workItemFactories.Add(99, () => new WorkItem()
+            {
+                Id = 99,
+                Fields = new Dictionary<string, object>()
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.State", "Open" },
+                    { "System.TeamProject", "example-project" },
+                    { "System.Title", "Hello" },
+                },
+                Rev = 3,
+                Relations = new List<WorkItemRelation>()
+                {
+                    new WorkItemRelation
+                    {
+                        Rel = "System.LinkTypes.Hierarchy-Reverse",
+                        Url = $"{vase}/example-project/_apis/wit/workItems/1"
+                    }
+                }
+            });
         }
 
         public override Task<WorkItem> GetWorkItemAsync(int id, IEnumerable<string> fields = null, DateTime? asOf = null, WorkItemExpand? expand = null, object userState = null, CancellationToken cancellationToken = default(CancellationToken))
         {
+            Debug.WriteLine($"FakeWorkItemTrackingHttpClient.GetWorkItemAsync({id})");
             if (expand == null)
             {
                 throw new ArgumentNullException(nameof(expand));
@@ -30,34 +101,42 @@ namespace aggregator.unittests
             {
                 throw new ArgumentException("Must be WorkItemExpand.All", nameof(expand));
             }
-            var t = new Task<WorkItem>(() => new WorkItem()
+
+            if (workItemFactories.ContainsKey(id))
             {
-                Id = id,
-                Fields = new Dictionary<string, object>()
+                var t = new Task<WorkItem>(workItemFactories[id]);
+                t.RunSynchronously();
+                return t;
+            } else
+            {
+                return null;
+            }
+        }
+
+        public override Task<List<WorkItem>> GetWorkItemsAsync(IEnumerable<int> ids, IEnumerable<string> fields = null, DateTime? asOf = null, WorkItemExpand? expand = null, WorkItemErrorPolicy? errorPolicy = null, object userState = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            string sid = ids.Aggregate(string.Empty, (s, i) => s + "," + i.ToString());
+            Debug.WriteLine($"FakeWorkItemTrackingHttpClient.GetWorkItemsAsync({sid})");
+            if (expand == null)
+            {
+                throw new ArgumentNullException(nameof(expand));
+            }
+            if (expand != WorkItemExpand.All)
+            {
+                throw new ArgumentException("Must be WorkItemExpand.All", nameof(expand));
+            }
+
+            var t = new Task<List<WorkItem>>(() => {
+                var result = new List<WorkItem>();
+                foreach (var id in ids)
                 {
-                    { "System.WorkItemType", "Bug" },
-                    { "System.State", "Open" },
-                    { "System.TeamProject", "MyProject" }
-                },
-                Rev = 99,
-                Relations = new List<WorkItemRelation>()
-                {
-                    new WorkItemRelation
+                    if (workItemFactories.ContainsKey(id))
                     {
-                        Rel = "System.LinkTypes.Hierarchy-Reverse",
-                        Url = $"{BaseAddress.AbsoluteUri}/example-project/_apis/wit/workItems/33"
-                    },
-                    new WorkItemRelation
-                    {
-                        Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{BaseAddress.AbsoluteUri}/example-project/_apis/wit/workItems/77"
-                    },
-                    new WorkItemRelation
-                    {
-                        Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{BaseAddress.AbsoluteUri}/example-project/_apis/wit/workItems/78"
+                        var wi = workItemFactories[id]();
+                        result.Add(wi);
                     }
                 }
+                return result;
             });
             t.RunSynchronously();
             return t;

@@ -7,11 +7,10 @@ namespace unittests_ruleng
 {
     public class WorkItemStoreTests
     {
-
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
-            var baseUrl = new Uri("https://dev.azure.com/fake-account/fake-project");
+            var baseUrl = new Uri("https://dev.azure.com/fake-account");
             var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
             var logger = new MockAggregatorLogger();
             var context = new EngineContext(client, logger);
@@ -21,6 +20,23 @@ namespace unittests_ruleng
 
             Assert.NotNull(wi);
             Assert.Equal(42, wi.Id.Value);
+        }
+
+        [Fact]
+        public void GetWorkItems_ByIds_Succeeds()
+        {
+            var baseUrl = new Uri("https://dev.azure.com/fake-account");
+            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
+            var logger = new MockAggregatorLogger();
+            var context = new EngineContext(client, logger);
+            var sut = new WorkItemStore(context);
+
+            var wis = sut.GetWorkItems(new int[] { 42, 99 });
+
+            Assert.NotEmpty(wis);
+            Assert.Equal(2, wis.Count);
+            Assert.Contains(wis, (x) => x.Id.Value == 42);
+            Assert.Contains(wis, (x) => x.Id.Value == 99);
         }
     }
 }

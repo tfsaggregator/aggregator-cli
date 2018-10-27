@@ -71,7 +71,11 @@ namespace aggregator.Engine
                 .GroupBy(k => tracked.ContainsKey(k))
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            var inMemory = tracked.Where(w => groups[true].Contains(w.Key)).Select(w => w.Value.Current);
+            var inMemory = tracked
+                .Where(w => groups.ContainsKey(true)
+                        ? groups[true].Contains(w.Key)
+                        : false)
+                .Select(w => w.Value.Current);
             var loaded = loader(groups[false].Select(k => k.Value));
 
             return inMemory.Union(loaded).ToList();
