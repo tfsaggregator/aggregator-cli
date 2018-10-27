@@ -57,8 +57,8 @@ namespace aggregator
             string eventType = data.eventType;
 
             // sanity check
-            if (!VstsEvents.IsValidEvent(eventType)
-                || data.publisherId != VstsEvents.PublisherId)
+            if (!DevOpsEvents.IsValidEvent(eventType)
+                || data.publisherId != DevOpsEvents.PublisherId)
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
                 {

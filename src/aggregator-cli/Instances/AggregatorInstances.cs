@@ -122,23 +122,23 @@ namespace aggregator.cli
             bool ok = await package.UpdateVersion(requiredVersion, instance, azure);
             if (ok)
             {
-                var vstsLogonData = VstsLogon.Load().connection;
-                if (vstsLogonData.Mode == VstsTokenType.PAT)
+                var devopsLogonData = DevOpsLogon.Load().connection;
+                if (devopsLogonData.Mode == DevOpsTokenType.PAT)
                 {
                     logger.WriteVerbose($"Saving Azure DevOps token");
-                    ok = await ChangeAppSettings(instance, vstsLogonData);
+                    ok = await ChangeAppSettings(instance, devopsLogonData);
                     logger.WriteInfo($"Azure DevOps token saved");
                 }
                 else
                 {
-                    logger.WriteWarning($"Azure DevOps token type {vstsLogonData.Mode} is unsupported");
+                    logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
                     ok = false;
                 }
             }
             return ok;
         }
 
-        internal async Task<bool> ChangeAppSettings(InstanceName instance, VstsLogon vstsLogonData)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, DevOpsLogon devopsLogonData)
         {
             var webFunctionApp = await azure
                 .AppServices
@@ -148,8 +148,8 @@ namespace aggregator.cli
                     instance.FunctionAppName);
             var configuration = new AggregatorConfiguration
             {
-                VstsTokenType = vstsLogonData.Mode,
-                VstsToken = vstsLogonData.Token
+                DevOpsTokenType = devopsLogonData.Mode,
+                DevOpsToken = devopsLogonData.Token
             };
             configuration.Write(webFunctionApp);
             return true;
@@ -175,16 +175,16 @@ namespace aggregator.cli
         internal async Task<bool> SetAuthentication(InstanceName instance, string location)
         {
             bool ok;
-            var vstsLogonData = VstsLogon.Load().connection;
-            if (vstsLogonData.Mode == VstsTokenType.PAT)
+            var devopsLogonData = DevOpsLogon.Load().connection;
+            if (devopsLogonData.Mode == DevOpsTokenType.PAT)
             {
                 logger.WriteVerbose($"Saving Azure DevOps token");
-                ok = await ChangeAppSettings(instance, vstsLogonData);
+                ok = await ChangeAppSettings(instance, devopsLogonData);
                 logger.WriteInfo($"Azure DevOps token saved");
             }
             else
             {
-                logger.WriteWarning($"Azure DevOps token type {vstsLogonData.Mode} is unsupported");
+                logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
                 ok = false;
             }
             return ok;

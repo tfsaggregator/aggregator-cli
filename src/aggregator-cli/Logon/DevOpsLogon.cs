@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    class VstsLogon : LogonDataBase
+    class DevOpsLogon : LogonDataBase
     {
         private static readonly string LogonDataTag = "davs";
 
         public string Url { get; set; }
-        public VstsTokenType Mode { get; set; }
+        public DevOpsTokenType Mode { get; set; }
         public string Token { get; set; }
 
         public string Save()
@@ -21,9 +21,9 @@ namespace aggregator.cli
             return new LogonDataStore(LogonDataTag).Save(this);
         }
 
-        public static (VstsLogon connection, LogonResult reason) Load()
+        public static (DevOpsLogon connection, LogonResult reason) Load()
         {
-            var result = new LogonDataStore(LogonDataTag).Load<VstsLogon>();
+            var result = new LogonDataStore(LogonDataTag).Load<DevOpsLogon>();
             return (result.connection, result.reason);
         }
 
@@ -32,10 +32,10 @@ namespace aggregator.cli
             var clientCredentials = default(VssCredentials);
             switch (Mode)
             {
-                case VstsTokenType.Integrated:
+                case DevOpsTokenType.Integrated:
                     clientCredentials = new VssCredentials();
                     break;
-                case VstsTokenType.PAT:
+                case DevOpsTokenType.PAT:
                     clientCredentials=new VssBasicCredential("pat", Token);
                     break;
                 default:

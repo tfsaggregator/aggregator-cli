@@ -7,7 +7,7 @@ namespace aggregator.cli
     /*
     Ideas for verbs and options:
 
-    logon.vsts --url URL --mode MODE --token TOKEN --slot SLOT
+    logon.ado --url URL --mode MODE --token TOKEN --slot SLOT
         to use different credentials
     configure.instance --slot SLOT --swap --avzone ZONE
         add a deployment slot with the option to specify an availability zone, the swap option will set the new slot as primary
@@ -32,7 +32,7 @@ namespace aggregator.cli
                 settings.CaseInsensitiveEnumValues = true;
             });
             var parserResult = parser.ParseArguments(args,
-                typeof(LogonAzureCommand), typeof(LogonVstsCommand),
+                typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
                 typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand), typeof(ConfigureRuleCommand),
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
@@ -40,7 +40,7 @@ namespace aggregator.cli
             int rc = -1;
             parserResult
                 .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())
-                .WithParsed<LogonVstsCommand>(cmd => rc = cmd.Run())
+                .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run())
                 .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run())
                 .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run())

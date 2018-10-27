@@ -22,10 +22,10 @@ namespace aggregator.cli
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon()
+                .WithDevOpsLogon()
                 .Build();
             var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
+            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
             bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Rule);
             return ok ? 0 : 1;
         }

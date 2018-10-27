@@ -25,10 +25,10 @@ namespace aggregator.cli
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon()
+                .WithDevOpsLogon()
                 .Build();
-            var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
-            bool ok = VstsEvents.IsValidEvent(Event);
+            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
+            bool ok = DevOpsEvents.IsValidEvent(Event);
             if (!ok)
             {
                 context.Logger.WriteError($"Invalid event type.");

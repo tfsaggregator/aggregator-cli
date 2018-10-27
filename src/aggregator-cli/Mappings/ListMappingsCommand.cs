@@ -16,10 +16,10 @@ namespace aggregator.cli
         internal override async Task<int> RunAsync()
         {
             var context = await Context
-                .WithVstsLogon()
+                .WithDevOpsLogon()
                 .Build();
             var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(context.Vsts, /*HACK*/null, context.Logger);
+            var mappings = new AggregatorMappings(context.Devops, /*HACK*/null, context.Logger);
             bool any = false;
             foreach (var item in await mappings.ListAsync(instance))
             {

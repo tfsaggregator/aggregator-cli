@@ -2,7 +2,7 @@
 
 namespace aggregator
 {
-    public enum VstsTokenType
+    public enum DevOpsTokenType
     {
         Integrated = 0,
         PAT = 1,
@@ -18,9 +18,9 @@ namespace aggregator
         static public AggregatorConfiguration Read(Microsoft.Extensions.Configuration.IConfiguration config)
         {
             var ac = new AggregatorConfiguration();
-            Enum.TryParse(config["Aggregator_VstsTokenType"], out VstsTokenType vtt);
-            ac.VstsTokenType = vtt;
-            ac.VstsToken = config["Aggregator_VstsToken"];
+            Enum.TryParse(config["Aggregator_VstsTokenType"], out DevOpsTokenType vtt);
+            ac.DevOpsTokenType = vtt;
+            ac.DevOpsToken = config["Aggregator_VstsToken"];
             return ac;
         }
 
@@ -28,12 +28,12 @@ namespace aggregator
         {
             webApp
                 .Update()
-                .WithAppSetting("Aggregator_VstsTokenType", VstsTokenType.ToString())
-                .WithAppSetting("Aggregator_VstsToken", VstsToken)
+                .WithAppSetting("Aggregator_VstsTokenType", DevOpsTokenType.ToString())
+                .WithAppSetting("Aggregator_VstsToken", DevOpsToken)
                 .Apply();
         }
 
-        public VstsTokenType VstsTokenType { get; set; }
-        public string VstsToken { get; set; }
+        public DevOpsTokenType DevOpsTokenType { get; set; }
+        public string DevOpsToken { get; set; }
     }
 }

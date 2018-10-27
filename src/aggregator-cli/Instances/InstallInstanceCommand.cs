@@ -22,7 +22,7 @@ namespace aggregator.cli
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon() // need the token, so we can save it in the app settings
+                .WithDevOpsLogon() // need the token, so we can save it in the app settings
                 .Build();
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name);

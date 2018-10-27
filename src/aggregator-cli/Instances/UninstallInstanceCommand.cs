@@ -22,7 +22,7 @@ namespace aggregator.cli
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon()
+                .WithDevOpsLogon()
                 .Build();
 
             var instance = new InstanceName(Name);
@@ -30,7 +30,7 @@ namespace aggregator.cli
             bool ok;
             if (!Mappings)
             {
-                var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
+                var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
                 ok = await mappings.RemoveInstanceAsync(instance);
             }
 

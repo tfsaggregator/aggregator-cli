@@ -11,8 +11,8 @@ namespace unittests_ruleng
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
-            const string baseUrl = "https://dev.azure.com/fake-account/fake-project";
-            var client = new FakeWorkItemTrackingHttpClient(new Uri(baseUrl), null);
+            var baseUrl = new Uri("https://dev.azure.com/fake-account/fake-project");
+            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
             var logger = new MockAggregatorLogger();
             var context = new EngineContext(client, logger);
             var sut = new WorkItemStore(context);

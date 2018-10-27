@@ -7,12 +7,11 @@ namespace unittests_ruleng
 {
     public class FakeWorkItemTrackingHttpClientTests
     {
-        const string baseUrl = "https://dev.azure.com/fake-account/fake-project";
-
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
-            var sut = new FakeWorkItemTrackingHttpClient(new Uri(baseUrl), null);
+            var baseUrl = new Uri("https://dev.azure.com/fake-account/fake-project");
+            var sut = new FakeWorkItemTrackingHttpClient(baseUrl, null);
 
             var wi = sut.GetWorkItemAsync(42, expand: WorkItemExpand.All).Result;
 

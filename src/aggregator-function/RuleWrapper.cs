@@ -43,20 +43,20 @@ namespace aggregator
             string eventType = data.eventType;
             int workItemId = (eventType != "workitem.updated") ? data.resource.id : data.resource.workItemId;
 
-            logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.VstsTokenType}...");
+            logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.DevOpsTokenType}...");
             var clientCredentials = default(VssCredentials);
-            if (configuration.VstsTokenType == VstsTokenType.PAT)
+            if (configuration.DevOpsTokenType == DevOpsTokenType.PAT)
             {
-                clientCredentials = new VssBasicCredential(configuration.VstsTokenType.ToString(), configuration.VstsToken);
+                clientCredentials = new VssBasicCredential(configuration.DevOpsTokenType.ToString(), configuration.DevOpsToken);
             } else
             {
-                logger.WriteError($"Azure DevOps Token type {configuration.VstsTokenType} not supported!");
-                throw new ArgumentOutOfRangeException(nameof(configuration.VstsTokenType));
+                logger.WriteError($"Azure DevOps Token type {configuration.DevOpsTokenType} not supported!");
+                throw new ArgumentOutOfRangeException(nameof(configuration.DevOpsTokenType));
             }
-            var vsts = new VssConnection(new Uri(collectionUrl), clientCredentials);
-            await vsts.ConnectAsync();
+            var devops = new VssConnection(new Uri(collectionUrl), clientCredentials);
+            await devops.ConnectAsync();
             logger.WriteInfo($"Connected to Azure DevOps");
-            var witClient = vsts.GetClient<WorkItemTrackingHttpClient>();
+            var witClient = devops.GetClient<WorkItemTrackingHttpClient>();
             var context = new Engine.EngineContext(witClient, logger);
             var store = new Engine.WorkItemStore(context);
             var self = store.GetWorkItem(workItemId);

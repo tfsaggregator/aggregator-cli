@@ -8,7 +8,7 @@ namespace aggregator
     /// <summary>
     /// This class tracks the VSTS/AzureDevOps Events exposed both in CLI and Rules
     /// </summary>
-    public class VstsEvents
+    public class DevOpsEvents
     {
         // TODO this table should be visible in the help
         static string[] validValues = new string[] {
