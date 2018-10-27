@@ -61,7 +61,7 @@ namespace aggregator.Engine
             return GetWorkItems(ids);
         }
 
-        internal (int created, int updated) SaveChanges()
+        public (int created, int updated) SaveChanges()
         {
             int created = 0;
             int updated = 0;

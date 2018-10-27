@@ -4,7 +4,7 @@ using System.Text;
 
 namespace aggregator
 {
-    interface IAggregatorLogger
+    public interface IAggregatorLogger
     {
         void WriteVerbose(string message);
 

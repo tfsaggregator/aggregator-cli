@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-shared", "aggregator-shared\aggregator-shared.csproj", "{B024DF56-E474-4A1A-BEA9-03A87F6D00F3}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-ruleng", "aggregator-ruleng\aggregator-ruleng.csproj", "{87B7E8EE-7C3B-450A-A319-18E2BA7D35D4}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-cli", "aggregator-cli\aggregator-cli.csproj", "{FFB65D93-8193-4DA7-820B-3CD4D1872ABA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-core", "unittests-core\unittests-core.csproj", "{4D4361EC-F361-4E63-8CAF-6913EF42ED6D}"
@@ -47,6 +49,10 @@ Global
 		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87B7E8EE-7C3B-450A-A319-18E2BA7D35D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87B7E8EE-7C3B-450A-A319-18E2BA7D35D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87B7E8EE-7C3B-450A-A319-18E2BA7D35D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87B7E8EE-7C3B-450A-A319-18E2BA7D35D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
