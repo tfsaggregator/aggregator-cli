@@ -1,6 +1,8 @@
 # aggregator-cli
 
-![](https://tfsaggregator.visualstudio.com/_apis/public/build/definitions/1cca877b-3e26-4880-b5b8-79e4b10fbfb4/16/badge)
+[![Build status: master](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=16)
+[![Build status](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=16)
+
 
 This is the successor to TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.

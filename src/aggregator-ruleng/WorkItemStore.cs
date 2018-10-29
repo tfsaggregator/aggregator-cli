@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace aggregator.Engine
 {
@@ -61,16 +62,32 @@ namespace aggregator.Engine
             return GetWorkItems(ids);
         }
 
-        public (int created, int updated) SaveChanges()
+        public WorkItemWrapper NewWorkItem(string workItemType)
+        {
+            var item = new WorkItem()
+            {
+                Fields = new Dictionary<string, object>() {
+                    { CoreFieldRefNames.WorkItemType, workItemType },
+                    { CoreFieldRefNames.TeamProject, _context.ProjectId.ToString() }
+                },
+                Relations = new List<WorkItemRelation>(),
+                Links = new Microsoft.VisualStudio.Services.WebApi.ReferenceLinks()
+            };
+            var wrapper = new WorkItemWrapper(_context, item);
+            _context.Logger.WriteVerbose($"Made new workitem with temporary id {wrapper.Id.Value}");
+            return wrapper;
+        }
+
+        public async Task<(int created, int updated)> SaveChanges()
         {
             int created = 0;
             int updated = 0;
             foreach (var item in _context.Tracker.NewWorkItems)
             {
-                _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
-                _context.Client.CreateWorkItemAsync(
+                _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {_context.ProjectId}");
+                var wi = await _context.Client.CreateWorkItemAsync(
                     item.Changes,
-                    item.TeamProject,
+                    _context.ProjectId,
                     item.WorkItemType
                 );
                 created++;
@@ -79,7 +96,7 @@ namespace aggregator.Engine
             foreach (var item in _context.Tracker.ChangedWorkItems)
             {
                 _context.Logger.WriteInfo($"Updating workitem {item.Id}");
-                _context.Client.UpdateWorkItemAsync(
+                var wi = await _context.Client.UpdateWorkItemAsync(
                     item.Changes,
                     item.Id.Value
                 );

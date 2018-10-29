@@ -15,13 +15,13 @@ namespace aggregator.unittests
 {
     internal class FakeWorkItemTrackingHttpClient : WorkItemTrackingHttpClientBase
     {
-        Dictionary<int, Func<WorkItem>> workItemFactories = new Dictionary<int, Func<WorkItem>>();
+        Dictionary<int, Func<WorkItem>> workItemFactory = new Dictionary<int, Func<WorkItem>>();
 
         public FakeWorkItemTrackingHttpClient(Uri baseUrl, VssCredentials credentials)
             : base(baseUrl, credentials)
         {
-            string vase = baseUrl.AbsoluteUri;
-            workItemFactories.Add(1, () => new WorkItem()
+            string workItemsBaseUrl = $"{baseUrl.AbsoluteUri}/example-project/_apis/wit/workItems";
+            workItemFactory.Add(1, () => new WorkItem()
             {
                 Id = 1,
                 Fields = new Dictionary<string, object>()
@@ -37,17 +37,18 @@ namespace aggregator.unittests
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{vase}/example-project/_apis/wit/workItems/42"
+                        Url = $"{workItemsBaseUrl}/42"
                     },
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{vase}/example-project/_apis/wit/workItems/99"
+                        Url = $"{workItemsBaseUrl}/99"
                     }
-                }
+                },
+                Url = $"{workItemsBaseUrl}/1"
             });
 
-            workItemFactories.Add(42, () => new WorkItem()
+            workItemFactory.Add(42, () => new WorkItem()
             {
                 Id = 42,
                 Fields = new Dictionary<string, object>()
@@ -63,12 +64,13 @@ namespace aggregator.unittests
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Reverse",
-                        Url = $"{vase}/example-project/_apis/wit/workItems/1"
+                        Url = $"{workItemsBaseUrl}/1"
                     }
-                }
+                },
+                Url = $"{workItemsBaseUrl}/42"
             });
 
-            workItemFactories.Add(99, () => new WorkItem()
+            workItemFactory.Add(99, () => new WorkItem()
             {
                 Id = 99,
                 Fields = new Dictionary<string, object>()
@@ -84,9 +86,10 @@ namespace aggregator.unittests
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Reverse",
-                        Url = $"{vase}/example-project/_apis/wit/workItems/1"
+                        Url = $"{workItemsBaseUrl}/1"
                     }
-                }
+                },
+                Url = $"{workItemsBaseUrl}/99"
             });
         }
 
@@ -102,9 +105,9 @@ namespace aggregator.unittests
                 throw new ArgumentException("Must be WorkItemExpand.All", nameof(expand));
             }
 
-            if (workItemFactories.ContainsKey(id))
+            if (workItemFactory.ContainsKey(id))
             {
-                var t = new Task<WorkItem>(workItemFactories[id]);
+                var t = new Task<WorkItem>(workItemFactory[id]);
                 t.RunSynchronously();
                 return t;
             } else
@@ -130,9 +133,9 @@ namespace aggregator.unittests
                 var result = new List<WorkItem>();
                 foreach (var id in ids)
                 {
-                    if (workItemFactories.ContainsKey(id))
+                    if (workItemFactory.ContainsKey(id))
                     {
-                        var wi = workItemFactories[id]();
+                        var wi = workItemFactory[id]();
                         result.Add(wi);
                     }
                 }
@@ -196,6 +199,31 @@ namespace aggregator.unittests
                 }
             });
 
+            t.RunSynchronously();
+            return t;
+        }
+
+        static int newId = 100;
+        public override Task<WorkItem> CreateWorkItemAsync(JsonPatchDocument document, Guid project, string type, bool? validateOnly = null, bool? bypassRules = null, bool? suppressNotifications = null, object userState = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            string workItemsBaseUrl = $"{BaseAddress.AbsoluteUri}/example-project/_apis/wit/workItems";
+
+            workItemFactory.Add(newId, () => new WorkItem()
+            {
+                Id = newId,
+                Fields = new Dictionary<string, object>()
+                {
+                    { "System.WorkItemType", type },
+                    { "System.State", "New" },
+                    { "System.TeamProject", "example-project" },
+                    { "System.Title", "Hello" },
+                },
+                Rev = 1,
+                Relations = new List<WorkItemRelation>(),
+                Url = $"{workItemsBaseUrl}/{newId}"
+            });
+
+            var t = new Task<WorkItem>(workItemFactory[newId]);
             t.RunSynchronously();
             return t;
         }

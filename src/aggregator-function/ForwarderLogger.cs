@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace aggregator
 {
+    /// <summary>
+    /// Forwards to Azure Function logging subsystem
+    /// </summary>
     internal class ForwarderLogger : IAggregatorLogger
     {
         private Microsoft.Extensions.Logging.ILogger log;

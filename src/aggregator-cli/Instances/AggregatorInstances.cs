@@ -71,7 +71,7 @@ namespace aggregator.cli
                 logger.WriteInfo($"Resource group {rgName} created.");
             }
 
-            // TODO the template should create a Storage account and/or a Key Vault
+            // IDEA the template should create a Storage account and/or a Key Vault
             var resourceName = "aggregator.cli.Instances.instance-template.json";
             string armTemplateString;
             var assembly = Assembly.GetExecutingAssembly();

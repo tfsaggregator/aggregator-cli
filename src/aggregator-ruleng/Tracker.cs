@@ -22,10 +22,16 @@ namespace aggregator.Engine
             }
         }
 
+        private int watermark = -1;
         IDictionary<WorkItemId<int>, TrackedWrapper> tracked = new Dictionary<WorkItemId<int>, TrackedWrapper>();
 
         internal Tracker()
         {
+        }
+
+        internal int GetNextWatermark()
+        {
+            return watermark--;
         }
 
         internal void TrackExisting(WorkItemWrapper workItemWrapper)
@@ -88,7 +94,7 @@ namespace aggregator.Engine
 
         internal IEnumerable<WorkItemWrapper> NewWorkItems
             => tracked
-            .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsDirty && w.Value.Current.IsNew)
+            .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsNew)
             .Select(w=>w.Value.Current);
 
         internal IEnumerable<WorkItemWrapper> ChangedWorkItems

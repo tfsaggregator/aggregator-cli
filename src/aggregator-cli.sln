@@ -21,9 +21,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-A
 		..\doc\log-streaming-from-azure-portal.png = ..\doc\log-streaming-from-azure-portal.png
 		..\README.md = ..\README.md
 		..\doc\rule-examples.md = ..\doc\rule-examples.md
+		rule-language.md = rule-language.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "unittests-ruleng", "unittests-ruleng\unittests-ruleng.csproj", "{19AE3176-D15F-4A2B-AB49-1B9DE6EA3EE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-ruleng", "unittests-ruleng\unittests-ruleng.csproj", "{19AE3176-D15F-4A2B-AB49-1B9DE6EA3EE4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

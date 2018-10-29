@@ -32,16 +32,12 @@ namespace aggregator
             this.functionDirectory = functionDirectory;
         }
 
-        internal async Task<string> Execute(string aggregatorVersion, dynamic data)
+        internal async Task<string> Execute(dynamic data)
         {
-            if (string.IsNullOrEmpty(aggregatorVersion))
-            {
-                aggregatorVersion = "0.1";
-            }
-
             string collectionUrl = data.resourceContainers.collection.baseUrl;
             string eventType = data.eventType;
             int workItemId = (eventType != "workitem.updated") ? data.resource.id : data.resource.workItemId;
+            Guid teamProject = data.resourceContainers.project.id;
 
             logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.DevOpsTokenType}...");
             var clientCredentials = default(VssCredentials);
@@ -53,6 +49,7 @@ namespace aggregator
                 logger.WriteError($"Azure DevOps Token type {configuration.DevOpsTokenType} not supported!");
                 throw new ArgumentOutOfRangeException(nameof(configuration.DevOpsTokenType));
             }
+
             using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
             {
                 await devops.ConnectAsync();
@@ -67,11 +64,11 @@ namespace aggregator
                     }
 
                     logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-                    string ruleCode = File.ReadAllText(ruleFilePath);
+                    string[] ruleCode = File.ReadAllLines(ruleFilePath);
 
                     var engine = new Engine.RuleEngine(logger, ruleCode);
 
-                    return await engine.ExecuteAsync(collectionUrl, workItemId, witClient);
+                    return await engine.ExecuteAsync(collectionUrl, teamProject, workItemId, witClient);
                 }
             }
         }

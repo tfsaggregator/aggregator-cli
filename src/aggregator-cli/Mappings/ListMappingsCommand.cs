@@ -19,7 +19,8 @@ namespace aggregator.cli
                 .WithDevOpsLogon()
                 .Build();
             var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(context.Devops, /*HACK*/null, context.Logger);
+            // HACK we pass null as the next calls do not use the Azure connection 
+            var mappings = new AggregatorMappings(context.Devops, null, context.Logger);
             bool any = false;
             foreach (var item in await mappings.ListAsync(instance))
             {

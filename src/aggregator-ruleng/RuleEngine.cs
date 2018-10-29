@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -9,36 +8,74 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 
 namespace aggregator.Engine
 {
+    public enum EngineState
+    {
+        Unknown,
+        Success,
+        Error
+    }
+
+    /// <summary>
+    /// Entry point to execute rules, indipendent of environment
+    /// </summary>
     public class RuleEngine
     {
         private readonly IAggregatorLogger logger;
         private readonly Script<string> roslynScript;
 
-        public RuleEngine(IAggregatorLogger logger, string ruleCode)
+        public RuleEngine(IAggregatorLogger logger, string[] ruleCode)
         {
+            State = EngineState.Unknown;
+
             this.logger = logger;
 
-            var types = new List<Type>() {
+            var directives = new DirectivesParser(logger, ruleCode);
+            if (!directives.Parse())
+            {
+                State = EngineState.Error;
+                return;
+            }
+
+            if (directives.Language == DirectivesParser.Languages.Csharp)
+            {
+                var types = new List<Type>() {
                         typeof(object),
                         typeof(System.Linq.Enumerable),
                         typeof(System.Collections.Generic.CollectionExtensions)
                     };
-            var references = types.ConvertAll(t => t.Assembly).Distinct();
+                var references = types.ConvertAll(t => t.Assembly).Distinct();
 
-            var scriptOptions = ScriptOptions.Default
-                .WithEmitDebugInformation(true)
-                .WithReferences(references)
-                // Add namespaces
-                .WithImports("System", "System.Linq", "System.Collections.Generic");
-            this.roslynScript = CSharpScript.Create<string>(
-                code: ruleCode,
-                options: scriptOptions,
-                globalsType: typeof(Globals));
+                var scriptOptions = ScriptOptions.Default
+                    .WithEmitDebugInformation(true)
+                    .WithReferences(references)
+                    // Add namespaces
+                    .WithImports("System", "System.Linq", "System.Collections.Generic");
+
+                this.roslynScript = CSharpScript.Create<string>(
+                    code: directives.GetRuleCode(),
+                    options: scriptOptions,
+                    globalsType: typeof(Globals));
+            }
+            else
+            {
+                logger.WriteError($"Cannot execute rule: language is not supported.");
+                State = EngineState.Error;
+            }
         }
 
-        public async Task<string> ExecuteAsync(string collectionUrl, int workItemId, WorkItemTrackingHttpClientBase witClient)
+        /// <summary>
+        /// State is used by unit tests
+        /// </summary>
+        public EngineState State { get; private set; }
+
+        public async Task<string> ExecuteAsync(string collectionUrl, Guid projectId, int workItemId, WorkItemTrackingHttpClientBase witClient)
         {
-            var context = new EngineContext(witClient, logger);
+            if (State == EngineState.Error)
+            {
+                return string.Empty;
+            }
+
+            var context = new EngineContext(witClient, projectId, logger);
             var store = new WorkItemStore(context);
             var self = store.GetWorkItem(workItemId);
             logger.WriteInfo($"Initial WorkItem {workItemId} retrieved from {collectionUrl}");
@@ -54,6 +91,7 @@ namespace aggregator.Engine
             if (result.Exception != null)
             {
                 logger.WriteError($"Rule failed with {result.Exception}");
+                State = EngineState.Error;
             }
             else if (result.ReturnValue != null)
             {
@@ -63,9 +101,10 @@ namespace aggregator.Engine
             {
                 logger.WriteInfo($"Rule succeeded, no return value");
             }
+            State = EngineState.Success;
 
             logger.WriteVerbose($"Post-execution, save any change...");
-            var saveRes = store.SaveChanges();
+            var saveRes = await store.SaveChanges();
             if (saveRes.created + saveRes.updated > 0)
             {
                 logger.WriteInfo($"Changes saved to Azure DevOps: {saveRes.created} created, {saveRes.updated} updated.");

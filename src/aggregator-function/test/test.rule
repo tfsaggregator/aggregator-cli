@@ -1,17 +1,10 @@
-﻿/*
-if (self.Parent != null)
-{
-    var parent = store.GetWorkItem(self.Parent);
-    var children = store.GetWorkItems(parent.Children);
-    if (children.All(c => c.State == "Closed"))
-    {
-        parent.State = "Closed";
-    }
-    parent.Description = parent.Description + " aggregator was here.";
-}
-return $"Hello { self.WorkItemType } #{ self.Id } - { self.Title }!";
+﻿.lang=C#
+
+/*
 return self.PreviousRevision.PreviousRevision.Description;
 */
+
+/*
 if (self.ParentLink != null)
 {
     var parent = self.Parent;
@@ -19,11 +12,15 @@ if (self.ParentLink != null)
     if (children.All(c => c.State == "Closed"))
     {
         parent.State = "Closed";
-		return "Had to close parent";
+        return "Had to close parent";
     } else {
-		return "Not all children are closed";
-	}
+        return "Not all children are closed";
+    }
     //parent.Description = parent.Description + " aggregator was here.";
 } else {
-	return "No parent!";
+    return "No parent!";
 }
+*/
+
+var newChild = store.NewWorkItem("Task");
+newChild.Title = "Brand new";

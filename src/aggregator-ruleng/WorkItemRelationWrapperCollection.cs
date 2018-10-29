@@ -43,10 +43,9 @@ namespace aggregator.Engine
                 {
                     rel = item.Rel,
                     url = item.Url,
-                    attributes = new
-                    {
-                        comment = item.Attributes["comment"]
-                    }
+                    attributes = item.Attributes != null && item.Attributes.ContainsKey("comment")
+                        ? new { comment = item.Attributes["comment"] }
+                        : null
                 }
             });
 

@@ -6,10 +6,8 @@ namespace aggregator.Engine
 {
     public class TemporaryWorkItemId : WorkItemId<int>
     {
-        private static int watermark = -1;
-
-        public TemporaryWorkItemId()
-            : base(watermark--)
+        internal TemporaryWorkItemId(Tracker tracker)
+            : base(tracker.GetNextWatermark())
         {
         }
     }

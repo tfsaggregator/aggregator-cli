@@ -33,13 +33,7 @@ namespace aggregator.Engine
             }
             else
             {
-                Id = new TemporaryWorkItemId();
-                Changes.Add(new JsonPatchOperation()
-                {
-                    Operation = Operation.Test,
-                    Path = "/id",
-                    Value = Id
-                });
+                Id = new TemporaryWorkItemId(_context.Tracker);
                 _context.Tracker.TrackNew(this);
             }
         }
@@ -48,19 +42,13 @@ namespace aggregator.Engine
         {
             _context = context;
 
-            Id = new TemporaryWorkItemId();
+            Id = new TemporaryWorkItemId(_context.Tracker);
 
             _item = new WorkItem();
             _item.Fields[CoreFieldRefNames.TeamProject] = project;
             _item.Fields[CoreFieldRefNames.WorkItemType] = type;
             _item.Fields[CoreFieldRefNames.Id] = Id.Value;
 
-            Changes.Add(new JsonPatchOperation()
-            {
-                Operation = Operation.Test,
-                Path = "/id",
-                Value = Id
-            });
             _context.Tracker.TrackNew(this);
         }
 
@@ -68,19 +56,13 @@ namespace aggregator.Engine
         {
             _context = context;
 
-            Id = new TemporaryWorkItemId();
+            Id = new TemporaryWorkItemId(_context.Tracker);
 
             _item = new WorkItem();
             _item.Fields[CoreFieldRefNames.TeamProject] = template.TeamProject;
             _item.Fields[CoreFieldRefNames.WorkItemType] = type;
             _item.Fields[CoreFieldRefNames.Id] = Id.Value;
 
-            Changes.Add(new JsonPatchOperation()
-            {
-                Operation = Operation.Test,
-                Path = "/id",
-                Value = Id
-            });
             _context.Tracker.TrackNew(this);
         }
 
@@ -193,6 +175,14 @@ namespace aggregator.Engine
                 var store = new WorkItemStore(_context);
                 return store.GetWorkItem(ParentLink);
             }
+        }
+
+        public void AddChild(WorkItemWrapper newChild)
+        {
+            var rel = new WorkItemRelation { Url = newChild.Url, Rel = CoreRelationRefNames.Children };
+            _item.Relations.Add(rel);
+            var rels = new WorkItemRelationWrapperCollection(this, _item.Relations);
+            rels.Add(new WorkItemRelationWrapper(this, rel));
         }
 
         public WorkItemId<int> Id
@@ -393,13 +383,26 @@ namespace aggregator.Engine
                 throw new InvalidOperationException("Work item is read-only.");
             }
 
-            _item.Fields[field] = value;
-            Changes.Add(new JsonPatchOperation()
+            if (_item.Fields.ContainsKey(field))
             {
-                Operation = Operation.Add,
-                Path = "/fields/" + field,
-                Value = value
-            });
+                _item.Fields[field] = value;
+                Changes.Add(new JsonPatchOperation()
+                {
+                    Operation = Operation.Replace,
+                    Path = "/fields/" + field,
+                    Value = value
+                });
+            }
+            else
+            {
+                _item.Fields.Add(field, value);
+                Changes.Add(new JsonPatchOperation()
+                {
+                    Operation = Operation.Add,
+                    Path = "/fields/" + field,
+                    Value = value
+                });
+            }
 
             IsDirty = true;
         }

@@ -23,7 +23,7 @@ namespace aggregator.Engine
             {
                 Rel = type,
                 Url = url,
-                Attributes = { { "comment", comment } }
+                Attributes = new Dictionary<string,object> { { "comment", comment } }
             };
         }
 
