@@ -72,6 +72,19 @@ namespace aggregator.cli
             // check if the subscription already exists and bail out
             var query = new SubscriptionsQuery {
                 PublisherId = DevOpsEvents.PublisherId,
+                PublisherInputFilters= new InputFilter[] {
+                    new InputFilter {
+                        Conditions = new List<InputFilterCondition> {
+                            new InputFilterCondition
+                            {
+                                InputId = "projectId",
+                                InputValue  = project.Id.ToString(),
+                                Operator = InputFilterOperator.Equals,
+                                CaseSensitive = false
+                            }
+                        }
+                    }
+                },
                 ConsumerInputFilters = new InputFilter[] {
                     new InputFilter {
                         Conditions = new List<InputFilterCondition> {

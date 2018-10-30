@@ -7,6 +7,15 @@ namespace aggregator.cli
     /*
     Ideas for verbs and options:
 
+    --resourceGroup RESOURCEGROUP 
+        wherever you specify the Resource Group for the instance
+    
+    set.defaults --instance INSTANCE --resourceGroup RESOURCEGROUP --project PROJECT
+        mappings from a project
+
+    list.mappings --project PROJECT
+        mappings from a project
+
     logon.ado --url URL --mode MODE --token TOKEN --slot SLOT
         to use different credentials
     configure.instance --slot SLOT --swap --avzone ZONE
@@ -15,9 +24,10 @@ namespace aggregator.cli
         use `azure.AppServices.WebApps.GetByResourceGroup(instance.ResourceGroupName,instance.FunctionAppName).OutboundIPAddresses`
     configure.rule --verbose --instance INSTANCE --name RULE --file FILE --slot SLOT
         change rule code on a single deployment slot
-    invoke.rule --verbose --local --ruleSource FILE --event EVENT --workItemId WORK_ITEM_ID
+        
+    invoke.rule --verbose --dryrun --local --ruleSource FILE --event EVENT --workItemId WORK_ITEM_ID
         runs rule code locally
-    invoke.rule --verbose --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --slot SLOT
+    invoke.rule --verbose --dryrun --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --slot SLOT
         emulates the event on the rule
 
     */
