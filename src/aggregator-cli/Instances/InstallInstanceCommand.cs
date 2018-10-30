@@ -15,6 +15,9 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
+        public string ResourceGroup { get; set; }
+
         [Option("requiredVersion", Required = false, HelpText = "Version of Aggregator Runtime required.")]
         public string RequiredVersion { get; set; }
 
@@ -25,7 +28,7 @@ namespace aggregator.cli
                 .WithDevOpsLogon() // need the token, so we can save it in the app settings
                 .Build();
             var instances = new AggregatorInstances(context.Azure, context.Logger);
-            var instance = new InstanceName(Name);
+            var instance = new InstanceName(Name, ResourceGroup);
             bool ok = await instances.Add(instance, Location, RequiredVersion);
             return ok ? 0 : 1;
         }

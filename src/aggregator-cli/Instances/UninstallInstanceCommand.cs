@@ -15,6 +15,9 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        public string ResourceGroup { get; set; }
+
         [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from Azure DevOps (default is to remove them).")]
         public bool Mappings { get; set; }
 
@@ -25,7 +28,7 @@ namespace aggregator.cli
                 .WithDevOpsLogon()
                 .Build();
 
-            var instance = new InstanceName(Name);
+            var instance = new InstanceName(Name, ResourceGroup);
 
             bool ok;
             if (!Mappings)

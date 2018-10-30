@@ -58,6 +58,20 @@ namespace aggregator.cli
             return result;
         }
 
+        internal async Task<IEnumerable<string>> ListInResourceGroupAsync(string resourceGroup)
+        {
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup);
+
+            var result = new List<string>();
+            foreach (var app in apps)
+            {
+                result.Add(
+                    InstanceName.FromFunctionAppName(app.Name).PlainName);
+            }
+            return result;
+        }
+
+
         internal async Task<bool> Add(InstanceName instance, string location, string requiredVersion)
         {
             string rgName = instance.ResourceGroupName;

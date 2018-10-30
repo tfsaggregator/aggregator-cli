@@ -13,12 +13,15 @@ namespace aggregator.cli
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        public string ResourceGroup { get; set; }
+
         internal override async Task<int> RunAsync()
         {
             var context = await Context
                 .WithDevOpsLogon()
                 .Build();
-            var instance = new InstanceName(Instance);
+            var instance = new InstanceName(Instance, ResourceGroup);
             // HACK we pass null as the next calls do not use the Azure connection 
             var mappings = new AggregatorMappings(context.Devops, null, context.Logger);
             bool any = false;

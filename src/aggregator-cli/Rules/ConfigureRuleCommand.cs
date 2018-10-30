@@ -9,6 +9,9 @@ namespace aggregator.cli
     [Verb("configure.rule", HelpText = "Change a rule configuration.")]
     class ConfigureRuleCommand : CommandBase
     {
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        public string ResourceGroup { get; set; }
+
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
@@ -31,7 +34,7 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .Build();
-            var instance = new InstanceName(Instance);
+            var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool ok = false;
             if (Disable || Enable)
