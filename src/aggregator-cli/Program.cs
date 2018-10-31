@@ -13,9 +13,6 @@ namespace aggregator.cli
     set.defaults --instance INSTANCE --resourceGroup RESOURCEGROUP --project PROJECT
         mappings from a project
 
-    list.mappings --project PROJECT
-        mappings from a project
-
     logon.ado --url URL --mode MODE --token TOKEN --slot SLOT
         to use different credentials
     configure.instance --slot SLOT --swap --avzone ZONE
@@ -41,12 +38,13 @@ namespace aggregator.cli
                 // fails see https://github.com/commandlineparser/commandline/issues/198
                 settings.CaseInsensitiveEnumValues = true;
             });
-            var parserResult = parser.ParseArguments(args,
+            var types = new Type[] {
                 typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
                 typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand), typeof(ConfigureRuleCommand),
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
-                );
+            };
+            var parserResult = parser.ParseArguments(args, types);
             int rc = -1;
             parserResult
                 .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())

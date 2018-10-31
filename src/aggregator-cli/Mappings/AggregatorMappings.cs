@@ -24,16 +24,20 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance)
+        internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance, string projectName)
         {
             logger.WriteVerbose($"Searching aggregator mappings in Azure DevOps...");
             var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync();
-            var filteredSubs = subscriptions.Where(s
-                    => s.PublisherId == DevOpsEvents.PublisherId
-                    && s.ConsumerInputs["url"].ToString().StartsWith(
-                        instance.FunctionAppUrl)
-                    );
+            var filteredSubs = instance != null
+                    ? subscriptions.Where(s
+                        => s.PublisherId == DevOpsEvents.PublisherId
+                        && s.ConsumerInputs["url"].ToString().StartsWith(
+                            instance.FunctionAppUrl))
+                    : subscriptions.Where(s
+                        => s.PublisherId == DevOpsEvents.PublisherId
+                        // HACK
+                        && s.ConsumerInputs["url"].ToString().IndexOf("aggregator.azurewebsites.net") > 8);
             var projectClient = devops.GetClient<ProjectHttpClient>();
             var projects = await projectClient.GetProjects();
             var projectsDict = projects.ToDictionary(p => p.Id);
@@ -44,10 +48,14 @@ namespace aggregator.cli
                 var foundProject = projectsDict[
                     new Guid(subscription.PublisherInputs["projectId"])
                     ];
+                if (!string.IsNullOrEmpty(projectName) && foundProject.Name != projectName)
+                {
+                    continue;
+                }
                 // HACK need to factor the URL<->rule_name
                 string ruleUrl = subscription.ConsumerInputs["url"].ToString();
                 string ruleName = ruleUrl.Substring(ruleUrl.LastIndexOf('/'));
-                string ruleFullName = instance.PlainName + ruleName;
+                string ruleFullName = InstanceName.FromFunctionAppUrl(ruleUrl).PlainName + ruleName;
                 result.Add(
                     (ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
