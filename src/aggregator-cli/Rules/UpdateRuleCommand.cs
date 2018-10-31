@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("configure.rule", HelpText = "Change a rule configuration.")]
-    class ConfigureRuleCommand : CommandBase
+    [Verb("update.rule", HelpText = "Update a rule code and/or runtime.")]
+    class UpdateRuleCommand : CommandBase
     {
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
@@ -18,10 +18,11 @@ namespace aggregator.cli
         [Option('n', "name", Required = true, HelpText = "Aggregator rule name.")]
         public string Name { get; set; }
 
-        [Option('d', "disable", SetName = "disable", HelpText = "Disable the rule.")]
-        public bool Disable { get; set; }
-        [Option('e', "enable", SetName = "enable", HelpText = "Enable the rule.")]
-        public bool Enable { get; set; }
+        [Option('f', "file", Required = true, HelpText = "Aggregator rule code.")]
+        public string File { get; set; }
+
+        [Option("requiredVersion", Required = false, HelpText = "Version of Aggregator Runtime required.")]
+        public string RequiredVersion { get; set; }
 
         internal override async Task<int> RunAsync()
         {
@@ -30,11 +31,7 @@ namespace aggregator.cli
                 .Build();
             var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
-            bool ok = false;
-            if (Disable || Enable)
-            {
-                ok = await rules.EnableAsync(instance, Name, Disable);
-            }
+            bool ok = await rules.UpdateAsync(instance, Name, File, RequiredVersion);
             return ok ? 0 : 1;
         }
     }
