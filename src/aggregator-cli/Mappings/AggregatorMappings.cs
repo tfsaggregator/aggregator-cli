@@ -148,15 +148,15 @@ namespace aggregator.cli
 
         internal async Task<bool> RemoveInstanceAsync(InstanceName instance)
         {
-            return await RemoveRuleEventAsync("*", instance, "*");
+            return await RemoveRuleEventAsync("*", instance, "*", "*");
         }
 
         internal async Task<bool> RemoveRuleAsync(InstanceName instance, string rule)
         {
-            return await RemoveRuleEventAsync("*", instance, rule);
+            return await RemoveRuleEventAsync("*", instance, "*", rule);
         }
 
-        internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string rule)
+        internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string projectName, string rule)
         {
             logger.WriteInfo($"Querying the Azure DevOps subscriptions for rule(s) {instance.PlainName}/{rule}");
             var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
@@ -170,6 +170,15 @@ namespace aggregator.cli
             {
                 ruleSubs = ruleSubs.Where(s => s.EventType == @event);
             }
+            if (projectName != "*")
+            {
+                logger.WriteVerbose($"Reading Azure DevOps project data...");
+                var projectClient = devops.GetClient<ProjectHttpClient>();
+                var project = await projectClient.GetProject(projectName);
+                logger.WriteInfo($"Project {projectName} data read.");
+
+                ruleSubs = ruleSubs.Where(s => s.PublisherInputs["projectId"] == project.Id.ToString());
+            }
             if (rule != "*")
             {
                 ruleSubs = ruleSubs
@@ -178,9 +187,9 @@ namespace aggregator.cli
             }
             foreach (var ruleSub in ruleSubs)
             {
-                logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription}...");
+                logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription} {ruleSub.EventType}...");
                 await serviceHooksClient.DeleteSubscriptionAsync(ruleSub.Id);
-                logger.WriteInfo($"Subscription {ruleSub.EventDescription} deleted.");
+                logger.WriteInfo($"Subscription {ruleSub.EventDescription} {ruleSub.EventType} deleted.");
             }
 
             return true;
