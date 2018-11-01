@@ -5,10 +5,10 @@ Remember that the Instance name must be unique in Azure.
 ```
 # logon
 logon.azure --subscription 9c********08 --client 5a********b6 --password P@assword1 --tenant 3c********1d
-logon.vsts --url https://someaccount.visualstudio.com --mode PAT --token 2**************************************q
+logon.ado --url https://someaccount.visualstudio.com --mode PAT --token 2**************************************q
 
 # create an Azure Function Application
-install.instance --verbose --name my1 --location westeurope
+install.instance --verbose --resourceGroup myrg --name my1 --location westeurope
 list.instances
 
 # create three Azure Functions
@@ -33,12 +33,12 @@ configure.rule --verbose --instance my1 --name test --update test.rule
 configure.instance --authentication
 
 # remove a Service Hook from VSTS
-unmap.rule --verbose --event workitem.created --instance my1 --rule test1
+unmap.rule --verbose --project SampleProject --event workitem.created --instance my1 --rule test1
 
 # deletes two Azure Functions
 remove.rule --verbose --instance my1 --name test1
 remove.rule --verbose --instance my1 --name test2
 
 # delete the Azure Function Application
-uninstall.instance --verbose --name my1 --location westeurope
+uninstall.instance --verbose --resourceGroup myrg --name my1 --location westeurope
 ```
