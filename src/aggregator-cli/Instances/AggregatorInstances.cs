@@ -175,13 +175,26 @@ namespace aggregator.cli
             logger.WriteVerbose($"Searching instance {instance.PlainName}...");
             if (await azure.ResourceGroups.ContainAsync(rgName))
             {
-                logger.WriteVerbose($"Deleting resource group {rgName}");
-                await azure.ResourceGroups.DeleteByNameAsync(rgName);
-                logger.WriteInfo($"Resource group {rgName} deleted.");
+                var functionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rgName, instance.FunctionAppName);
+                if (functionApp != null)
+                {
+                    logger.WriteVerbose($"Deleting instance {functionApp.Name} in resource group {rgName}.");
+                    await azure.AppServices.FunctionApps.DeleteByIdAsync(functionApp.Id);
+                    logger.WriteVerbose($"instance {functionApp.Name} deleted.");
+                }
+
+                var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName);
+                if (apps == null || apps.Count() == 0)
+                {
+                    logger.WriteVerbose($"Deleting resource group {rgName}");
+                    await azure.ResourceGroups.DeleteByNameAsync(rgName);
+                    logger.WriteInfo($"Resource group {rgName} deleted.");
+                }
             }
             else
             {
-                logger.WriteWarning($"Instance {instance.PlainName} not found in {location}.");
+                logger.WriteWarning($"Resource Group {rgName} not found in {location}.");
+                return false;
             }
             return true;
         }
