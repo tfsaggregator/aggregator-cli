@@ -18,7 +18,7 @@ add.rule --verbose --instance my1 --name test3 --file test\test3.rule
 list.rules --verbose --instance my1
 
 # adds two Service Hook to VSTS, each invoking a different rule
-map.rule --verbose --project SampleProject --event workitem.created --instance my1 --rule test1
+map.rule --verbose --resourceGroup myrg --project SampleProject --event workitem.created --instance my1 --rule test1
 map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2
 list.mappings --verbose --instance my1
 
@@ -33,7 +33,7 @@ configure.rule --verbose --instance my1 --name test --update test.rule
 configure.instance --authentication
 
 # remove a Service Hook from VSTS
-unmap.rule --verbose --project SampleProject --event workitem.created --instance my1 --rule test1
+unmap.rule --verbose --resourceGroup myrg --project SampleProject --event workitem.created --instance my1 --rule test1
 
 # deletes two Azure Functions
 remove.rule --verbose --instance my1 --name test1
