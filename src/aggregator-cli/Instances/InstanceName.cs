@@ -46,6 +46,8 @@ namespace aggregator.cli
 
         internal string ResourceGroupName => resourceGroup;
 
+        internal bool IsCustom => resourceGroup != resourceGroupPrefix + name;
+
         internal string FunctionAppName=> name + functionAppSuffix;
 
         internal string DnsHostName => $"{FunctionAppName}.azurewebsites.net";

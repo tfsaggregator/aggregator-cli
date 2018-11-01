@@ -75,8 +75,15 @@ namespace aggregator.cli
         internal async Task<bool> Add(InstanceName instance, string location, string requiredVersion)
         {
             string rgName = instance.ResourceGroupName;
+            logger.WriteVerbose($"Checking if Resource Group {rgName} already exists");
             if (!await azure.ResourceGroups.ContainAsync(rgName))
             {
+                if (instance.IsCustom)
+                {
+                    logger.WriteError($"Resource group {rgName} is custom and cannot be created.");
+                    return false;
+                }
+
                 logger.WriteVerbose($"Creating resource group {rgName}");
                 await azure.ResourceGroups
                     .Define(rgName)
@@ -173,28 +180,37 @@ namespace aggregator.cli
         {
             string rgName = instance.ResourceGroupName;
             logger.WriteVerbose($"Searching instance {instance.PlainName}...");
-            if (await azure.ResourceGroups.ContainAsync(rgName))
-            {
-                var functionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rgName, instance.FunctionAppName);
-                if (functionApp != null)
-                {
-                    logger.WriteVerbose($"Deleting instance {functionApp.Name} in resource group {rgName}.");
-                    await azure.AppServices.FunctionApps.DeleteByIdAsync(functionApp.Id);
-                    logger.WriteVerbose($"instance {functionApp.Name} deleted.");
-                }
-
-                var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName);
-                if (apps == null || apps.Count() == 0)
-                {
-                    logger.WriteVerbose($"Deleting resource group {rgName}");
-                    await azure.ResourceGroups.DeleteByNameAsync(rgName);
-                    logger.WriteInfo($"Resource group {rgName} deleted.");
-                }
-            }
-            else
+            bool rgFound = await azure.ResourceGroups.ContainAsync(rgName);
+            if (!rgFound)
             {
                 logger.WriteWarning($"Resource Group {rgName} not found in {location}.");
                 return false;
+            }
+            var functionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rgName, instance.FunctionAppName);
+            if (functionApp == null)
+            {
+                logger.WriteWarning($"Instance {functionApp.Name} not found in resource group {rgName}.");
+                return false;
+            }
+
+            logger.WriteVerbose($"Deleting instance {functionApp.Name} in resource group {rgName}.");
+            await azure.AppServices.FunctionApps.DeleteByIdAsync(functionApp.Id);
+            logger.WriteInfo($"Instance {functionApp.Name} deleted.");
+
+            // we delete the RG only if was made by us
+            logger.WriteVerbose($"Checking if last instance in resource group {rgName}");
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName);
+            if (apps == null || apps.Count() == 0)
+            {
+                if (instance.IsCustom)
+                {
+                    logger.WriteWarning($"Resource group {rgName} is custom and won't be deleted.");
+                    return true;
+                }
+
+                logger.WriteVerbose($"Deleting empty resource group {rgName}");
+                await azure.ResourceGroups.DeleteByNameAsync(rgName);
+                logger.WriteInfo($"Resource group {rgName} deleted.");
             }
             return true;
         }
