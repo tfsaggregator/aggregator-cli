@@ -26,6 +26,9 @@ add.rule --verbose --instance my3 --resourceGroup myRG1 --name test3 --file test
 # adds two Service Hook to Azure DevOps, each invoking a different rule
 map.rule --verbose --project SampleProject --event workitem.created --instance my1 --rule test1
 map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2
+map.rule --verbose --project SampleProject --event workitem.created --instance my3 --resourceGroup myRG1 --rule test3
+
+
 list.mappings --verbose --instance my1
 list.mappings --verbose --project SampleProject
 list.mappings --instance my1 --project SampleProject
@@ -44,8 +47,8 @@ configure.instance --name my3 --resourceGroup myRG1 --location westeurope --auth
 
 # remove a Service Hook from Azure DevOps
 unmap.rule --verbose --event workitem.created --instance my1 --rule test1
-# remove a Service Hook from Azure DevOps
 unmap.rule --verbose --event workitem.updated --project SampleProject --instance my1 --rule test2
+unmap.rule --verbose --project SampleProject --event workitem.created --instance my3 --resourceGroup myRG1 --rule test3
 
 # deletes an Azure Function and all Service Hooks referring to it
 remove.rule --verbose --instance my1 --name test1
