@@ -110,16 +110,18 @@ return message;
             var logger = new MockAggregatorLogger();
             int workItemId = 1;
             string ruleCode = @"
-var wi = store.NewWorkItem();
+var wi = store.NewWorkItem(""Task"");
 wi.Title = ""Brand new"";
-var rel = new WorkItemRelationWrapper(wi, CoreRelationRefNames.Parent, self.Url);
-self.ChildrenLinks.AddRelation(rel);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince());
             string result = await engine.ExecuteAsync(collectionUrl, projectId, workItemId, client);
 
-            Assert.Equal("Children are ,42,99", result);
+            Assert.Null(result);
+            Assert.Contains(
+                logger.GetMessages(),
+                m => m.Message == "Changes saved to Azure DevOps: 1 created, 0 updated."
+                    && m.Level == "Info");
         }
     }
 }
