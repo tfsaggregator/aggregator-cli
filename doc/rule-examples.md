@@ -16,10 +16,10 @@ The major difference is the navigation: `Parent` and `Children` properties do no
 
 ```
 string message = "";
-if (self.Parent != null)
+var parent = self.Parent;
+if (parent != null)
 {
-    var parent = store.GetWorkItem(self.Parent);
-    var children = store.GetWorkItems(parent.Children);
+    var children = parent.Children;
     if (children.All(c => c.State == "Closed"))
     {
         parent.State = "Closed";

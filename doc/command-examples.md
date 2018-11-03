@@ -54,5 +54,5 @@ remove.rule --verbose --instance my3 --resourceGroup myRG1 --name test3
 # delete the Azure Function Application leaving the Service Hooks in place
 uninstall.instance --name my1 --location westeurope --dont-remove-mappings
 # delete the Azure Function Application and any Service Hooks referring to it
-uninstall.instance --verbose --instance my3 --resourceGroup myRG1
+uninstall.instance --verbose --name my3 --resourceGroup myRG1 --location westeurope
 ```
