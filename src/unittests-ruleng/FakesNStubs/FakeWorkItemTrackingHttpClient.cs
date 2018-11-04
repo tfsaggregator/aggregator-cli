@@ -227,5 +227,12 @@ namespace aggregator.unittests
             t.RunSynchronously();
             return t;
         }
+
+        public override Task<WorkItem> UpdateWorkItemAsync(JsonPatchDocument document, int id, bool? validateOnly = null, bool? bypassRules = null, bool? suppressNotifications = null, object userState = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var t = new Task<WorkItem>(() => new WorkItem());
+            t.RunSynchronously();
+            return t;
+        }
     }
 }

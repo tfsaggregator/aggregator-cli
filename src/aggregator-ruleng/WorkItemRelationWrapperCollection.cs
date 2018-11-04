@@ -89,6 +89,18 @@ namespace aggregator.Engine
             AddRelation(item);
         }
 
+        public void AddChild(WorkItemWrapper child)
+        {
+            var r = new WorkItemRelationWrapper(child, CoreRelationRefNames.Children, child.Url, string.Empty);
+            AddRelation(r);
+        }
+
+        public void AddParent(WorkItemWrapper parent)
+        {
+            var r = new WorkItemRelationWrapper(parent, CoreRelationRefNames.Parent, parent.Url, string.Empty);
+            AddRelation(r);
+        }
+
         public void AddLink(string type, string url, string comment)
         {
             AddRelation(new WorkItemRelationWrapper(

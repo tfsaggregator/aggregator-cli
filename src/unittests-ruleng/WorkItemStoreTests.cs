@@ -78,9 +78,11 @@ namespace unittests_ruleng
             var sut = new WorkItemStore(context);
 
             var parent = sut.GetWorkItem(1);
+            Assert.Equal(2, parent.Relations.Count());
+
             var newChild = sut.NewWorkItem("Task");
             newChild.Title = "Brand new";
-            parent.AddChild(newChild);
+            parent.Relations.AddChild(newChild);
 
             Assert.NotNull(newChild);
             Assert.True(newChild.IsNew);

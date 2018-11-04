@@ -123,5 +123,31 @@ wi.Title = ""Brand new"";
                 m => m.Message == "Changes saved to Azure DevOps: 1 created, 0 updated."
                     && m.Level == "Info");
         }
+
+        [Fact]
+        public async void AddChild_Succeeds()
+        {
+            string collectionUrl = "https://dev.azure.com/fake-organization";
+            Guid projectId = Guid.NewGuid();
+            var baseUrl = new Uri($"{collectionUrl}");
+            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
+            var logger = new MockAggregatorLogger();
+            int workItemId = 1;
+            string ruleCode = @"
+var parent = self;
+var newChild = store.NewWorkItem(""Task"");
+newChild.Title = ""Brand new"";
+parent.Relations.AddChild(newChild);
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince());
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, workItemId, client);
+
+            Assert.Null(result);
+            Assert.Contains(
+                logger.GetMessages(),
+                m => m.Message == "Changes saved to Azure DevOps: 1 created, 1 updated."
+                    && m.Level == "Info");
+        }
     }
 }

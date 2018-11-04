@@ -12,6 +12,8 @@ namespace aggregator.Engine
     {
         private EngineContext _context;
         private WorkItem _item;
+        private WorkItemRelationWrapperCollection _relationCollection;
+
         private readonly JsonPatchDocument _changes = new JsonPatchDocument();
         private readonly bool _isReadOnly = false;
 
@@ -19,6 +21,7 @@ namespace aggregator.Engine
         {
             _context = context;
             _item = item;
+            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             if (item.Id.HasValue)
             {
@@ -48,6 +51,7 @@ namespace aggregator.Engine
             _item.Fields[CoreFieldRefNames.TeamProject] = project;
             _item.Fields[CoreFieldRefNames.WorkItemType] = type;
             _item.Fields[CoreFieldRefNames.Id] = Id.Value;
+            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             _context.Tracker.TrackNew(this);
         }
@@ -62,6 +66,7 @@ namespace aggregator.Engine
             _item.Fields[CoreFieldRefNames.TeamProject] = template.TeamProject;
             _item.Fields[CoreFieldRefNames.WorkItemType] = type;
             _item.Fields[CoreFieldRefNames.Id] = Id.Value;
+            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             _context.Tracker.TrackNew(this);
         }
@@ -81,6 +86,7 @@ namespace aggregator.Engine
             });
             _isReadOnly = isReadOnly;
             _item = item;
+            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
             _context.Tracker.TrackRevision(this);
         }
 
@@ -114,11 +120,20 @@ namespace aggregator.Engine
             }
         }
 
-        public IEnumerable<WorkItemRelationWrapper> Relations
+        public IEnumerable<WorkItemRelationWrapper> RelationLinks
         {
             get
             {
-                return new WorkItemRelationWrapperCollection(this, _item.Relations);
+                return _relationCollection;
+            }
+        }
+
+
+        public WorkItemRelationWrapperCollection Relations
+        {
+            get
+            {
+                return _relationCollection;
             }
         }
 
@@ -126,7 +141,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return new WorkItemRelationWrapperCollection(this, _item.Relations)
+                return _relationCollection
                     .Where(rel => rel.Rel == CoreRelationRefNames.Children);
             }
         }
@@ -144,7 +159,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return new WorkItemRelationWrapperCollection(this, _item.Relations)
+                return _relationCollection
                     .Where(rel => rel.Rel == CoreRelationRefNames.Related);
             }
         }
@@ -153,7 +168,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return new WorkItemRelationWrapperCollection(this, _item.Relations)
+                return _relationCollection
                     .Where(rel => rel.Rel == CoreRelationRefNames.Hyperlink);
             }
         }
@@ -162,7 +177,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return new WorkItemRelationWrapperCollection(this, _item.Relations)
+                return _relationCollection
                     .Where(rel => rel.Rel == CoreRelationRefNames.Parent)
                     .SingleOrDefault();
             }
@@ -175,14 +190,6 @@ namespace aggregator.Engine
                 var store = new WorkItemStore(_context);
                 return store.GetWorkItem(ParentLink);
             }
-        }
-
-        public void AddChild(WorkItemWrapper newChild)
-        {
-            var rel = new WorkItemRelation { Url = newChild.Url, Rel = CoreRelationRefNames.Children };
-            _item.Relations.Add(rel);
-            var rels = new WorkItemRelationWrapperCollection(this, _item.Relations);
-            rels.Add(new WorkItemRelationWrapper(this, rel));
         }
 
         public WorkItemId<int> Id

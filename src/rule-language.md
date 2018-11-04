@@ -3,17 +3,30 @@
 `.lang=C#`
 `.language=Csharp`
 
+
+
 # WorkItem Object
 
+## Revisions
 WorkItem PreviousRevision
 IEnumerable<WorkItem> Revisions
-IEnumerable<WorkItemRelation> Relations
+
+## Relations
+IEnumerable<WorkItemRelation> RelationLinks
+WorkItemRelationCollection Relations
 IEnumerable<WorkItemRelation> ChildrenLinks
 IEnumerable<WorkItem> Children
-IEnumerable<WorkItemRelation> RelatedLinks
-IEnumerable<WorkItemRelation> Hyperlinks
 WorkItemRelation ParentLink
 WorkItem Parent
+
+## Links
+IEnumerable<WorkItemRelation> RelatedLinks
+IEnumerable<WorkItemRelation> Hyperlinks
+int ExternalLinkCount
+int HyperLinkCount
+int RelatedLinkCount
+
+## Fields
 WorkItemId<int> Id
 int Rev
 string Url
@@ -22,20 +35,16 @@ string State
 int AreaId
 string AreaPath
 string AssignedTo
-int AttachedFileCount
 string AuthorizedAs
 string ChangedBy
 DateTime? ChangedDate
 string CreatedBy
 DateTime? CreatedDate
 string Description
-int ExternalLinkCount
 string History
-int HyperLinkCount
 int IterationId
 string IterationPath
 string Reason
-int RelatedLinkCount
 DateTime? RevisedDate
 DateTime? AuthorizedDate
 string TeamProject
@@ -48,6 +57,11 @@ bool IsNew
 bool IsDirty
 object this[string field]
 
+## Attachments
+int AttachedFileCount
+
+
+
 # WorkItemStore Object
 
 WorkItem GetWorkItem(int id)
@@ -56,10 +70,16 @@ WorkItem GetWorkItem(WorkItemRelation item)
 IList<WorkItem> GetWorkItems(IEnumerable<int> ids)
 IList<WorkItem> GetWorkItems(IEnumerable<WorkItemRelation> collection)
 
+WorkItemWrapper NewWorkItem(string workItemType)
+
+
+
 # WorkItemRelationCollection
 
 IEnumerator<WorkItemRelation> GetEnumerator()
 Add(WorkItemRelation item)
+AddChild(WorkItemWrapper child)
+AddParent(WorkItemWrapper parent)
 AddLink(string type, string url, string comment)
 AddHyperlink(string url, string comment = null)
 AddRelatedLink(WorkItem item, string comment = null)
@@ -69,6 +89,8 @@ bool Contains(WorkItemRelation item)
 bool Remove(WorkItemRelation item)
 int Count
 bool IsReadOnly
+
+
 
 # WorkItemRelation
 
