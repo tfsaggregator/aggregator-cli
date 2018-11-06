@@ -58,6 +58,11 @@ namespace aggregator.cli
             }
         }
 
+        internal Task<bool> InvokeLocalAsync(string @event, int workItemId, string source)
+        {
+                throw new NotImplementedException();
+        }
+
         internal static string GetInvocationUrl(InstanceName instance, string rule)
         {
             return $"{instance.FunctionAppUrl}/api/{rule}";
@@ -109,7 +114,7 @@ namespace aggregator.cli
             bool ok = await UploadRuleFiles(instance, name, baseDirPath);
             if (ok)
             {
-                logger.WriteInfo($"{name} files uploaded to {instance.PlainName}.");
+                logger.WriteInfo($"All {name} files uploaded to {instance.PlainName}.");
             }
             CleanupRuleFiles(baseDirPath);
             logger.WriteInfo($"Cleaned local working directory.");
@@ -162,27 +167,45 @@ namespace aggregator.cli
 
             PUT /api/vfs/{path}/
             Creates a directory at path. The path can be nested, e.g. `folder1/folder2`.
+
+            Note: when updating or deleting a file, ETag behavior will apply. You can pass a If-Match: "*" header to disable the ETag check.
             */
             var kudu = new KuduApi(instance, azure, logger);
             string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
             var instances = new AggregatorInstances(azure, logger);
-            logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
             {
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
+                bool exists = false;
+
+                // check if function already exists
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl))
                 {
+                    logger.WriteVerbose($"Checking if function {name} already exists in {instance.PlainName}...");
                     using (var response = await client.SendAsync(request))
                     {
-                        bool ok = response.IsSuccessStatusCode;
-                        if (!ok)
-                        {
-                            logger.WriteError($"Upload failed with {response.ReasonPhrase}");
-                            return ok;
-                        }
+                        exists = response.IsSuccessStatusCode;
                     }
                 }
-                logger.WriteInfo($"Function {name} created.");
+
+                if (!exists)
+                {
+                    logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
+                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
+                    {
+                        using (var response = await client.SendAsync(request))
+                        {
+                            bool ok = response.IsSuccessStatusCode;
+                            if (!ok)
+                            {
+                                logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                                return ok;
+                            }
+                        }
+                    }
+                    logger.WriteInfo($"Function {name} created.");
+                }
+
                 var files = Directory.EnumerateFiles(baseDirPath, "*", SearchOption.AllDirectories);
                 foreach (var file in files)
                 {
@@ -190,6 +213,8 @@ namespace aggregator.cli
                     string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
                     {
+                        //HACK -> request.Headers.IfMatch.Add(new EntityTagHeaderValue("*", false)); <- won't work
+                        request.Headers.Add("If-Match", "*");
                         request.Content = new StringContent(File.ReadAllText(file));
                         using (var response = await client.SendAsync(request))
                         {
