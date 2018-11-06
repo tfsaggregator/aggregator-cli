@@ -44,6 +44,7 @@ namespace aggregator.cli
             var types = new Type[] {
                 typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
+                typeof(ConfigureInstanceCommand),
                 typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
                 typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand),
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
