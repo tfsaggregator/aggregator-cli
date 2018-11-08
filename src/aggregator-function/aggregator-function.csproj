@@ -29,15 +29,6 @@
     <None Update="default.rule">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <None Include="test\function.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="test\run.csx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="test\test.rule">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
