@@ -64,7 +64,7 @@ namespace aggregator.cli
                 }
                 else
                 {
-                    logger.WriteError($"{response.ReasonPhrase}");
+                    logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase}");
                 }
             }
             var uploadedRuntimeVer = SemVersion.Parse(manifestVersion);
@@ -97,7 +97,7 @@ namespace aggregator.cli
             }
             else
             {
-                logger.WriteInfo($"Nothing to update.");
+                logger.WriteInfo($"Runtime package is up to date.");
                 return true;
             }
         }

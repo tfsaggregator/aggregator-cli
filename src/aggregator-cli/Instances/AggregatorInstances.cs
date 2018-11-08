@@ -148,7 +148,14 @@ namespace aggregator.cli
                 {
                     logger.WriteVerbose($"Saving Azure DevOps token");
                     ok = await ChangeAppSettings(instance, devopsLogonData);
-                    logger.WriteInfo($"Azure DevOps token saved");
+                    if (ok)
+                    {
+                        logger.WriteInfo($"Azure DevOps token saved");
+                    }
+                    else
+                    {
+                        logger.WriteError($"Failed to save Azure DevOps token");
+                    }
                 }
                 else
                 {
