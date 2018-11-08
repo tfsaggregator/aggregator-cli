@@ -41,7 +41,8 @@ namespace aggregator.Engine
                 var types = new List<Type>() {
                         typeof(object),
                         typeof(System.Linq.Enumerable),
-                        typeof(System.Collections.Generic.CollectionExtensions)
+                        typeof(System.Collections.Generic.CollectionExtensions),
+                        typeof(Microsoft.VisualStudio.Services.WebApi.IdentityRef)
                     };
                 var references = types.ConvertAll(t => t.Assembly).Distinct();
 
@@ -49,7 +50,12 @@ namespace aggregator.Engine
                     .WithEmitDebugInformation(true)
                     .WithReferences(references)
                     // Add namespaces
-                    .WithImports("System", "System.Linq", "System.Collections.Generic");
+                    .WithImports(
+                        "System",
+                        "System.Linq",
+                        "System.Collections.Generic",
+                        "Microsoft.VisualStudio.Services.WebApi"
+                    );
 
                 this.roslynScript = CSharpScript.Create<string>(
                     code: directives.GetRuleCode(),

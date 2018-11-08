@@ -1,5 +1,6 @@
 ﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System;
@@ -231,9 +232,9 @@ namespace aggregator.Engine
             set { SetFieldValue(CoreFieldRefNames.AreaPath, value); }
         }
 
-        public string AssignedTo
+        public IdentityRef AssignedTo
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.AssignedTo); }
+            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.AssignedTo); }
             set { SetFieldValue(CoreFieldRefNames.AssignedTo, value); }
         }
 
@@ -243,15 +244,15 @@ namespace aggregator.Engine
             set { SetFieldValue(CoreFieldRefNames.AttachedFileCount, value); }
         }
 
-        public string AuthorizedAs
+        public IdentityRef AuthorizedAs
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.AuthorizedAs); }
+            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.AuthorizedAs); }
             set { SetFieldValue(CoreFieldRefNames.AuthorizedAs, value); }
         }
 
-        public string ChangedBy
+        public IdentityRef ChangedBy
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.ChangedBy); }
+            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.ChangedBy); }
             set { SetFieldValue(CoreFieldRefNames.ChangedBy, value); }
         }
 
@@ -261,9 +262,9 @@ namespace aggregator.Engine
             set { SetFieldValue(CoreFieldRefNames.ChangedDate, value); }
         }
 
-        public string CreatedBy
+        public IdentityRef CreatedBy
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.CreatedBy); }
+            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.CreatedBy); }
             set { SetFieldValue(CoreFieldRefNames.CreatedBy, value); }
         }
 
