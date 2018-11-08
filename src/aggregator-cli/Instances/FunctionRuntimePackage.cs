@@ -31,12 +31,22 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateVersion(string requiredVersion, InstanceName instance, IAzure azure)
         {
+            string tag = requiredVersion;
             if (string.IsNullOrWhiteSpace(requiredVersion))
             {
-                requiredVersion = "latest";
+                tag = requiredVersion = "latest";
+            }
+            else
+            {
+                tag = requiredVersion[0] != 'v' ? "v" + requiredVersion : requiredVersion;
             }
             logger.WriteVerbose($"Checking runtime package versions in GitHub");
-            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(requiredVersion);
+            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(tag);
+            if (string.IsNullOrEmpty(rel_name))
+            {
+                logger.WriteError($"Requested runtime {requiredVersion} version does not exists.");
+                return false;
+            }
             if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
             var requiredRuntimeVer = SemVersion.Parse(rel_name);
             logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
