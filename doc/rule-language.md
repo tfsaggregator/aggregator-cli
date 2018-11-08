@@ -34,11 +34,11 @@ string WorkItemType
 string State
 int AreaId
 string AreaPath
-string AssignedTo
-string AuthorizedAs
-string ChangedBy
+IdentityRef AssignedTo
+IdentityRef AuthorizedAs
+IdentityRef ChangedBy
 DateTime? ChangedDate
-string CreatedBy
+IdentityRef CreatedBy
 DateTime? CreatedDate
 string Description
 string History
@@ -98,3 +98,18 @@ string Title
 string Rel
 string Url
 IDictionary<string, object> Attributes
+
+
+
+# IdentityRef
+
+string DirectoryAlias
+string DisplayName
+string Id
+string ImageUrl
+bool Inactive
+bool IsAadIdentity
+bool IsContainer
+string ProfileUrl
+string UniqueName
+string Url

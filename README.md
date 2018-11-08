@@ -59,6 +59,8 @@ The PAT is stored in the Azure Function settings: **whoever has access to the Re
 
 The Service Principal must have Contributor permission to the Azure Subscription.
 In alternative, pre-create the `aggregator-` Resource Group in Azure and give the service account Contributor permission to the Resource Group.
+![Permission on existing Resource Group](doc/contributor-on-rg.png)
+If you go this route, you must add the `--resourceGroup` to all commands requiring an instance.
 The `instance` parameter prefixes `aggregator-` to identify the Resource Group.
 
 ## Usage
@@ -77,20 +79,25 @@ logon.ado           | Logon into Azure DevOps.
 list.instances      | Lists Aggregator instances.
 install.instance    | Creates a new Aggregator instance in Azure.
 uninstall.instance  | Destroy an Aggregator instance in Azure.
+configure.instance  | Configures an existing Aggregator instance.
 list.rules          | List the rule in existing Aggregator instance in Azure.
 add.rule            | Add a rule to existing Aggregator instance in Azure.
 remove.rule         | Remove a rule from existing Aggregator instance in Azure.
-configure.rule      | Change a rule configuration and code.
+configure.rule      | Change a rule configuration.
+update.rule         | Update a rule code and/or runtime.
+invoke.rule         | Executes a rule locally or in an existing Aggregator instance.
 list.mappings       | Lists mappings from existing Azure DevOps Projects to Aggregator Rules.
 map.rule            | Maps an Aggregator Rule to existing Azure DevOps Projects.
 unmap.rule          | Unmaps an Aggregator Rule from a Azure DevOps Project.
 help                | Display more information on a specific command.
 version             | Display version information.
 
-## Examples
+You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-examples.md), see also [Manual Tests](doc/test-matrix.md).
 
-You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-examples.md).
-You can see a few Rule examples in [Rule Examples](doc/rule-examples.md).
+## Rule language
+
+See [Rule Language](doc/rule-language.md) for a list of objects and properties to use.
+For examples see [Rule Examples](doc/rule-examples.md).
 
 ## Troubleshooting
 
