@@ -31,15 +31,14 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateVersion(string requiredVersion, InstanceName instance, IAzure azure)
         {
-            string tag = requiredVersion;
-            if (string.IsNullOrWhiteSpace(requiredVersion))
-            {
-                tag = requiredVersion = "latest";
-            }
-            else
-            {
-                tag = requiredVersion[0] != 'v' ? "v" + requiredVersion : requiredVersion;
-            }
+            string tag = string.IsNullOrWhiteSpace(requiredVersion)
+                ? "latest"
+                : (requiredVersion != "latest"
+                    ? (requiredVersion[0] != 'v'
+                        ? "v" + requiredVersion
+                        : requiredVersion)
+                    : requiredVersion);
+
             logger.WriteVerbose($"Checking runtime package versions in GitHub");
             (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(tag);
             if (string.IsNullOrEmpty(rel_name))
