@@ -13,6 +13,10 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 
 namespace aggregator.cli
@@ -56,11 +60,6 @@ namespace aggregator.cli
                     return new KuduFunction[0];
                 }
             }
-        }
-
-        internal Task<bool> InvokeLocalAsync(string @event, int workItemId, string source)
-        {
-                throw new NotImplementedException();
         }
 
         internal static string GetInvocationUrl(InstanceName instance, string rule)
@@ -277,6 +276,60 @@ namespace aggregator.cli
                 ok = await AddAsync(instance, name, filePath);
             }
             return ok;
+        }
+
+        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun)
+        {
+            if (!File.Exists(ruleFilePath))
+            {
+                logger.WriteError($"Rule code not found at {ruleFilePath}");
+                return false;
+            }
+
+            var devopsLogonData = DevOpsLogon.Load().connection;
+
+            logger.WriteVerbose($"Connecting to Azure DevOps using {devopsLogonData.Mode}...");
+            var clientCredentials = default(VssCredentials);
+            if (devopsLogonData.Mode == DevOpsTokenType.PAT)
+            {
+                clientCredentials = new VssBasicCredential(devopsLogonData.Mode.ToString(), devopsLogonData.Token);
+            }
+            else
+            {
+                logger.WriteError($"Azure DevOps Token type {devopsLogonData.Mode} not supported!");
+                throw new ArgumentOutOfRangeException(nameof(devopsLogonData.Mode));
+            }
+
+            string collectionUrl = devopsLogonData.Url;
+            using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
+            {
+                await devops.ConnectAsync();
+                logger.WriteInfo($"Connected to Azure DevOps");
+
+                Guid teamProjectId;
+                using (var projectClient = devops.GetClient<ProjectHttpClient>())
+                {
+                    logger.WriteVerbose($"Reading Azure DevOps project data...");
+                    var project = await projectClient.GetProject(projectName);
+                    logger.WriteInfo($"Project {projectName} data read.");
+                    teamProjectId = project.Id;
+                }
+
+                using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
+                {
+                    logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+                    string[] ruleCode = File.ReadAllLines(ruleFilePath);
+
+                    var engineLogger = new EngineWrapperLogger(logger);
+                    var engine = new Engine.RuleEngine(engineLogger, ruleCode);
+                    engine.DryRun = dryRun;
+
+                    string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, workItemId, witClient);
+                    logger.WriteInfo($"Rule returned '{result}'");
+
+                    return true;
+                }
+            }
         }
     }
 }

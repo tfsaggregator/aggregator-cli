@@ -78,28 +78,42 @@ namespace aggregator.Engine
             return wrapper;
         }
 
-        public async Task<(int created, int updated)> SaveChanges()
+        public async Task<(int created, int updated)> SaveChanges(bool commit)
         {
             int created = 0;
             int updated = 0;
             foreach (var item in _context.Tracker.NewWorkItems)
             {
-                _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {_context.ProjectId}");
-                var wi = await _context.Client.CreateWorkItemAsync(
-                    item.Changes,
-                    _context.ProjectId,
-                    item.WorkItemType
-                );
+                if (commit)
+                {
+                    _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {_context.ProjectId}");
+                    var wi = await _context.Client.CreateWorkItemAsync(
+                        item.Changes,
+                        _context.ProjectId,
+                        item.WorkItemType
+                    );
+                }
+                else
+                {
+                    _context.Logger.WriteInfo($"Dry-run mode: should create a {item.WorkItemType} workitem in {_context.ProjectId}");
+                }
                 created++;
             }
 
             foreach (var item in _context.Tracker.ChangedWorkItems)
             {
-                _context.Logger.WriteInfo($"Updating workitem {item.Id}");
-                var wi = await _context.Client.UpdateWorkItemAsync(
-                    item.Changes,
-                    item.Id.Value
-                );
+                if (commit)
+                {
+                    _context.Logger.WriteInfo($"Updating workitem {item.Id}");
+                    var wi = await _context.Client.UpdateWorkItemAsync(
+                        item.Changes,
+                        item.Id.Value
+                    );
+                }
+                else
+                {
+                    _context.Logger.WriteInfo($"Dry-run mode: should update workitem {item.Id} in {_context.ProjectId}");
+                }
                 updated++;
             }
             return (created, updated);

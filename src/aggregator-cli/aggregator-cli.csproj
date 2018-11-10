@@ -43,6 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
     <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
   </ItemGroup>
 

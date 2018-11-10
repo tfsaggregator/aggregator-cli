@@ -73,6 +73,7 @@ namespace aggregator.Engine
         /// State is used by unit tests
         /// </summary>
         public EngineState State { get; private set; }
+        public bool DryRun { get; set; }
 
         public async Task<string> ExecuteAsync(string collectionUrl, Guid projectId, int workItemId, WorkItemTrackingHttpClientBase witClient)
         {
@@ -110,7 +111,7 @@ namespace aggregator.Engine
             State = EngineState.Success;
 
             logger.WriteVerbose($"Post-execution, save any change...");
-            var saveRes = await store.SaveChanges();
+            var saveRes = await store.SaveChanges(!this.DryRun);
             if (saveRes.created + saveRes.updated > 0)
             {
                 logger.WriteInfo($"Changes saved to Azure DevOps: {saveRes.created} created, {saveRes.updated} updated.");

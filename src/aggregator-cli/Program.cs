@@ -46,7 +46,7 @@ namespace aggregator.cli
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
                 typeof(ConfigureInstanceCommand),
                 typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
-                typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand),
+                typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
             };
             var parserResult = parser.ParseArguments(args, types);
@@ -63,6 +63,7 @@ namespace aggregator.cli
                 .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<UpdateRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<InvokeRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run())
                 .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run())

@@ -57,7 +57,7 @@ namespace unittests_ruleng
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = sut.SaveChanges().Result;
+            var save = sut.SaveChanges(true).Result;
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);
