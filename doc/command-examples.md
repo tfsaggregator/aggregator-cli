@@ -58,4 +58,7 @@ remove.rule --verbose --instance my3 --resourceGroup myRG1 --name test3
 uninstall.instance --name my1 --location westeurope --dont-remove-mappings
 # delete the Azure Function Application and any Service Hooks referring to it
 uninstall.instance --verbose --name my3 --resourceGroup myRG1 --location westeurope
+
+# run rule locally, no change is sent to Azure DevOps
+invoke.rule --dryrun --project SampleProject --event workitem.created --workItemId 14 --local --source test\test2.rule
 ```
