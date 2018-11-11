@@ -1,7 +1,13 @@
 ﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace aggregator.Engine
@@ -42,7 +48,7 @@ namespace aggregator.Engine
             return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
             {
                 string idList2 = workItemIds.Aggregate("", (s, i) => s += $",{i}");
-                _context.Logger.WriteVerbose($"Loading workitems {idList2.Substring(1)}");
+                _context.Logger.WriteInfo($"Loading workitems {idList2.Substring(1)}");
                 var items = _context.Client.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
                 return items.ConvertAll(i => new WorkItemWrapper(_context, i));
             });
@@ -78,7 +84,7 @@ namespace aggregator.Engine
             return wrapper;
         }
 
-        public async Task<(int created, int updated)> SaveChanges(bool commit)
+        public async Task<(int created, int updated)> OLD_SaveChanges(bool commit)
         {
             int created = 0;
             int updated = 0;
@@ -117,6 +123,122 @@ namespace aggregator.Engine
                 updated++;
             }
             return (created, updated);
+        }
+
+        public async Task<(int created, int updated)> SaveChanges(bool commit)
+        {
+            // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
+            // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
+
+            const string ApiVersion = "api-version=4.1";
+
+            int created = _context.Tracker.NewWorkItems.Count();
+            int updated = _context.Tracker.ChangedWorkItems.Count();
+
+            string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
+
+            BatchRequest[] batchRequests = new BatchRequest[created + updated];
+            Dictionary<string, string> headers = new Dictionary<string, string>() {
+                { "Content-Type", "application/json-patch+json" }
+            };
+            string credentials = Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes($":{_context.PersonalAccessToken}"));
+
+            int index = 0;
+
+            foreach (var item in _context.Tracker.NewWorkItems)
+            {
+                _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {_context.ProjectName}");
+
+                batchRequests[index++] = new BatchRequest
+                {
+                    method = "PATCH",
+                    uri = $"/{_context.ProjectName}/_apis/wit/workitems/{item.WorkItemType}?{ApiVersion}",
+                    headers = headers,
+                    body = item.Changes.ToArray()
+                };
+            }
+            foreach (var item in _context.Tracker.ChangedWorkItems)
+            {
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
+
+                batchRequests[index++] = new BatchRequest
+                {
+                    method = "PATCH",
+                    uri = $"/{_context.ProjectName}/_apis/wit/workitems/{item.Id.Value}?{ApiVersion}",
+                    headers = headers,
+                    body = item.Changes.ToArray()
+                };
+            }
+            var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
+            string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.Indented, converters);
+
+
+            if (commit)
+            {
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+                    var batchRequest = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                    var method = new HttpMethod("POST");
+
+                    // send the request
+                    var request = new HttpRequestMessage(method, $"{baseUriString}_apis/wit/$batch?{ApiVersion}") { Content = batchRequest };
+                    var response = client.SendAsync(request).Result;
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var stringResponse = response.Content.ReadAsStringAsync();
+                        WorkItemBatchPostResponse batchResponse = response.Content.ReadAsAsync<WorkItemBatchPostResponse>().Result;
+                        //return batchResponse;
+                    }
+                }//using
+            }
+            else
+            {
+                _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
+                _context.Logger.WriteVerbose(requestBody);
+            }//if
+
+            return (created, updated);
+        }
+    }
+
+    class JsonPatchOperationConverter : JsonConverter<Microsoft.VisualStudio.Services.WebApi.Patch.Json.JsonPatchOperation>
+    {
+        public override bool CanRead => false;
+
+        public override JsonPatchOperation ReadJson(JsonReader reader, Type objectType, JsonPatchOperation existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
+        }
+
+        public override void WriteJson(JsonWriter writer, JsonPatchOperation value, JsonSerializer serializer)
+        {
+            JToken t = JToken.FromObject(value);
+
+            if (t.Type != JTokenType.Object)
+            {
+                t.WriteTo(writer);
+            }
+            else
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("op");
+                writer.WriteValue(value.Operation.ToString().ToLower());
+                writer.WritePropertyName("path");
+                writer.WriteValue(value.Path);
+                if (!string.IsNullOrEmpty(value.From))
+                {
+                    writer.WritePropertyName("from");
+                    writer.WriteValue(value.From);
+                }
+                writer.WritePropertyName("value");
+                writer.WriteValue(value.Value);
+                writer.WriteEndObject();
+            }
         }
     }
 }

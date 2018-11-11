@@ -37,7 +37,8 @@ namespace aggregator
             string collectionUrl = data.resourceContainers.collection.baseUrl;
             string eventType = data.eventType;
             int workItemId = (eventType != "workitem.updated") ? data.resource.id : data.resource.workItemId;
-            Guid teamProject = data.resourceContainers.project.id;
+            Guid teamProjectId = data.resourceContainers.project.id;
+            string teamProjectName = data.resourceContainers.project.name;
 
             logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.DevOpsTokenType}...");
             var clientCredentials = default(VssCredentials);
@@ -68,7 +69,7 @@ namespace aggregator
 
                     var engine = new Engine.RuleEngine(logger, ruleCode);
 
-                    return await engine.ExecuteAsync(collectionUrl, teamProject, workItemId, witClient);
+                    return await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, configuration.DevOpsToken, workItemId, witClient);
                 }
             }
         }

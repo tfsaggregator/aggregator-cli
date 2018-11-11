@@ -307,12 +307,14 @@ namespace aggregator.cli
                 logger.WriteInfo($"Connected to Azure DevOps");
 
                 Guid teamProjectId;
+                string teamProjectName;
                 using (var projectClient = devops.GetClient<ProjectHttpClient>())
                 {
                     logger.WriteVerbose($"Reading Azure DevOps project data...");
                     var project = await projectClient.GetProject(projectName);
                     logger.WriteInfo($"Project {projectName} data read.");
                     teamProjectId = project.Id;
+                    teamProjectName = project.Name;
                 }
 
                 using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
@@ -324,7 +326,7 @@ namespace aggregator.cli
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode);
                     engine.DryRun = dryRun;
 
-                    string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, workItemId, witClient);
+                    string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient);
                     logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;

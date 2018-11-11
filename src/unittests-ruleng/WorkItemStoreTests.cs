@@ -8,15 +8,17 @@ namespace unittests_ruleng
 {
     public class WorkItemStoreTests
     {
+        const string collectionUrl = "https://dev.azure.com/fake-organization";
+        Guid projectId = Guid.NewGuid();
+        const string projectName = "test-project";
+        const string personalAccessToken = "***personalAccessToken***";
+        FakeWorkItemTrackingHttpClient client = new FakeWorkItemTrackingHttpClient(new Uri($"{collectionUrl}"), null);
+        MockAggregatorLogger logger = new MockAggregatorLogger();
+
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
-            string collectionUrl = "https://dev.azure.com/fake-organization";
-            Guid projectId = Guid.NewGuid();
-            var baseUrl = new Uri($"{collectionUrl}");
-            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
-            var logger = new MockAggregatorLogger();
-            var context = new EngineContext(client, projectId, logger);
+            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(42);
@@ -28,12 +30,7 @@ namespace unittests_ruleng
         [Fact]
         public void GetWorkItems_ByIds_Succeeds()
         {
-            string collectionUrl = "https://dev.azure.com/fake-organization";
-            Guid projectId = Guid.NewGuid();
-            var baseUrl = new Uri($"{collectionUrl}");
-            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
-            var logger = new MockAggregatorLogger();
-            var context = new EngineContext(client, projectId, logger);
+            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(new int[] { 42, 99 });
@@ -47,12 +44,7 @@ namespace unittests_ruleng
         [Fact]
         public void NewWorkItem_Succeeds()
         {
-            string collectionUrl = "https://dev.azure.com/fake-organization";
-            Guid projectId = Guid.NewGuid();
-            var baseUrl = new Uri($"{collectionUrl}");
-            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
-            var logger = new MockAggregatorLogger();
-            var context = new EngineContext(client, projectId, logger);
+            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -69,12 +61,7 @@ namespace unittests_ruleng
         [Fact]
         public void AddChild_Succeeds()
         {
-            string collectionUrl = "https://dev.azure.com/fake-organization";
-            Guid projectId = Guid.NewGuid();
-            var baseUrl = new Uri($"{collectionUrl}");
-            var client = new FakeWorkItemTrackingHttpClient(baseUrl, null);
-            var logger = new MockAggregatorLogger();
-            var context = new EngineContext(client, projectId, logger);
+            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var parent = sut.GetWorkItem(1);
