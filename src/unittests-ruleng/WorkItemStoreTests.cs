@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using aggregator;
 using aggregator.Engine;
 using aggregator.unittests;
 using Xunit;
@@ -49,7 +50,7 @@ namespace unittests_ruleng
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = sut.SaveChanges(true).Result;
+            var save = sut.SaveChanges(SaveMode.Item, true).Result;
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);

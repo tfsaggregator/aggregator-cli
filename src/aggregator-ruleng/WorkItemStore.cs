@@ -81,10 +81,28 @@ namespace aggregator.Engine
             };
             var wrapper = new WorkItemWrapper(_context, item);
             _context.Logger.WriteVerbose($"Made new workitem with temporary id {wrapper.Id.Value}");
+            //HACK
+            string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
+            item.Url = $"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}";
             return wrapper;
         }
 
-        public async Task<(int created, int updated)> OLD_SaveChanges(bool commit)
+        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit)
+        {
+            switch (mode)
+            {
+                case SaveMode.Default:
+                    goto case SaveMode.Batch;
+                case SaveMode.Item:
+                    return await SaveChanges_ByItem(commit);
+                case SaveMode.Batch:
+                    return await SaveChanges_Batch(commit);
+                default:
+                    throw new ApplicationException($"Unsupported save mode: {mode}.");
+            }
+        }
+
+        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit)
         {
             int created = 0;
             int updated = 0;
@@ -125,10 +143,11 @@ namespace aggregator.Engine
             return (created, updated);
         }
 
-        public async Task<(int created, int updated)> SaveChanges(bool commit)
+        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
+            // BUG this code won't work if there is a relation between a new (id<0) work item and an existing one (id>0): it is an API limit
 
             const string ApiVersion = "api-version=4.1";
 
@@ -152,9 +171,11 @@ namespace aggregator.Engine
                 batchRequests[index++] = new BatchRequest
                 {
                     method = "PATCH",
-                    uri = $"/{_context.ProjectName}/_apis/wit/workitems/{item.WorkItemType}?{ApiVersion}",
+                    uri = $"{baseUriString}/_apis/wit/workitems/${item.WorkItemType}?{ApiVersion}",
                     headers = headers,
-                    body = item.Changes.ToArray()
+                    body = item.Changes
+                        .Where(c=>c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
+                        .ToArray()
                 };
             }
             foreach (var item in _context.Tracker.ChangedWorkItems)
@@ -164,14 +185,16 @@ namespace aggregator.Engine
                 batchRequests[index++] = new BatchRequest
                 {
                     method = "PATCH",
-                    uri = $"/{_context.ProjectName}/_apis/wit/workitems/{item.Id.Value}?{ApiVersion}",
+                    uri = $"{baseUriString}/_apis/wit/workitems/{item.Id.Value}?{ApiVersion}",
                     headers = headers,
-                    body = item.Changes.ToArray()
+                    body = item.Changes
+                        .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
+                        .ToArray()
                 };
             }
             var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
             string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.Indented, converters);
-
+            _context.Logger.WriteVerbose(requestBody);
 
             if (commit)
             {
@@ -185,21 +208,37 @@ namespace aggregator.Engine
                     var method = new HttpMethod("POST");
 
                     // send the request
-                    var request = new HttpRequestMessage(method, $"{baseUriString}_apis/wit/$batch?{ApiVersion}") { Content = batchRequest };
+                    var request = new HttpRequestMessage(method, $"{baseUriString}/_apis/wit/$batch?{ApiVersion}") { Content = batchRequest };
                     var response = client.SendAsync(request).Result;
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var stringResponse = response.Content.ReadAsStringAsync();
                         WorkItemBatchPostResponse batchResponse = response.Content.ReadAsAsync<WorkItemBatchPostResponse>().Result;
-                        //return batchResponse;
+                        string stringResponse = JsonConvert.SerializeObject(batchResponse);
+                        _context.Logger.WriteVerbose(stringResponse);
+                        bool succeeded = true;
+                        foreach (var batchElement in batchResponse.values)
+                        {
+                            if (batchElement.code != 200)
+                            {
+                                _context.Logger.WriteError($"Save failed: {batchElement.body}");
+                                succeeded = false;
+                            }
+                        }
+                        if (!succeeded)
+                            throw new ApplicationException($"Save failed.");
+                    }
+                    else
+                    {
+                        string stringResponse = await response.Content.ReadAsStringAsync();
+                        _context.Logger.WriteError($"Save failed: {stringResponse}");
+                        throw new ApplicationException($"Save failed: {response.ReasonPhrase}.");
                     }
                 }//using
             }
             else
             {
                 _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
-                _context.Logger.WriteVerbose(requestBody);
             }//if
 
             return (created, updated);
@@ -236,7 +275,9 @@ namespace aggregator.Engine
                     writer.WriteValue(value.From);
                 }
                 writer.WritePropertyName("value");
-                writer.WriteValue(value.Value);
+                //writer.WriteValue(value.Value);
+                t = JToken.FromObject(value.Value);
+                t.WriteTo(writer);
                 writer.WriteEndObject();
             }
         }

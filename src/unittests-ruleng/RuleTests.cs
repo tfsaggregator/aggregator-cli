@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using aggregator;
 using aggregator.Engine;
 using aggregator.unittests;
 using Xunit;
@@ -32,7 +33,7 @@ namespace unittests_ruleng
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince());
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Item);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
@@ -46,7 +47,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince());
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Item);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal(EngineState.Success, engine.State);
@@ -61,7 +62,7 @@ return string.Empty;
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince());
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Item);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal(EngineState.Error, engine.State);
@@ -81,7 +82,7 @@ if (parent != null)
 return message;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince());
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Item);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal("Parent is 1", result);
@@ -96,13 +97,13 @@ var wi = store.NewWorkItem(""Task"");
 wi.Title = ""Brand new"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince());
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Item);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Null(result);
             Assert.Contains(
                 logger.GetMessages(),
-                m => m.Message == "Changes saved to Azure DevOps: 1 created, 0 updated."
+                m => m.Message == "Changes saved to Azure DevOps (mode Item): 1 created, 0 updated."
                     && m.Level == "Info");
         }
 
@@ -117,13 +118,13 @@ newChild.Title = ""Brand new"";
 parent.Relations.AddChild(newChild);
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince());
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Item);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Null(result);
             Assert.Contains(
                 logger.GetMessages(),
-                m => m.Message == "Changes saved to Azure DevOps: 1 created, 1 updated."
+                m => m.Message == "Changes saved to Azure DevOps (mode Item): 1 created, 1 updated."
                     && m.Level == "Info");
         }
     }

@@ -147,7 +147,7 @@ namespace aggregator.cli
                 if (devopsLogonData.Mode == DevOpsTokenType.PAT)
                 {
                     logger.WriteVerbose($"Saving Azure DevOps token");
-                    ok = await ChangeAppSettings(instance, devopsLogonData);
+                    ok = await ChangeAppSettings(instance, devopsLogonData, SaveMode.Default);
                     if (ok)
                     {
                         logger.WriteInfo($"Azure DevOps token saved");
@@ -166,7 +166,7 @@ namespace aggregator.cli
             return ok;
         }
 
-        internal async Task<bool> ChangeAppSettings(InstanceName instance, DevOpsLogon devopsLogonData)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode)
         {
             var webFunctionApp = await azure
                 .AppServices
@@ -177,7 +177,8 @@ namespace aggregator.cli
             var configuration = new AggregatorConfiguration
             {
                 DevOpsTokenType = devopsLogonData.Mode,
-                DevOpsToken = devopsLogonData.Token
+                DevOpsToken = devopsLogonData.Token,
+                SaveMode = saveMode
             };
             configuration.Write(webFunctionApp);
             return true;
@@ -222,14 +223,14 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> SetAuthentication(InstanceName instance, string location)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, string location, SaveMode saveMode)
         {
             bool ok;
             var devopsLogonData = DevOpsLogon.Load().connection;
             if (devopsLogonData.Mode == DevOpsTokenType.PAT)
             {
                 logger.WriteVerbose($"Saving Azure DevOps token");
-                ok = await ChangeAppSettings(instance, devopsLogonData);
+                ok = await ChangeAppSettings(instance, devopsLogonData, saveMode);
                 logger.WriteInfo($"Azure DevOps token saved");
             }
             else

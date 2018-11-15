@@ -20,6 +20,10 @@ namespace aggregator.cli
 
         [Option('a', "authentication", SetName = "auth", Required = true, HelpText = "Refresh authentication data.")]
         public bool Authentication { get; set; }
+
+        [Option('m', "saveMode", SetName = "save", Required = false, HelpText = "Save behaviour.")]
+        public SaveMode SaveMode { get; set; }
+        
         // TODO add --swap.slot to support App Service Deployment Slots
 
 
@@ -34,7 +38,7 @@ namespace aggregator.cli
             bool ok = false;
             if (Authentication)
             {
-                ok = await instances.SetAuthentication(instance, Location);
+                ok = await instances.ChangeAppSettings(instance, Location, SaveMode);
             } else
             {
                 context.Logger.WriteError($"Unsupported command option(s)");

@@ -38,6 +38,12 @@ namespace aggregator.Engine
             else
             {
                 Id = new TemporaryWorkItemId(_context.Tracker);
+                Changes.Add(new JsonPatchOperation()
+                {
+                    Operation = Operation.Add,
+                    Path = "/id",
+                    Value = Id.Value
+                });
                 _context.Tracker.TrackNew(this);
             }
         }
@@ -54,6 +60,12 @@ namespace aggregator.Engine
             _item.Fields[CoreFieldRefNames.Id] = Id.Value;
             _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
+            Changes.Add(new JsonPatchOperation()
+            {
+                Operation = Operation.Add,
+                Path = "/id",
+                Value = Id.Value
+            });
             _context.Tracker.TrackNew(this);
         }
 
@@ -69,6 +81,12 @@ namespace aggregator.Engine
             _item.Fields[CoreFieldRefNames.Id] = Id.Value;
             _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
+            Changes.Add(new JsonPatchOperation()
+            {
+                Operation = Operation.Add,
+                Path = "/id",
+                Value = Id.Value
+            });
             _context.Tracker.TrackNew(this);
         }
 

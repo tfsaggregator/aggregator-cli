@@ -22,12 +22,14 @@ namespace aggregator.Engine
     {
         private readonly IAggregatorLogger logger;
         private readonly Script<string> roslynScript;
+        private readonly SaveMode saveMode;
 
-        public RuleEngine(IAggregatorLogger logger, string[] ruleCode)
+        public RuleEngine(IAggregatorLogger logger, string[] ruleCode, SaveMode mode)
         {
             State = EngineState.Unknown;
 
             this.logger = logger;
+            this.saveMode = mode;
 
             var directives = new DirectivesParser(logger, ruleCode);
             if (!directives.Parse())
@@ -110,11 +112,11 @@ namespace aggregator.Engine
             }
             State = EngineState.Success;
 
-            logger.WriteVerbose($"Post-execution, save any change...");
-            var saveRes = await store.SaveChanges(!this.DryRun);
+            logger.WriteVerbose($"Post-execution, save any change (mode {saveMode})...");
+            var saveRes = await store.SaveChanges(saveMode, !this.DryRun);
             if (saveRes.created + saveRes.updated > 0)
             {
-                logger.WriteInfo($"Changes saved to Azure DevOps: {saveRes.created} created, {saveRes.updated} updated.");
+                logger.WriteInfo($"Changes saved to Azure DevOps (mode {saveMode}): {saveRes.created} created, {saveRes.updated} updated.");
             }
             else
             {

@@ -67,7 +67,7 @@ namespace aggregator
                     logger.WriteVerbose($"Rule code found at {ruleFilePath}");
                     string[] ruleCode = File.ReadAllLines(ruleFilePath);
 
-                    var engine = new Engine.RuleEngine(logger, ruleCode);
+                    var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode);
 
                     return await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, configuration.DevOpsToken, workItemId, witClient);
                 }

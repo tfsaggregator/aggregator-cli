@@ -9,7 +9,7 @@ namespace aggregator.cli
     [Verb("invoke.rule", HelpText = "Executes a rule locally or in an existing Aggregator instance.")]
     class InvokeRuleCommand : CommandBase
     {
-        [Option('d', "dryrun", Required = false, Default = true, HelpText = "Real or non-committing run.")]
+        [Option('d', "dryrun", Required = false, Default = false, HelpText = "Real or non-committing run.")]
         public bool DryRun { get; set; }
 
         [Option('p', "project", Required = true, HelpText = "Azure DevOps project name.")]
@@ -27,6 +27,9 @@ namespace aggregator.cli
         [Option('s', "source", SetName = "Local", Required = true, HelpText = "Aggregator rule code.")]
         public string Source { get; set; }
 
+        [Option('m', "saveMode", SetName = "Local", Required = false, HelpText = "Save behaviour.")]
+        public SaveMode SaveMode { get; set; }
+
         [Option('i', "instance", SetName = "Remote", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
@@ -42,7 +45,7 @@ namespace aggregator.cli
             var rules = new AggregatorRules(context.Azure, context.Logger);
             if (Local)
             {
-                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun);
+                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode);
                 return ok ? 0 : 1;
             }
             else

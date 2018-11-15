@@ -19,4 +19,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
+  </ItemGroup>
+
 </Project>

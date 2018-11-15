@@ -278,7 +278,7 @@ namespace aggregator.cli
             return ok;
         }
 
-        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun)
+        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode)
         {
             if (!File.Exists(ruleFilePath))
             {
@@ -323,7 +323,7 @@ namespace aggregator.cli
                     string[] ruleCode = File.ReadAllLines(ruleFilePath);
 
                     var engineLogger = new EngineWrapperLogger(logger);
-                    var engine = new Engine.RuleEngine(engineLogger, ruleCode);
+                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode);
                     engine.DryRun = dryRun;
 
                     string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient);

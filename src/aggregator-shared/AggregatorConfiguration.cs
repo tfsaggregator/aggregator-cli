@@ -8,6 +8,14 @@ namespace aggregator
         PAT = 1,
     }
 
+    public enum SaveMode
+    {
+        Default = 0,
+        Item = 1,
+        Batch = 2,
+        TwoPhases = 3
+    }
+
     /// <summary>
     /// This class tracks the configuration data that CLI writes and Function runtime reads
     /// </summary>
@@ -21,6 +29,9 @@ namespace aggregator
             Enum.TryParse(config["Aggregator_VstsTokenType"], out DevOpsTokenType vtt);
             ac.DevOpsTokenType = vtt;
             ac.DevOpsToken = config["Aggregator_VstsToken"];
+            ac.SaveMode = Enum.TryParse(config["Aggregator_SaveMode"], out SaveMode sm)
+                ? sm
+                : SaveMode.Item;
             return ac;
         }
 
@@ -30,10 +41,12 @@ namespace aggregator
                 .Update()
                 .WithAppSetting("Aggregator_VstsTokenType", DevOpsTokenType.ToString())
                 .WithAppSetting("Aggregator_VstsToken", DevOpsToken)
+                .WithAppSetting("Aggregator_SaveMode", SaveMode.ToString())
                 .Apply();
         }
 
         public DevOpsTokenType DevOpsTokenType { get; set; }
         public string DevOpsToken { get; set; }
+        public SaveMode SaveMode { get; set; }
     }
 }
