@@ -214,6 +214,7 @@ namespace aggregator.Engine
         public WorkItemId<int> Id
         {
             get;
+            private set;
         }
 
         public int Rev
@@ -438,6 +439,47 @@ namespace aggregator.Engine
             return _item.Fields.ContainsKey(field)
                 ? (T)_item.Fields[field]
                 : default(T);
+        }
+
+        internal void ReplaceIdAndResetChanges(int oldId, int newId)
+        {
+            if (oldId >= 0) throw new ArgumentOutOfRangeException(nameof(oldId));
+
+            Id = new PermanentWorkItemId(newId);
+
+            var candidates = Changes.Where(op => op.Path == "/relations/-");
+            foreach (var op in candidates)
+            {
+                var patch = op.Value as RelationPatch;
+                string url = patch.url;
+                int pos = url.LastIndexOf('/') + 1;
+                int relId = int.Parse(url.Substring(pos));
+                if (relId == oldId)
+                {
+                    patch.url = url.Substring(0, pos) + newId.ToString();
+                    break;
+                }
+            }
+
+            Changes.RemoveAll(op => op.Path.StartsWith("/fields/") || op.Path == "/id");
+        }
+
+        internal void RemapIdReferences(IDictionary<int, int> realIds)
+        {
+            var candidates = Changes.Where(op => op.Path == "/relations/-");
+            foreach (var op in candidates)
+            {
+                var patch = op.Value as RelationPatch;
+                string url = patch.url;
+                int pos = url.LastIndexOf('/') + 1;
+                int relId = int.Parse(url.Substring(pos));
+                if (realIds.ContainsKey(relId))
+                {
+                    int newId = realIds[relId];
+                    string newUrl = url.Substring(0, pos) + newId.ToString();
+                    patch.url = newUrl;
+                }
+            }
         }
     }
 }

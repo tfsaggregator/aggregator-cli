@@ -39,7 +39,7 @@ namespace aggregator.Engine
             {
                 Operation = Operation.Add,
                 Path = "/relations/-",
-                Value = new
+                Value = new RelationPatch
                 {
                     rel = item.Rel,
                     url = item.Url,
