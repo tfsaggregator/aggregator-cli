@@ -125,5 +125,15 @@ namespace integrationtests.cli
             Assert.DoesNotContain("Instance my4", output);
             Assert.Contains("Instance my5", output);
         }
+
+        [Theory, Order(10)]
+        [InlineData("my5", "test5")]
+        void UnmapRules(string instance, string rule)
+        {
+            (int rc, string output) = RunAggregatorCommand($"unmap.rule --project {project} --event workitem.created --instance {instance} --resourceGroup {resourceGroup} --rule {rule}");
+
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+        }
     }
 }
