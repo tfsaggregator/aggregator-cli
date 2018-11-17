@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.16.1" />
-    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.16.1" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.17.0" />
+    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.17.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.137.0-preview" />
