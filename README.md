@@ -10,13 +10,14 @@ The Web Service flavor will be discontinued in favor of this (its deployment and
 
 The main scenario for Aggregator (3.x) is supporting Azure DevOps and the cloud scenario. It will work for TFS as long as it is reachable from Internet.
 
-> **This is an early version (alpha)**: we might change verbs and rule language before the final release!
+> **This is an early version (beta)**: we might change verbs and rule language before the final release!
+*Note*: The documentation is limited to this page and the content of the `doc` folder.
 
 ## Major features
 
-- use of new REST API
+- use of new Azure DevOps REST API
 - simple deployment via CLI tool
-- similar model for Rules
+- Rule object model similar to v2
 
 ## Planned features
 
@@ -40,7 +41,7 @@ Aggregator checks its latest GitHub Release to ensure that Aggregator Runtime is
 
 An Aggregator Mapping is a Azure DevOps Service Hook for a specific work item event that invokes an Aggregator Rule i.e. the Azure Function hosting the Rule code. Azure DevOps saves the Azure Function Key in the Service Hook configuration.
 
-You can deploy the same Rule in many Instances or map the same Azure DevOps event to many Rules: it is up how to organize.
+You can deploy the same Rule in many Instances or map the same Azure DevOps event to many Rules: it is up to you choosing the best way to organize.
 
 ## Authentication
 
@@ -49,19 +50,17 @@ To do this, run the `login.azure` and `login.ado` commands.
 
 To create the credentials, you need an Azure Service Principal and a Azure DevOps Personal Access Token.
 
-These documents will guide you
+These documents will guide you in creating the credentials
 * [Use portal to create an Azure Active Directory application and service principal that can access resources](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal)        
 * [Create personal access tokens to authenticate access](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate).
 
 Logon credentials are stored locally and expire after 2 hours.
 
-The PAT is stored in the Azure Function settings: **whoever has access to the Resource Group can read it!**
+The PAT is also stored in the Azure Function settings: **whoever has access to the Resource Group can read it!**
 
-The Service Principal must have Contributor permission to the Azure Subscription.
-In alternative, pre-create the `aggregator-` Resource Group in Azure and give the service account Contributor permission to the Resource Group.
+The Service Principal must have Contributor permission to the Azure Subscription or, in alternative, pre-create the Resource Group in Azure and give the service account Contributor permission to the Resource Group.
 ![Permission on existing Resource Group](doc/contributor-on-rg.png)
-If you go this route, you must add the `--resourceGroup` to all commands requiring an instance.
-The `instance` parameter prefixes `aggregator-` to identify the Resource Group.
+If you go this route, remember add the `--resourceGroup` to all commands requiring an instance, otherwise the `instance` parameter adds an `aggregator-` prefixe to find the Resource Group.
 
 ## Usage
 

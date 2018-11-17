@@ -41,3 +41,13 @@ return message;
 ```
 return self.PreviousRevision.PreviousRevision.Description;
 ```
+
+# Create new Work Item
+```
+var parent = self;
+var newChild = store.NewWorkItem("Task");
+newChild.Title = "Brand new child";
+parent.Relations.AddChild(newChild);
+
+return parent.Title;
+```
