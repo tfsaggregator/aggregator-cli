@@ -7,23 +7,33 @@ namespace aggregator.cli
     /*
     Ideas for verbs and options:
 
-    logon.vsts --url URL --mode MODE --token TOKEN --slot SLOT
+    logon.azure --subscription SUBSCRIPTION_ID --client CLIENT_ID --password CLIENT_PASSWORD --tenant TENANT_ID  --instance INSTANCE --resourceGroup RESOURCEGROUP
+        default values for instance and resource group
+    logon.ado --url URL --mode MODE --token TOKEN --project PROJECT
+        default value for project
+
+    logon.ado --url URL --mode MODE --token TOKEN --slot SLOT
         to use different credentials
+
     configure.instance --slot SLOT --swap --avzone ZONE
         add a deployment slot with the option to specify an availability zone, the swap option will set the new slot as primary
     configure.instance --listOutboundIPs
         use `azure.AppServices.WebApps.GetByResourceGroup(instance.ResourceGroupName,instance.FunctionAppName).OutboundIPAddresses`
+    configure.instance --MSI
+        support for Managed service identity when AzDO is backed by AAD
+
     configure.rule --verbose --instance INSTANCE --name RULE --file FILE --slot SLOT
         change rule code on a single deployment slot
-    invoke.rule --verbose --local --ruleSource FILE --event EVENT --workItemId WORK_ITEM_ID
+        
+    invoke.rule --verbose --dryrun --local --ruleSource FILE --event EVENT --workItemId WORK_ITEM_ID
         runs rule code locally
-    invoke.rule --verbose --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --slot SLOT
+    invoke.rule --verbose --dryrun --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --slot SLOT
         emulates the event on the rule
 
     */
-    class Program
+    public class Program
     {
-        static int Main(string[] args)
+        public static int Main(string[] args)
         {
             var parser = new Parser(settings =>
             {
@@ -31,16 +41,19 @@ namespace aggregator.cli
                 // fails see https://github.com/commandlineparser/commandline/issues/198
                 settings.CaseInsensitiveEnumValues = true;
             });
-            var parserResult = parser.ParseArguments(args,
-                typeof(LogonAzureCommand), typeof(LogonVstsCommand),
+            var types = new Type[] {
+                typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
-                typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand), typeof(ConfigureRuleCommand),
+                typeof(ConfigureInstanceCommand),
+                typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
+                typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
-                );
+            };
+            var parserResult = parser.ParseArguments(args, types);
             int rc = -1;
             parserResult
                 .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())
-                .WithParsed<LogonVstsCommand>(cmd => rc = cmd.Run())
+                .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run())
                 .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run())
                 .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run())
@@ -49,6 +62,8 @@ namespace aggregator.cli
                 .WithParsed<AddRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<UpdateRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<InvokeRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run())
                 .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run())

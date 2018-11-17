@@ -31,37 +31,84 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateVersion(string requiredVersion, InstanceName instance, IAzure azure)
         {
-            if (string.IsNullOrWhiteSpace(requiredVersion))
-            {
-                requiredVersion = "latest";
-            }
+            string tag = string.IsNullOrWhiteSpace(requiredVersion)
+                ? "latest"
+                : (requiredVersion != "latest"
+                    ? (requiredVersion[0] != 'v'
+                        ? "v" + requiredVersion
+                        : requiredVersion)
+                    : requiredVersion);
+
             logger.WriteVerbose($"Checking runtime package versions in GitHub");
-            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(requiredVersion);
+            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(tag);
+            if (string.IsNullOrEmpty(rel_name))
+            {
+                logger.WriteError($"Requested runtime {requiredVersion} version does not exists.");
+                return false;
+            }
             if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
             var requiredRuntimeVer = SemVersion.Parse(rel_name);
-            logger.WriteInfo($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
+            logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
 
             string localPackageVersion = GetLocalPackageVersion(RuntimePackageFile);
             var localRuntimeVer = SemVersion.Parse(localPackageVersion);
-            logger.WriteInfo($"Cached Runtime package version is {localRuntimeVer}.");
-            if (ShouldUpdate(requiredRuntimeVer, localRuntimeVer))
-            {
-                logger.WriteVerbose($"Downloading runtime package {rel_name}");
-                await Download(rel_url);
-                logger.WriteInfo($"Runtime package downloaded.");
-            }
+            logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
 
-            logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
-            bool ok = await UploadRuntimeZip(instance, azure);
-            if (ok)
+            // TODO check the uploaded version before overwriting?
+            string manifestVersion = "0.0.0";
+            logger.WriteVerbose($"Retrieving functions runtime");
+            var kudu = new KuduApi(instance, azure, logger);
+            using (var client = new HttpClient())
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini"))
+            using (var response = await client.SendAsync(request))
             {
-                logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
+                string manifest = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // HACK refactor so that there is a single class parsing the manifest
+                    var parts = manifest.Split('=');
+                    if (parts[0] == "version")
+                        manifestVersion = parts[1];
+                }
+                else
+                {
+                    logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase}");
+                }
+            }
+            var uploadedRuntimeVer = SemVersion.Parse(manifestVersion);
+            logger.WriteVerbose($"Function Runtime version is {uploadedRuntimeVer}.");
+
+            if (requiredRuntimeVer > uploadedRuntimeVer || localRuntimeVer > uploadedRuntimeVer)
+            {
+                if (requiredRuntimeVer > localRuntimeVer)
+                {
+                    logger.WriteVerbose($"Downloading runtime package {rel_name}");
+                    await Download(rel_url);
+                    logger.WriteInfo($"Runtime package downloaded.");
+                }
+                else
+                {
+                    logger.WriteInfo($"Using cached runtime package {localRuntimeVer}");
+                }
+
+                logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
+                bool ok = await UploadRuntimeZip(instance, azure);
+                if (ok)
+                {
+                    logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
+                }
+                else
+                {
+                    logger.WriteError($"Failed uploading Runtime to {instance.DnsHostName}.");
+                }
+                return ok;
             }
             else
             {
-                logger.WriteError($"Failed uploading Runtime to {instance.DnsHostName}.");
+                logger.WriteInfo($"Runtime package is up to date.");
+                return true;
             }
-            return ok;
         }
 
         private string GetLocalPackageVersion(string runtimePackageFile)
@@ -84,11 +131,6 @@ namespace aggregator.cli
                 }
             }
             return manifestVersion;
-        }
-
-        private bool ShouldUpdate(SemVersion lastRuntimeVer, SemVersion currentCliVer)
-        {
-             return lastRuntimeVer > currentCliVer;
         }
 
         private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHub(string tag = "latest")

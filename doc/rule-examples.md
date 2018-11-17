@@ -12,14 +12,14 @@ $"Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"
 
 This is more similar to classic TFS Aggregator.
 It move a parent work item to Closed state, if all children are closed.
-The major difference is the navigation: `Parent` and `Children` properties do not returns work items but relation. You have to explicitly query VSTS to retrieve the referenced work items.
+The major difference is the navigation: `Parent` and `Children` properties do not returns work items but relation. You have to explicitly query Azure DevOps to retrieve the referenced work items.
 
 ```
 string message = "";
-if (self.Parent != null)
+var parent = self.Parent;
+if (parent != null)
 {
-    var parent = store.GetWorkItem(self.Parent);
-    var children = store.GetWorkItems(parent.Children);
+    var children = parent.Children;
     if (children.All(c => c.State == "Closed"))
     {
         parent.State = "Closed";
@@ -40,4 +40,14 @@ return message;
 
 ```
 return self.PreviousRevision.PreviousRevision.Description;
+```
+
+# Create new Work Item
+```
+var parent = self;
+var newChild = store.NewWorkItem("Task");
+newChild.Title = "Brand new child";
+parent.Relations.AddChild(newChild);
+
+return parent.Title;
 ```

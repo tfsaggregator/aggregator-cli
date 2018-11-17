@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\aggregator-core\aggregator-core.csproj" />
+    <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
   </ItemGroup>
 
 </Project>

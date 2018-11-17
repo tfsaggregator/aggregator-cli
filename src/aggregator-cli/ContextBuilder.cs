@@ -12,12 +12,12 @@ namespace aggregator.cli
     {
         internal ILogger Logger { get; private set; }
         internal IAzure Azure { get; private set; }
-        internal VssConnection Vsts { get; private set; }
-        internal CommandContext(ILogger logger, IAzure azure, VssConnection vsts)
+        internal VssConnection Devops { get; private set; }
+        internal CommandContext(ILogger logger, IAzure azure, VssConnection devops)
         {
             Logger = logger;
             Azure = azure;
-            Vsts = vsts;
+            Devops = devops;
         }
     }
 
@@ -25,7 +25,7 @@ namespace aggregator.cli
     {
         ILogger logger;
         bool azureLogon = false;
-        bool vstsLogon = false;
+        bool devopsLogon = false;
 
         internal ContextBuilder(ILogger logger) => this.logger = logger;
 
@@ -34,15 +34,15 @@ namespace aggregator.cli
             azureLogon = true;
             return this;
         }
-        internal ContextBuilder WithVstsLogon()
+        internal ContextBuilder WithDevOpsLogon()
         {
-            vstsLogon = true;
+            devopsLogon = true;
             return this;
         }
         internal async Task<CommandContext> Build()
         {
             IAzure azure = null;
-            VssConnection vsts = null;
+            VssConnection devops = null;
 
             if (azureLogon)
             {
@@ -57,20 +57,20 @@ namespace aggregator.cli
                 logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
             }
 
-            if (vstsLogon)
+            if (devopsLogon)
             {
-                logger.WriteVerbose($"Authenticating to VSTS...");
-                var (connection, reason) = VstsLogon.Load();
+                logger.WriteVerbose($"Authenticating to Azure DevOps...");
+                var (connection, reason) = DevOpsLogon.Load();
                 if (reason != LogonResult.Succeeded)
                 {
                     string msg = TranslateResult(reason);
-                    throw new ApplicationException(string.Format(msg, "VSTS", "logon.vsts"));
+                    throw new ApplicationException(string.Format(msg, "Azure DevOps", "logon.ado"));
                 }
-                vsts = await connection.LogonAsync();
-                logger.WriteInfo($"Connected to {vsts.Uri.Host}");
+                devops = await connection.LogonAsync();
+                logger.WriteInfo($"Connected to {devops.Uri.Host}");
             }
 
-            return new CommandContext(logger, azure, vsts);
+            return new CommandContext(logger, azure, devops);
         }
 
         private string TranslateResult(LogonResult reason)

@@ -332,6 +332,8 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+## Specific to this repo
 secrets/
 src/aggregator-cli/FunctionRuntime.zip
 *.exe

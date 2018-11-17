@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -28,13 +29,12 @@ namespace aggregator
         {
             log.LogDebug($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
 
-            // TODO check expected version
-            string aggregatorVersion = null;
+            var aggregatorVersion = GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
             try
             {
                 string rule = context.FunctionName;
-                log.LogInformation($"Welcome to rule '{rule}'");
+                log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{rule}'");
             }
             catch (Exception ex)
             {
@@ -57,12 +57,12 @@ namespace aggregator
             string eventType = data.eventType;
 
             // sanity check
-            if (!VstsEvents.IsValidEvent(eventType)
-                || data.publisherId != VstsEvents.PublisherId)
+            if (!DevOpsEvents.IsValidEvent(eventType)
+                || data.publisherId != DevOpsEvents.PublisherId)
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
                 {
-                    error = "Not a good VSTS post..."
+                    error = "Not a good Azure DevOps post..."
                 });
             }
 
@@ -77,7 +77,7 @@ namespace aggregator
             var wrapper = new RuleWrapper(configuration, logger, context.FunctionName, context.FunctionDirectory);
             try
             {
-                string execResult = await wrapper.Execute(aggregatorVersion, data);
+                string execResult = await wrapper.Execute(data);
 
                 if (string.IsNullOrEmpty(execResult))
                 {
@@ -105,6 +105,15 @@ namespace aggregator
                 };
                 return resp;
             }
+        }
+
+        private static T GetCustomAttribute<T>()
+            where T : Attribute
+        {
+            return System.Reflection.Assembly
+                .GetExecutingAssembly()
+                .GetCustomAttributes(typeof(T), false)
+                .FirstOrDefault() as T;
         }
     }
 }

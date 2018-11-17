@@ -58,11 +58,32 @@ namespace aggregator.cli
             return result;
         }
 
+        internal async Task<IEnumerable<string>> ListInResourceGroupAsync(string resourceGroup)
+        {
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup);
+
+            var result = new List<string>();
+            foreach (var app in apps)
+            {
+                result.Add(
+                    InstanceName.FromFunctionAppName(app.Name).PlainName);
+            }
+            return result;
+        }
+
+
         internal async Task<bool> Add(InstanceName instance, string location, string requiredVersion)
         {
             string rgName = instance.ResourceGroupName;
+            logger.WriteVerbose($"Checking if Resource Group {rgName} already exists");
             if (!await azure.ResourceGroups.ContainAsync(rgName))
             {
+                if (instance.IsCustom)
+                {
+                    logger.WriteError($"Resource group {rgName} is custom and cannot be created.");
+                    return false;
+                }
+
                 logger.WriteVerbose($"Creating resource group {rgName}");
                 await azure.ResourceGroups
                     .Define(rgName)
@@ -71,7 +92,7 @@ namespace aggregator.cli
                 logger.WriteInfo($"Resource group {rgName} created.");
             }
 
-            // TODO the template should create a Storage account and/or a Key Vault
+            // IDEA the template should create a Storage account and/or a Key Vault
             var resourceName = "aggregator.cli.Instances.instance-template.json";
             string armTemplateString;
             var assembly = Assembly.GetExecutingAssembly();
@@ -122,23 +143,30 @@ namespace aggregator.cli
             bool ok = await package.UpdateVersion(requiredVersion, instance, azure);
             if (ok)
             {
-                var vstsLogonData = VstsLogon.Load().connection;
-                if (vstsLogonData.Mode == VstsTokenType.PAT)
+                var devopsLogonData = DevOpsLogon.Load().connection;
+                if (devopsLogonData.Mode == DevOpsTokenType.PAT)
                 {
-                    logger.WriteVerbose($"Saving VSTS token");
-                    ok = await ChangeAppSettings(instance, vstsLogonData);
-                    logger.WriteInfo($"VSTS token saved");
+                    logger.WriteVerbose($"Saving Azure DevOps token");
+                    ok = await ChangeAppSettings(instance, devopsLogonData, SaveMode.Default);
+                    if (ok)
+                    {
+                        logger.WriteInfo($"Azure DevOps token saved");
+                    }
+                    else
+                    {
+                        logger.WriteError($"Failed to save Azure DevOps token");
+                    }
                 }
                 else
                 {
-                    logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
+                    logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
                     ok = false;
                 }
             }
             return ok;
         }
 
-        internal async Task<bool> ChangeAppSettings(InstanceName instance, VstsLogon vstsLogonData)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode)
         {
             var webFunctionApp = await azure
                 .AppServices
@@ -148,8 +176,9 @@ namespace aggregator.cli
                     instance.FunctionAppName);
             var configuration = new AggregatorConfiguration
             {
-                VstsTokenType = vstsLogonData.Mode,
-                VstsToken = vstsLogonData.Token
+                DevOpsTokenType = devopsLogonData.Mode,
+                DevOpsToken = devopsLogonData.Token,
+                SaveMode = saveMode
             };
             configuration.Write(webFunctionApp);
             return true;
@@ -159,32 +188,54 @@ namespace aggregator.cli
         {
             string rgName = instance.ResourceGroupName;
             logger.WriteVerbose($"Searching instance {instance.PlainName}...");
-            if (await azure.ResourceGroups.ContainAsync(rgName))
+            bool rgFound = await azure.ResourceGroups.ContainAsync(rgName);
+            if (!rgFound)
             {
-                logger.WriteVerbose($"Deleting resource group {rgName}");
+                logger.WriteWarning($"Resource Group {rgName} not found in {location}.");
+                return false;
+            }
+            var functionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rgName, instance.FunctionAppName);
+            if (functionApp == null)
+            {
+                logger.WriteWarning($"Instance {functionApp.Name} not found in resource group {rgName}.");
+                return false;
+            }
+
+            logger.WriteVerbose($"Deleting instance {functionApp.Name} in resource group {rgName}.");
+            await azure.AppServices.FunctionApps.DeleteByIdAsync(functionApp.Id);
+            logger.WriteInfo($"Instance {functionApp.Name} deleted.");
+
+            // we delete the RG only if was made by us
+            logger.WriteVerbose($"Checking if last instance in resource group {rgName}");
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName);
+            if (apps == null || apps.Count() == 0)
+            {
+                if (instance.IsCustom)
+                {
+                    logger.WriteWarning($"Resource group {rgName} is custom and won't be deleted.");
+                    return true;
+                }
+
+                logger.WriteVerbose($"Deleting empty resource group {rgName}");
                 await azure.ResourceGroups.DeleteByNameAsync(rgName);
                 logger.WriteInfo($"Resource group {rgName} deleted.");
-            }
-            else
-            {
-                logger.WriteWarning($"Instance {instance.PlainName} not found in {location}.");
             }
             return true;
         }
 
-        internal async Task<bool> SetAuthentication(InstanceName instance, string location)
+        internal async Task<bool> ChangeAppSettings(InstanceName instance, string location, SaveMode saveMode)
         {
             bool ok;
-            var vstsLogonData = VstsLogon.Load().connection;
-            if (vstsLogonData.Mode == VstsTokenType.PAT)
+            var devopsLogonData = DevOpsLogon.Load().connection;
+            if (devopsLogonData.Mode == DevOpsTokenType.PAT)
             {
-                logger.WriteVerbose($"Saving VSTS token");
-                ok = await ChangeAppSettings(instance, vstsLogonData);
-                logger.WriteInfo($"VSTS token saved");
+                logger.WriteVerbose($"Saving Azure DevOps token");
+                ok = await ChangeAppSettings(instance, devopsLogonData, saveMode);
+                logger.WriteInfo($"Azure DevOps token saved");
             }
             else
             {
-                logger.WriteWarning($"VSTS token type {vstsLogonData.Mode} is unsupported");
+                logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
                 ok = false;
             }
             return ok;

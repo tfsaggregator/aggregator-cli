@@ -15,22 +15,25 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
-        [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from VSTS (default is to remove them).")]
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        public string ResourceGroup { get; set; }
+
+        [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from Azure DevOps (default is to remove them).")]
         public bool Mappings { get; set; }
 
         internal override async Task<int> RunAsync()
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon()
+                .WithDevOpsLogon()
                 .Build();
 
-            var instance = new InstanceName(Name);
+            var instance = new InstanceName(Name, ResourceGroup);
 
             bool ok;
             if (!Mappings)
             {
-                var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
+                var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
                 ok = await mappings.RemoveInstanceAsync(instance);
             }
 
