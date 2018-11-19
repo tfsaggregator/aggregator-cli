@@ -31,7 +31,7 @@ namespace aggregator
             ac.DevOpsToken = config["Aggregator_VstsToken"];
             ac.SaveMode = Enum.TryParse(config["Aggregator_SaveMode"], out SaveMode sm)
                 ? sm
-                : SaveMode.Item;
+                : SaveMode.Default;
             return ac;
         }
 
