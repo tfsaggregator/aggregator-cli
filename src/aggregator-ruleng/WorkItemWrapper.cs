@@ -169,8 +169,13 @@ namespace aggregator.Engine
         {
             get
             {
-                var store = new WorkItemStore(_context);
-                return store.GetWorkItems(ChildrenLinks);
+                if (ChildrenLinks != null && ChildrenLinks.Count() > 0)
+                {
+                    var store = new WorkItemStore(_context);
+                    return store.GetWorkItems(ChildrenLinks);
+                }
+                else
+                    return new WorkItemWrapper[0];                 
             }
         }
 
@@ -206,8 +211,13 @@ namespace aggregator.Engine
         {
             get
             {
-                var store = new WorkItemStore(_context);
-                return store.GetWorkItem(ParentLink);
+                 if (ParentLink != null && ParentLink != default(WorkItemRelationWrapper))
+                {
+                    var store = new WorkItemStore(_context);
+                    return store.GetWorkItem(ParentLink);
+                }
+                else
+                    return null;
             }
         }
 
