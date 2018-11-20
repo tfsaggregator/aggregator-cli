@@ -13,28 +13,32 @@ namespace aggregator.cli
 {
     internal class AggregatorMappings
     {
-        private VssConnection vsts;
+        private VssConnection devops;
         private readonly IAzure azure;
         private readonly ILogger logger;
 
-        public AggregatorMappings(VssConnection vsts, IAzure azure, ILogger logger)
+        public AggregatorMappings(VssConnection devops, IAzure azure, ILogger logger)
         {
-            this.vsts = vsts;
+            this.devops = devops;
             this.azure = azure;
             this.logger = logger;
         }
 
-        internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance)
+        internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance, string projectName)
         {
-            logger.WriteVerbose($"Searching aggregator mappings in VSTS...");
-            var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
+            logger.WriteVerbose($"Searching aggregator mappings in Azure DevOps...");
+            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
             var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync();
-            var filteredSubs = subscriptions.Where(s
-                    => s.PublisherId == VstsEvents.PublisherId
-                    && s.ConsumerInputs["url"].ToString().StartsWith(
-                        instance.FunctionAppUrl)
-                    );
-            var projectClient = vsts.GetClient<ProjectHttpClient>();
+            var filteredSubs = instance != null
+                    ? subscriptions.Where(s
+                        => s.PublisherId == DevOpsEvents.PublisherId
+                        && s.ConsumerInputs["url"].ToString().StartsWith(
+                            instance.FunctionAppUrl))
+                    : subscriptions.Where(s
+                        => s.PublisherId == DevOpsEvents.PublisherId
+                        // HACK
+                        && s.ConsumerInputs["url"].ToString().IndexOf("aggregator.azurewebsites.net") > 8);
+            var projectClient = devops.GetClient<ProjectHttpClient>();
             var projects = await projectClient.GetProjects();
             var projectsDict = projects.ToDictionary(p => p.Id);
 
@@ -44,10 +48,14 @@ namespace aggregator.cli
                 var foundProject = projectsDict[
                     new Guid(subscription.PublisherInputs["projectId"])
                     ];
+                if (!string.IsNullOrEmpty(projectName) && foundProject.Name != projectName)
+                {
+                    continue;
+                }
                 // HACK need to factor the URL<->rule_name
                 string ruleUrl = subscription.ConsumerInputs["url"].ToString();
                 string ruleName = ruleUrl.Substring(ruleUrl.LastIndexOf('/'));
-                string ruleFullName = instance.PlainName + ruleName;
+                string ruleFullName = InstanceName.FromFunctionAppUrl(ruleUrl).PlainName + ruleName;
                 result.Add(
                     (ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
@@ -57,8 +65,8 @@ namespace aggregator.cli
 
         internal async Task<Guid> Add(string projectName, string @event, InstanceName instance, string ruleName)
         {
-            logger.WriteVerbose($"Reading VSTS project data...");
-            var projectClient = vsts.GetClient<ProjectHttpClient>();
+            logger.WriteVerbose($"Reading Azure DevOps project data...");
+            var projectClient = devops.GetClient<ProjectHttpClient>();
             var project = await projectClient.GetProject(projectName);
             logger.WriteInfo($"Project {projectName} data read.");
 
@@ -67,11 +75,24 @@ namespace aggregator.cli
             (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
+            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
 
             // check if the subscription already exists and bail out
             var query = new SubscriptionsQuery {
-                PublisherId = VstsEvents.PublisherId,
+                PublisherId = DevOpsEvents.PublisherId,
+                PublisherInputFilters= new InputFilter[] {
+                    new InputFilter {
+                        Conditions = new List<InputFilterCondition> {
+                            new InputFilterCondition
+                            {
+                                InputId = "projectId",
+                                InputValue  = project.Id.ToString(),
+                                Operator = InputFilterOperator.Equals,
+                                CaseSensitive = false
+                            }
+                        }
+                    }
+                },
                 ConsumerInputFilters = new InputFilter[] {
                     new InputFilter {
                         Conditions = new List<InputFilterCondition> {
@@ -93,7 +114,7 @@ namespace aggregator.cli
                 return Guid.Empty;
             }
 
-            // see https://docs.microsoft.com/en-us/vsts/service-hooks/consumers?toc=%2Fvsts%2Fintegrate%2Ftoc.json&bc=%2Fvsts%2Fintegrate%2Fbreadcrumb%2Ftoc.json&view=vsts#web-hooks
+            // see https://docs.microsoft.com/en-us/azure/devops/service-hooks/consumers?toc=%2Fvsts%2Fintegrate%2Ftoc.json&bc=%2Fvsts%2Fintegrate%2Fbreadcrumb%2Ftoc.json&view=vsts#web-hooks
             var subscriptionParameters = new Subscription()
             {
                 ConsumerId = "webHooks",
@@ -108,12 +129,12 @@ namespace aggregator.cli
                     { "detailedMessagesToSend", "none" },
                 },
                 EventType = @event,
-                PublisherId = VstsEvents.PublisherId,
+                PublisherId = DevOpsEvents.PublisherId,
                 PublisherInputs = new Dictionary<string, string>
                 {
                     { "projectId", project.Id.ToString() },
                     /* TODO consider offering additional filters using the following
-                    { "tfsSubscriptionId", vsts.ServerId },
+                    { "tfsSubscriptionId", devops.ServerId },
                     { "teamId", null },
                     // Filter events to include only work items under the specified area path.
                     { "areaPath", null },
@@ -135,19 +156,19 @@ namespace aggregator.cli
 
         internal async Task<bool> RemoveInstanceAsync(InstanceName instance)
         {
-            return await RemoveRuleEventAsync("*", instance, "*");
+            return await RemoveRuleEventAsync("*", instance, "*", "*");
         }
 
         internal async Task<bool> RemoveRuleAsync(InstanceName instance, string rule)
         {
-            return await RemoveRuleEventAsync("*", instance, rule);
+            return await RemoveRuleEventAsync("*", instance, "*", rule);
         }
 
-        internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string rule)
+        internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string projectName, string rule)
         {
-            logger.WriteInfo($"Querying the VSTS subscriptions for rule(s) {instance.PlainName}/{rule}");
-            var serviceHooksClient = vsts.GetClient<ServiceHooksPublisherHttpClient>();
-            var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync(VstsEvents.PublisherId);
+            logger.WriteInfo($"Querying the Azure DevOps subscriptions for rule(s) {instance.PlainName}/{rule}");
+            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
+            var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync(DevOpsEvents.PublisherId);
             var ruleSubs = subscriptions
                 // TODO can we trust this equality?
                 // && s.ActionDescription == $"To host {instance.DnsHostName}"
@@ -157,6 +178,15 @@ namespace aggregator.cli
             {
                 ruleSubs = ruleSubs.Where(s => s.EventType == @event);
             }
+            if (projectName != "*")
+            {
+                logger.WriteVerbose($"Reading Azure DevOps project data...");
+                var projectClient = devops.GetClient<ProjectHttpClient>();
+                var project = await projectClient.GetProject(projectName);
+                logger.WriteInfo($"Project {projectName} data read.");
+
+                ruleSubs = ruleSubs.Where(s => s.PublisherInputs["projectId"] == project.Id.ToString());
+            }
             if (rule != "*")
             {
                 ruleSubs = ruleSubs
@@ -165,9 +195,9 @@ namespace aggregator.cli
             }
             foreach (var ruleSub in ruleSubs)
             {
-                logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription}...");
+                logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription} {ruleSub.EventType}...");
                 await serviceHooksClient.DeleteSubscriptionAsync(ruleSub.Id);
-                logger.WriteInfo($"Subscription {ruleSub.EventDescription} deleted.");
+                logger.WriteInfo($"Subscription {ruleSub.EventDescription} {ruleSub.EventType} deleted.");
             }
 
             return true;

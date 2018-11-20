@@ -13,6 +13,10 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 
 namespace aggregator.cli
@@ -109,7 +113,7 @@ namespace aggregator.cli
             bool ok = await UploadRuleFiles(instance, name, baseDirPath);
             if (ok)
             {
-                logger.WriteInfo($"{name} files uploaded to {instance.PlainName}.");
+                logger.WriteInfo($"All {name} files uploaded to {instance.PlainName}.");
             }
             CleanupRuleFiles(baseDirPath);
             logger.WriteInfo($"Cleaned local working directory.");
@@ -162,27 +166,45 @@ namespace aggregator.cli
 
             PUT /api/vfs/{path}/
             Creates a directory at path. The path can be nested, e.g. `folder1/folder2`.
+
+            Note: when updating or deleting a file, ETag behavior will apply. You can pass a If-Match: "*" header to disable the ETag check.
             */
             var kudu = new KuduApi(instance, azure, logger);
             string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
             var instances = new AggregatorInstances(azure, logger);
-            logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
             {
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
+                bool exists = false;
+
+                // check if function already exists
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl))
                 {
+                    logger.WriteVerbose($"Checking if function {name} already exists in {instance.PlainName}...");
                     using (var response = await client.SendAsync(request))
                     {
-                        bool ok = response.IsSuccessStatusCode;
-                        if (!ok)
-                        {
-                            logger.WriteError($"Upload failed with {response.ReasonPhrase}");
-                            return ok;
-                        }
+                        exists = response.IsSuccessStatusCode;
                     }
                 }
-                logger.WriteInfo($"Function {name} created.");
+
+                if (!exists)
+                {
+                    logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
+                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
+                    {
+                        using (var response = await client.SendAsync(request))
+                        {
+                            bool ok = response.IsSuccessStatusCode;
+                            if (!ok)
+                            {
+                                logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                                return ok;
+                            }
+                        }
+                    }
+                    logger.WriteInfo($"Function {name} created.");
+                }
+
                 var files = Directory.EnumerateFiles(baseDirPath, "*", SearchOption.AllDirectories);
                 foreach (var file in files)
                 {
@@ -190,6 +212,8 @@ namespace aggregator.cli
                     string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
                     {
+                        //HACK -> request.Headers.IfMatch.Add(new EntityTagHeaderValue("*", false)); <- won't work
+                        request.Headers.Add("If-Match", "*");
                         request.Content = new StringContent(File.ReadAllText(file));
                         using (var response = await client.SendAsync(request))
                         {
@@ -252,6 +276,62 @@ namespace aggregator.cli
                 ok = await AddAsync(instance, name, filePath);
             }
             return ok;
+        }
+
+        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode)
+        {
+            if (!File.Exists(ruleFilePath))
+            {
+                logger.WriteError($"Rule code not found at {ruleFilePath}");
+                return false;
+            }
+
+            var devopsLogonData = DevOpsLogon.Load().connection;
+
+            logger.WriteVerbose($"Connecting to Azure DevOps using {devopsLogonData.Mode}...");
+            var clientCredentials = default(VssCredentials);
+            if (devopsLogonData.Mode == DevOpsTokenType.PAT)
+            {
+                clientCredentials = new VssBasicCredential(devopsLogonData.Mode.ToString(), devopsLogonData.Token);
+            }
+            else
+            {
+                logger.WriteError($"Azure DevOps Token type {devopsLogonData.Mode} not supported!");
+                throw new ArgumentOutOfRangeException(nameof(devopsLogonData.Mode));
+            }
+
+            string collectionUrl = devopsLogonData.Url;
+            using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
+            {
+                await devops.ConnectAsync();
+                logger.WriteInfo($"Connected to Azure DevOps");
+
+                Guid teamProjectId;
+                string teamProjectName;
+                using (var projectClient = devops.GetClient<ProjectHttpClient>())
+                {
+                    logger.WriteVerbose($"Reading Azure DevOps project data...");
+                    var project = await projectClient.GetProject(projectName);
+                    logger.WriteInfo($"Project {projectName} data read.");
+                    teamProjectId = project.Id;
+                    teamProjectName = project.Name;
+                }
+
+                using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
+                {
+                    logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+                    string[] ruleCode = File.ReadAllLines(ruleFilePath);
+
+                    var engineLogger = new EngineWrapperLogger(logger);
+                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode);
+                    engine.DryRun = dryRun;
+
+                    string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient);
+                    logger.WriteInfo($"Rule returned '{result}'");
+
+                    return true;
+                }
+            }
         }
     }
 }

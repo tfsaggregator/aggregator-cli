@@ -1,0 +1,8 @@
+﻿.language=Csharp
+
+var parent = self;
+var newChild = store.NewWorkItem("Task");
+newChild.Title = "Brand new child";
+parent.Relations.AddChild(newChild);
+
+return parent.Title;

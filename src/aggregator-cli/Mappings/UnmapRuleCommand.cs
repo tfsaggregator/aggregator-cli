@@ -6,14 +6,20 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("unmap.rule", HelpText = "Unmaps an Aggregator Rule from a VSTS Project.")]
+    [Verb("unmap.rule", HelpText = "Unmaps an Aggregator Rule from a Azure DevOps Project.")]
     class UnmapRuleCommand : CommandBase
     {
-        [Option('e', "event", Required = true, HelpText = "VSTS event.")]
+        [Option('e', "event", Required = true, HelpText = "Azure DevOps event.")]
         public string Event { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
+
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        public string ResourceGroup { get; set; }
+
+        [Option('p', "project", Required = false, Default = "*", HelpText = "Azure DevOps project name.")]
+        public string Project { get; set; }
 
         [Option('r', "rule", Required = true, HelpText = "Aggregator rule name.")]
         public string Rule { get; set; }
@@ -22,11 +28,11 @@ namespace aggregator.cli
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon()
+                .WithDevOpsLogon()
                 .Build();
-            var instance = new InstanceName(Instance);
-            var mappings = new AggregatorMappings(context.Vsts, context.Azure, context.Logger);
-            bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Rule);
+            var instance = new InstanceName(Instance, ResourceGroup);
+            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
+            bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
             return ok ? 0 : 1;
         }
     }

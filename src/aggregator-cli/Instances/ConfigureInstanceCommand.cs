@@ -15,8 +15,15 @@ namespace aggregator.cli
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        public string ResourceGroup { get; set; }
+
         [Option('a', "authentication", SetName = "auth", Required = true, HelpText = "Refresh authentication data.")]
         public bool Authentication { get; set; }
+
+        [Option('m', "saveMode", SetName = "save", Required = false, HelpText = "Save behaviour.")]
+        public SaveMode SaveMode { get; set; }
+        
         // TODO add --swap.slot to support App Service Deployment Slots
 
 
@@ -24,14 +31,14 @@ namespace aggregator.cli
         {
             var context = await Context
                 .WithAzureLogon()
-                .WithVstsLogon() // need the token, so we can save it in the app settings
+                .WithDevOpsLogon() // need the token, so we can save it in the app settings
                 .Build();
             var instances = new AggregatorInstances(context.Azure, context.Logger);
-            var instance = new InstanceName(Name);
+            var instance = new InstanceName(Name, ResourceGroup);
             bool ok = false;
             if (Authentication)
             {
-                ok = await instances.SetAuthentication(instance, Location);
+                ok = await instances.ChangeAppSettings(instance, Location, SaveMode);
             } else
             {
                 context.Logger.WriteError($"Unsupported command option(s)");

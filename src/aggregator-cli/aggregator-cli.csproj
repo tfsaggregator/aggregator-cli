@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.16.1" />
-    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.16.1" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.17.0" />
+    <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.17.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.137.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.137.0-preview" />
@@ -43,7 +43,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\aggregator-core\aggregator-core.csproj" />
+    <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
+    <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,6 +52,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="FunctionRuntime.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="test\test4.rule">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="test\test3b.rule">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="test\test3.rule">

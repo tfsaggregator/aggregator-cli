@@ -1,0 +1,8 @@
+{
+    "subscription": "guid",
+    "client": "guid",
+    "password": "password",
+    "tenant": "guid",
+    "devopsUrl": "https://dev.azure.com/organization",
+    "pat": "PAT"
+}

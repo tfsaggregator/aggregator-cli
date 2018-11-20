@@ -9,29 +9,44 @@ namespace aggregator.cli
         const string resourceGroupPrefix = "aggregator-";
         const string functionAppSuffix = "aggregator";
         private readonly string name;
+        private readonly string resourceGroup;
 
+        // used only in ListInstances
         public static string ResourceGroupInstancePrefix => resourceGroupPrefix;
 
-        internal InstanceName(string name)
+        public InstanceName(string name, string resourceGroup)
         {
             this.name = name;
+            this.resourceGroup = string.IsNullOrEmpty(resourceGroup)
+                ? resourceGroupPrefix + name
+                : resourceGroup;
         }
 
+        // used only in ListInstances
         public static InstanceName FromResourceGroupName(string rgName)
         {
-            return new InstanceName(rgName.Remove(0, ResourceGroupInstancePrefix.Length));
+            return new InstanceName(rgName.Remove(0, ResourceGroupInstancePrefix.Length), null);
         }
 
+        // used only in ListInstances
+        public static InstanceName FromFunctionAppName(string appName)
+        {
+            return new InstanceName(appName.Remove(appName.Length - functionAppSuffix.Length), null);
+        }
+
+        // used only in mappings.ListAsync
         public static InstanceName FromFunctionAppUrl(string url)
         {
             string host = new Uri(url).Host;
             host = host.Substring(0, host.IndexOf('.'));
-            return new InstanceName(host.Remove(host.Length - functionAppSuffix.Length));
+            return new InstanceName(host.Remove(host.Length - functionAppSuffix.Length), null);
         }
 
         public string PlainName => name;
 
-        internal string ResourceGroupName => resourceGroupPrefix + name;
+        internal string ResourceGroupName => resourceGroup;
+
+        internal bool IsCustom => resourceGroup != resourceGroupPrefix + name;
 
         internal string FunctionAppName=> name + functionAppSuffix;
 
