@@ -1,8 +1,21 @@
 ﻿.language=Csharp
 
+string newItemTitle = "Brand new child";
 var parent = self;
-var newChild = store.NewWorkItem("Task");
-newChild.Title = "Brand new child";
-parent.Relations.AddChild(newChild);
+// test to avoid infinite loop
+if (parent.WorkItemType == "Task") {
+	return "No root type";
+}
 
-return parent.Title;
+var children = parent.Children;
+// test to avoid infinite loop
+if (!children.Any(c => c.Title == newItemTitle))
+{
+	var newChild = store.NewWorkItem("Task");
+	newChild.Title = newItemTitle;
+	parent.Relations.AddChild(newChild);
+
+	return "Item added";
+}
+
+return "Nothing to do";
