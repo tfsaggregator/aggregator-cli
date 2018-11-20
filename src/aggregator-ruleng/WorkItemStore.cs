@@ -68,19 +68,20 @@ namespace aggregator.Engine
             return GetWorkItems(ids);
         }
 
-        public WorkItemWrapper NewWorkItem(string workItemType)
+        public WorkItemWrapper NewWorkItem(string workItemType, string projectName = null)
         {
+            // TODO check workItemType and projectName values by querying AzDO
             var item = new WorkItem()
             {
                 Fields = new Dictionary<string, object>() {
                     { CoreFieldRefNames.WorkItemType, workItemType },
-                    { CoreFieldRefNames.TeamProject, _context.ProjectId.ToString() }
+                    { CoreFieldRefNames.TeamProject, projectName ?? _context.ProjectName }
                 },
                 Relations = new List<WorkItemRelation>(),
                 Links = new Microsoft.VisualStudio.Services.WebApi.ReferenceLinks()
             };
             var wrapper = new WorkItemWrapper(_context, item);
-            _context.Logger.WriteVerbose($"Made new workitem with temporary id {wrapper.Id.Value}");
+            _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id.Value}");
             //HACK
             string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
             item.Url = $"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}";
@@ -113,7 +114,7 @@ namespace aggregator.Engine
             {
                 if (commit)
                 {
-                    _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {_context.ProjectId}");
+                    _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
                     var wi = await _context.Client.CreateWorkItemAsync(
                         item.Changes,
                         _context.ProjectId,
@@ -122,7 +123,7 @@ namespace aggregator.Engine
                 }
                 else
                 {
-                    _context.Logger.WriteInfo($"Dry-run mode: should create a {item.WorkItemType} workitem in {_context.ProjectId}");
+                    _context.Logger.WriteInfo($"Dry-run mode: should create a {item.WorkItemType} workitem in {item.TeamProject}");
                 }
                 created++;
             }
@@ -139,7 +140,7 @@ namespace aggregator.Engine
                 }
                 else
                 {
-                    _context.Logger.WriteInfo($"Dry-run mode: should update workitem {item.Id} in {_context.ProjectId}");
+                    _context.Logger.WriteInfo($"Dry-run mode: should update workitem {item.Id} in {item.TeamProject}");
                 }
                 updated++;
             }
@@ -169,12 +170,12 @@ namespace aggregator.Engine
 
             foreach (var item in _context.Tracker.NewWorkItems)
             {
-                _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {_context.ProjectName}");
+                _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
                 batchRequests[index++] = new BatchRequest
                 {
                     method = "PATCH",
-                    uri = $"/{_context.ProjectName}/_apis/wit/workitems/${item.WorkItemType}?{ApiVersion}",
+                    uri = $"/{item.TeamProject}/_apis/wit/workitems/${item.WorkItemType}?{ApiVersion}",
                     headers = headers,
                     body = item.Changes
                         .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
@@ -183,7 +184,7 @@ namespace aggregator.Engine
             }
             foreach (var item in _context.Tracker.ChangedWorkItems)
             {
-                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {item.TeamProject}");
 
                 batchRequests[index++] = new BatchRequest
                 {
@@ -269,12 +270,12 @@ namespace aggregator.Engine
             int index = 0;
             foreach (var item in _context.Tracker.NewWorkItems)
             {
-                _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {_context.ProjectName}");
+                _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
                 newWorkItemsBatchRequests[index++] = new BatchRequest
                 {
                     method = "PATCH",
-                    uri = $"/{_context.ProjectName}/_apis/wit/workitems/${item.WorkItemType}?{ApiVersion}",
+                    uri = $"/{item.TeamProject}/_apis/wit/workitems/${item.WorkItemType}?{ApiVersion}",
                     headers = headers,
                     body = item.Changes
                         .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
