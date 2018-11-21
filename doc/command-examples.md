@@ -8,7 +8,7 @@ logon.azure --subscription 9c********08 --client 5a********b6 --password P@asswo
 logon.ado --url https://someaccount.visualstudio.com --mode PAT --token 2**************************************q
 
 # create an Azure Function Application
-install.instance --verbose --name my1 --location westeurope
+install.instance --verbose --name myRG1 --location westeurope
 install.instance --name my3 --resourceGroup myRG1 --location westeurope --requiredVersion latest
 # search instances in the Azure subscription
 list.instances
