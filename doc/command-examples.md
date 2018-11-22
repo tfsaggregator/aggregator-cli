@@ -1,6 +1,6 @@
 # Sample Aggregator CLI usage
 
-Remember that the Instance name must be unique in Azure.
+Remember that the Instance name must be unique in Azure (CLI automatical append `aggregator` suffix to help).
 
 ```
 # logon

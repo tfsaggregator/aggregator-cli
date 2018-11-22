@@ -45,9 +45,22 @@ return self.PreviousRevision.PreviousRevision.Description;
 # Create new Work Item
 ```
 var parent = self;
-var newChild = store.NewWorkItem("Task");
-newChild.Title = "Brand new child";
-parent.Relations.AddChild(newChild);
+
+// test to avoid infinite loop
+if (parent.WorkItemType == "Task") {
+    return "No root type";
+}
+
+var children = parent.Children;
+// test to avoid infinite loop
+if (!children.Any(c => c.Title == "Brand new child"))
+{
+    var newChild = store.NewWorkItem("Task");
+    newChild.Title = "Brand new child";
+    parent.Relations.AddChild(newChild);
+
+    return "Item added";
+}
 
 return parent.Title;
 ```
