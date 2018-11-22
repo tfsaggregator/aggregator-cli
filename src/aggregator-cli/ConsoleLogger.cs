@@ -15,7 +15,10 @@ namespace aggregator.cli
 
         protected void WriteMessagePrefix(System.IO.TextWriter w)
         {
-            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            Console.ForegroundColor
+                = Console.BackgroundColor == ConsoleColor.Black
+                ? ConsoleColor.DarkMagenta
+                : ConsoleColor.DarkGray;
             w.Write($"[{DateTime.Now.ToString("u")}] ");
         }
         public void WriteOutput(object data, Func<object, string> humanOutput)

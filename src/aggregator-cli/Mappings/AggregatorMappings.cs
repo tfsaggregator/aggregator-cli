@@ -93,6 +93,7 @@ namespace aggregator.cli
                         }
                     }
                 },
+                EventType = @event,
                 ConsumerInputFilters = new InputFilter[] {
                     new InputFilter {
                         Conditions = new List<InputFilterCondition> {
