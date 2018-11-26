@@ -1,17 +1,19 @@
 # aggregator-cli
 
 [![Build status: master](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=16)
-[![Build status](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=16)
-
 
 This is the successor to TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
-The Web Service flavor will be discontinued in favor of this (its deployment and configuration was too complex for most users).
+The Web Service flavor will be discontinued in favor of this new tool for two reasons:
+- deployment and configuration of Web Service was too complex for most users;
+- both the Plugin and the Service rely heavily on TFS Object Model which is [deprecated](https://docs.microsoft.com/en-us/azure/devops/integrate/concepts/wit-client-om-deprecation).
 
-The main scenario for Aggregator (3.x) is supporting Azure DevOps and the cloud scenario. It will work for TFS as long as it is reachable from Internet.
+The main scenario for Aggregator (3.x) is supporting Azure DevOps and cloud scenario. In the future, we will work to support the on-premise scenario to permit replacement of the Server Plugin.
 
 > **This is an early version (beta)**: we might change verbs and rule language before the final release!
 *Note*: The documentation is limited to this page and the content of the `doc` folder.
+
+
 
 ## Major features
 
@@ -19,29 +21,43 @@ The main scenario for Aggregator (3.x) is supporting Azure DevOps and the cloud 
 - simple deployment via CLI tool
 - Rule object model similar to v2
 
+
+
 ## Planned features
 
 - Support for Deployment Slots for blue/green-style deployments
 - OAuth support to avoid maintain access tokens
-- Additional Azure DevOps events
-- Additional Azure DevOps objects
+- Additional Azure DevOps events and objects (e.g. Git)
+
+
 
 ## How it works
 
+As the name implies, this is a command line tool: you download the latest CLI.zip from GitHub [releases](https://github.com/tfsaggregator/aggregator-cli/releases) and unzip on your client machine.
+Read more below at the Usage section.
+
+Through the CLI you create one or more Aggregator **Instance** in Azure. 
 An Aggregator Instance is an Azure Function Application in its own Resource Group,
-sharing the same Azure DevOps credential. You can have only one Application per Resource Group.
+sharing the same Azure DevOps credential and version of Aggregator **Runtime**.
 If the Resource Group does not exists, Aggregator will try to create it.
-*Note*: The Instance name must be **unique** amongst all Aggregator Instances in Azure!
+*Note*: The name you pick for the Instance must be **unique** amongst all
+Aggregator Instances in Azure!
+If you specify the Resource Group, you can have more than one Instance in the Resource Group.
 
-Each Aggregator Rule becomes an Azure Function in the above instance.
-The Rule code is parsed and run on-the-spot using Roslyn.
-To work, it uses an Aggregator Runtime.
-Aggregator checks its latest GitHub Release to ensure that Aggregator Runtime is up-to-date before uploading the function.
-*Note*: We use [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 2.0 for C# which is still in Preview.
+After creating the Instance, you upload the code of Aggregator **Rules**.
+A Rule is code that reacts to one or more Azure DevOps event.
+Each Aggregator Rule becomes an Azure Function in the Aggragator instance i.e. the Azure Function Application.
+The Rule language is C# (hopefully more in the future) and uses Aggregator Runtime and [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 2.0
+to do its work.
+When you create an Instance, a Rule or update them, CLI checks GitHub Releases
+to ensure that Aggregator Runtime is up-to-date or match the specified version.
 
-An Aggregator Mapping is a Azure DevOps Service Hook for a specific work item event that invokes an Aggregator Rule i.e. the Azure Function hosting the Rule code. Azure DevOps saves the Azure Function Key in the Service Hook configuration.
+An Aggregator **Mapping** is an Azure DevOps Service Hook triggered by a specific event. Currently we support only Work Item events.
+When triggered the Azure DevOps Service Hook invokes a single Aggregator Rule i.e. the Azure Function hosting the Rule code. Azure DevOps saves the Azure Function Key in the Service Hook configuration.
 
-You can deploy the same Rule in many Instances or map the same Azure DevOps event to many Rules: it is up to you choosing the best way to organize.
+You can deploy the same Rule in different Instances, map the same Azure DevOps event to many Rules or map multiple events to the same Rule: it is up to you choosing the best way to organize.
+
+
 
 ## Authentication
 
@@ -62,12 +78,13 @@ The Service Principal must have Contributor permission to the Azure Subscription
 ![Permission on existing Resource Group](doc/contributor-on-rg.png)
 If you go this route, remember add the `--resourceGroup` to all commands requiring an instance, otherwise the `instance` parameter adds an `aggregator-` prefixe to find the Resource Group.
 
+
+
 ## Usage
 
 Download and unzip the latest CLI.zip file from [Releases](https://github.com/tfsaggregator/aggregator-cli/releases).
-It requires [.Net Core 2.1](https://www.microsoft.com/net/download).
-To run Aggregator use
-`dotnet aggregator-cli.dll` followed by the verb and the options.
+It requires [.Net Core 2.1](https://www.microsoft.com/net/download) installed on the machine.
+To run Aggregator use `dotnet aggregator-cli.dll` followed by a verb and its options.
 
 ### Verbs
 
@@ -93,10 +110,14 @@ version             | Display version information.
 
 You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-examples.md), see also [Manual Tests](doc/test-matrix.md).
 
+
+
 ## Rule language
 
 See [Rule Language](doc/rule-language.md) for a list of objects and properties to use.
 For examples see [Rule Examples](doc/rule-examples.md).
+
+
 
 ## Troubleshooting
 

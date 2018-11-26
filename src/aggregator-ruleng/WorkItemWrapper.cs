@@ -427,7 +427,7 @@ namespace aggregator.Engine
                 {
                     Operation = Operation.Replace,
                     Path = "/fields/" + field,
-                    Value = value
+                    Value = TranslateValue(value)
                 });
             }
             else
@@ -437,11 +437,22 @@ namespace aggregator.Engine
                 {
                     Operation = Operation.Add,
                     Path = "/fields/" + field,
-                    Value = value
+                    Value = TranslateValue(value)
                 });
             }
 
             IsDirty = true;
+        }
+
+        private object TranslateValue(object value)
+        {
+            switch (value)
+            {
+                case IdentityRef id:
+                    return id.DisplayName;
+                default:
+                    return value;
+            }
         }
 
         private T GetFieldValue<T>(string field)
