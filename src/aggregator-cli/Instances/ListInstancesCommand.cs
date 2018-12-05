@@ -42,11 +42,9 @@ namespace aggregator.cli
         {
             var found = await instances.ListByLocationAsync(Location);
             bool any = false;
-            foreach (var name in found)
+            foreach (var dataObject in found)
             {
-                context.Logger.WriteOutput(
-                    name,
-                    (data) => $"Instance {name}");
+                context.Logger.WriteOutput(dataObject);
                 any = true;
             }
             if (!any)
@@ -60,11 +58,9 @@ namespace aggregator.cli
         {
             var found = await instances.ListInResourceGroupAsync(ResourceGroup);
             bool any = false;
-            foreach (var name in found)
+            foreach (var dataObject in found)
             {
-                context.Logger.WriteOutput(
-                    name,
-                    (data) => $"Instance {name}");
+                context.Logger.WriteOutput(dataObject);
                 any = true;
             }
             if (!any)
@@ -78,11 +74,9 @@ namespace aggregator.cli
         {
             var found = await instances.ListAllAsync();
             bool any = false;
-            foreach (var item in found)
+            foreach (var dataObject in found)
             {
-                context.Logger.WriteOutput(
-                    item,
-                    (data) => $"Instance {item.name} in {item.region} region");
+                context.Logger.WriteOutput(dataObject);
                 any = true;
             }
             if (!any)

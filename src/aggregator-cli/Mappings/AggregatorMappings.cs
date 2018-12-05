@@ -24,7 +24,7 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        internal async Task<IEnumerable<(string rule, string project, string @event, string status)>> ListAsync(InstanceName instance, string projectName)
+        internal async Task<IEnumerable<MappingOutputData>> ListAsync(InstanceName instance, string projectName)
         {
             logger.WriteVerbose($"Searching aggregator mappings in Azure DevOps...");
             var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
@@ -42,7 +42,7 @@ namespace aggregator.cli
             var projects = await projectClient.GetProjects();
             var projectsDict = projects.ToDictionary(p => p.Id);
 
-            var result = new List<(string rule, string project, string @event, string status)>();
+            var result = new List<MappingOutputData>();
             foreach (var subscription in filteredSubs)
             {
                 var foundProject = projectsDict[
@@ -57,7 +57,7 @@ namespace aggregator.cli
                 string ruleName = ruleUrl.Substring(ruleUrl.LastIndexOf('/'));
                 string ruleFullName = InstanceName.FromFunctionAppUrl(ruleUrl).PlainName + ruleName;
                 result.Add(
-                    (ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
+                    new MappingOutputData(instance, ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
             }
             return result;

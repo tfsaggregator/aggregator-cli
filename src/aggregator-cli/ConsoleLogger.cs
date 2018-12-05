@@ -21,9 +21,10 @@ namespace aggregator.cli
                 : ConsoleColor.DarkGray;
             w.Write($"[{DateTime.Now.ToString("u")}] ");
         }
-        public void WriteOutput(object data, Func<object, string> humanOutput)
+
+        public void WriteOutput(ILogDataObject data)
         {
-            string message = humanOutput(data);
+            string message = data.AsHumanReadable();
             Console.WriteLine(message);
         }
 

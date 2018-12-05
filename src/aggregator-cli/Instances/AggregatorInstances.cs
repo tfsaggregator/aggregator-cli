@@ -27,15 +27,15 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        public async Task<IEnumerable<(string name, string region)>> ListAllAsync()
+        public async Task<IEnumerable<ILogDataObject>> ListAllAsync()
         {
             var rgs = await azure.ResourceGroups.ListAsync();
             var filter = rgs
                 .Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix));
-            var result = new List<(string name, string region)>();
+            var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
-                result.Add((
+                result.Add(new InstanceOutputData(
                     InstanceName.FromResourceGroupName(rg.Name).PlainName,
                     rg.RegionName)
                 );
@@ -43,30 +43,34 @@ namespace aggregator.cli
             return result;
         }
 
-        public async Task<IEnumerable<string>> ListByLocationAsync(string location)
+        public async Task<IEnumerable<ILogDataObject>> ListByLocationAsync(string location)
         {
             var rgs = await azure.ResourceGroups.ListAsync();
             var filter = rgs.Where(rg =>
                     rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
                     && rg.RegionName.CompareTo(location) == 0);
-            var result = new List<string>();
+            var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
-                result.Add(
-                    InstanceName.FromResourceGroupName(rg.Name).PlainName);
+                result.Add(new InstanceOutputData(
+                    InstanceName.FromResourceGroupName(rg.Name).PlainName,
+                    rg.RegionName)
+                );
             }
             return result;
         }
 
-        internal async Task<IEnumerable<string>> ListInResourceGroupAsync(string resourceGroup)
+        internal async Task<IEnumerable<ILogDataObject>> ListInResourceGroupAsync(string resourceGroup)
         {
             var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup);
 
-            var result = new List<string>();
+            var result = new List<InstanceOutputData>();
             foreach (var app in apps)
             {
-                result.Add(
-                    InstanceName.FromFunctionAppName(app.Name).PlainName);
+                result.Add(new InstanceOutputData(
+                    InstanceName.FromFunctionAppName(app.Name).PlainName,
+                    app.Region.Name)
+                );
             }
             return result;
         }

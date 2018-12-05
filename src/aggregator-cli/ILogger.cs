@@ -6,7 +6,7 @@ namespace aggregator.cli
 {
     interface ILogger
     {
-        void WriteOutput(object data, Func<object, string> humanOutput);
+        void WriteOutput(ILogDataObject data);
 
         void WriteVerbose(string message);
 

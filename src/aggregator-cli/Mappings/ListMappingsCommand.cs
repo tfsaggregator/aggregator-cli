@@ -30,9 +30,7 @@ namespace aggregator.cli
             bool any = false;
             foreach (var item in await mappings.ListAsync(instance, Project))
             {
-                context.Logger.WriteOutput(
-                    item,
-                    (data) => $"Project {item.project} invokes rule {item.rule} for {item.@event} (status {item.status})");
+                context.Logger.WriteOutput(item);
                 any = true;
             }
             if (!any)

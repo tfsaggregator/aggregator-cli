@@ -25,9 +25,7 @@ namespace aggregator.cli
             bool any = false;
             foreach (var item in await rules.ListAsync(instance))
             {
-                context.Logger.WriteOutput(
-                    item,
-                    (data) => $"Rule {instance.PlainName}/{item.Name} {(item.Config.Disabled ? "(disabled)" : string.Empty)}");
+                context.Logger.WriteOutput(new RuleOutputData(instance, item));
                 any = true;
             }
             if (!any)
