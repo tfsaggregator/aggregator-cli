@@ -66,6 +66,17 @@ namespace aggregator
                 });
             }
 
+            if (data.resource.url == "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5")
+            {
+                var resp = req.CreateResponse(HttpStatusCode.OK, new
+                {
+                    message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{context.FunctionName}'"
+                });
+                resp.Headers.Add("X-Aggregator-Version", aggregatorVersion);
+                resp.Headers.Add("X-Aggregator-Rule", context.FunctionName);
+                return resp;
+            }
+
             var config = new ConfigurationBuilder()
                 .SetBasePath(context.FunctionAppDirectory)
                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
