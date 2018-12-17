@@ -55,29 +55,7 @@ namespace aggregator.cli
             logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
 
             // TODO check the uploaded version before overwriting?
-            string manifestVersion = "0.0.0";
-            logger.WriteVerbose($"Retrieving functions runtime");
-            var kudu = new KuduApi(instance, azure, logger);
-            using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini"))
-            using (var response = await client.SendAsync(request))
-            {
-                string manifest = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    // HACK refactor so that there is a single class parsing the manifest
-                    var parts = manifest.Split('=');
-                    if (parts[0] == "version")
-                        manifestVersion = parts[1];
-                }
-                else
-                {
-                    logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase}");
-                }
-            }
-            var uploadedRuntimeVer = SemVersion.Parse(manifestVersion);
-            logger.WriteVerbose($"Function Runtime version is {uploadedRuntimeVer}.");
+            SemVersion uploadedRuntimeVer = await GetDeployedRuntimeVersion(instance, azure);
 
             if (requiredRuntimeVer > uploadedRuntimeVer || localRuntimeVer > uploadedRuntimeVer)
             {
@@ -109,6 +87,34 @@ namespace aggregator.cli
                 logger.WriteInfo($"Runtime package is up to date.");
                 return true;
             }
+        }
+
+        internal async Task<SemVersion> GetDeployedRuntimeVersion(InstanceName instance, IAzure azure)
+        {
+            string manifestVersion = "0.0.0";
+            logger.WriteVerbose($"Retrieving functions runtime from {instance.PlainName} app");
+            var kudu = new KuduApi(instance, azure, logger);
+            using (var client = new HttpClient())
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini"))
+            using (var response = await client.SendAsync(request))
+            {
+                string manifest = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // HACK refactor so that there is a single class parsing the manifest
+                    var parts = manifest.Split('=');
+                    if (parts[0] == "version")
+                        manifestVersion = parts[1];
+                }
+                else
+                {
+                    logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase}");
+                }
+            }
+            var uploadedRuntimeVer = SemVersion.Parse(manifestVersion);
+            logger.WriteVerbose($"Function Runtime version is {uploadedRuntimeVer}.");
+            return uploadedRuntimeVer;
         }
 
         private string GetLocalPackageVersion(string runtimePackageFile)

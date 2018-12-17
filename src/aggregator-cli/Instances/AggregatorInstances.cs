@@ -1,5 +1,4 @@
-﻿using Microsoft.Azure.Management.AppService.Fluent;
-using Microsoft.Azure.Management.Fluent;
+﻿using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
 using Newtonsoft.Json.Linq;
@@ -7,12 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
 
 namespace aggregator.cli
 {
@@ -29,15 +24,18 @@ namespace aggregator.cli
 
         public async Task<IEnumerable<ILogDataObject>> ListAllAsync()
         {
+            var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync();
             var filter = rgs
                 .Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix));
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
+                var name = InstanceName.FromResourceGroupName(rg.Name);
                 result.Add(new InstanceOutputData(
-                    InstanceName.FromResourceGroupName(rg.Name).PlainName,
-                    rg.RegionName)
+                    name.PlainName,
+                    rg.RegionName,
+                    await runtime.GetDeployedRuntimeVersion(name, azure))
                 );
             }
             return result;
@@ -45,6 +43,7 @@ namespace aggregator.cli
 
         public async Task<IEnumerable<ILogDataObject>> ListByLocationAsync(string location)
         {
+            var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync();
             var filter = rgs.Where(rg =>
                     rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
@@ -52,9 +51,11 @@ namespace aggregator.cli
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
+                var name = InstanceName.FromResourceGroupName(rg.Name);
                 result.Add(new InstanceOutputData(
-                    InstanceName.FromResourceGroupName(rg.Name).PlainName,
-                    rg.RegionName)
+                    name.PlainName,
+                    rg.RegionName,
+                    await runtime.GetDeployedRuntimeVersion(name, azure))
                 );
             }
             return result;
@@ -62,14 +63,17 @@ namespace aggregator.cli
 
         internal async Task<IEnumerable<ILogDataObject>> ListInResourceGroupAsync(string resourceGroup)
         {
+            var runtime = new FunctionRuntimePackage(logger);
             var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup);
 
             var result = new List<InstanceOutputData>();
             foreach (var app in apps)
             {
+                var name = InstanceName.FromFunctionAppName(app.Name);
                 result.Add(new InstanceOutputData(
-                    InstanceName.FromFunctionAppName(app.Name).PlainName,
-                    app.Region.Name)
+                    name.PlainName,
+                    app.Region.Name,
+                    await runtime.GetDeployedRuntimeVersion(name, azure))
                 );
             }
             return result;
