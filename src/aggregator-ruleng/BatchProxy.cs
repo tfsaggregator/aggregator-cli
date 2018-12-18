@@ -15,6 +15,7 @@ namespace aggregator.Engine
 
         internal BatchProxy(EngineContext context, bool commit)
         {
+            this._context = context;
             this._commit = commit;
         }
 
