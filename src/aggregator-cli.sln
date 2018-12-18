@@ -22,6 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-A
 		..\README.md = ..\README.md
 		..\doc\rule-examples.md = ..\doc\rule-examples.md
 		..\doc\rule-language.md = ..\doc\rule-language.md
+		..\doc\service-hook-example.png = ..\doc\service-hook-example.png
+		..\doc\service-principal.png = ..\doc\service-principal.png
 		..\doc\test-matrix.md = ..\doc\test-matrix.md
 	EndProjectSection
 EndProject

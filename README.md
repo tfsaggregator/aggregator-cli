@@ -2,7 +2,7 @@
 
 [![Build status: master](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=16)
 
-This is the successor to TFS Aggregator.
+This is the successor to renowed TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
 The Web Service flavor will be discontinued in favor of this new tool for two reasons:
 - deployment and configuration of Web Service was too complex for most users;
