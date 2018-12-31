@@ -253,32 +253,14 @@ namespace aggregator.cli
 
         internal async Task<bool> StreamLogsAsync(InstanceName instance)
         {
-            // see https://github.com/projectkudu/kudu/wiki/Diagnostic-Log-Stream
             var kudu = new KuduApi(instance, azure, logger);
             logger.WriteVerbose($"Connecting to {instance.PlainName}...");
-            using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/logstream/application"))
-            {
-                logger.WriteInfo($"Connected to {instance.PlainName} logs");
-                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-                {
-                    logger.WriteVerbose($"Streaming {instance.PlainName} logs...");
-                    var stream = await response.Content.ReadAsStreamAsync();
 
-                    // Main takes care of resetting color
-                    Console.ForegroundColor = ConsoleColor.Green;
+            // Main takes care of resetting color
+            Console.ForegroundColor = ConsoleColor.Green;
 
-                    using (var reader = new StreamReader(stream))
-                    {
-                        while (!reader.EndOfStream && stream != null)
-                        {
-                            //We are ready to read the stream
-                            var line = reader.ReadLine();
-                            Console.WriteLine(line);
-                        }
-                    }
-                }
-            }
+            await kudu.StreamLogsAsync(Console.Out);
+
             return true;
         }
     }

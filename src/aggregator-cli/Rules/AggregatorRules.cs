@@ -333,5 +333,66 @@ namespace aggregator.cli
                 }
             }
         }
+
+        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode)
+        {
+            var kudu = new KuduApi(instance, azure, logger);
+            logger.WriteVerbose($"Connecting to {instance.PlainName}...");
+
+            Task streamTask = kudu.StreamLogsAsync(Console.Out);
+
+            // build the request ...
+            logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
+            (string ruleUrl, string ruleKey) = await this.GetInvocationUrlAndKey(instance, ruleName);
+            logger.WriteInfo($"{ruleName} Function Key retrieved.");
+
+            ruleUrl += $"?dryRun={dryRun}&saveMode={saveMode}";
+
+            string baseUrl = $"https://dev.azure.com/{account}";
+            Guid teamProjectId = Guid.Empty;
+            string body = $@"{{
+  ""eventType"": ""{@event}"",
+  ""publisherId"": ""tfs"",
+  ""resource"": {{
+    ""url"": ""{baseUrl}/{project}/_apis/wit/workItems/{workItemId}"",
+    ""id"": {workItemId},
+    ""workItemId"": {workItemId},
+    ""fields"": {{
+      ""System.TeamProject"": ""{project}""
+    }},
+    ""revision"": {{
+      ""fields"": {{
+        ""System.TeamProject"": ""{project}""
+      }}
+    }}
+  }},
+  ""resourceContainers"": {{
+    ""collection"": {{
+      ""baseUrl"": ""{baseUrl}""
+    }},
+    ""project"": {{
+      ""id"": ""{teamProjectId}""
+    }}
+  }}
+}}";
+            logger.WriteVerbose($"Request to {ruleName} is:");
+            logger.WriteVerbose(body);
+
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Post, ruleUrl))
+                {
+                    request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+                    request.Headers.Add("x-functions-key", ruleKey);
+                    request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                    var requestTask = client.SendAsync(request);
+
+                    Task.WaitAll(streamTask, requestTask);
+                }
+            }
+
+            return true;
+        }
     }
 }

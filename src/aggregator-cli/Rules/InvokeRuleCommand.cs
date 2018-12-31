@@ -27,14 +27,21 @@ namespace aggregator.cli
         [Option('s', "source", SetName = "Local", Required = true, HelpText = "Aggregator rule code.")]
         public string Source { get; set; }
 
-        [Option('m', "saveMode", SetName = "Local", Required = false, HelpText = "Save behaviour.")]
+        [Option('m', "saveMode", Required = false, HelpText = "Save behaviour.")]
         public SaveMode SaveMode { get; set; }
+
+        [Option('a', "account", SetName = "Remote", Required = true, HelpText = "Azure DevOps account name.")]
+        public string Account { get; set; }
 
         [Option('i', "instance", SetName = "Remote", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
         [Option('g', "resourceGroup", SetName = "Remote", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
+
+        [Option('n', "name", SetName = "Remote", Required = true, HelpText = "Aggregator rule name.")]
+        public string Name { get; set; }
+
 
         internal override async Task<int> RunAsync()
         {
@@ -51,8 +58,9 @@ namespace aggregator.cli
             else
             {
                 var instance = new InstanceName(Instance, ResourceGroup);
-                context.Logger.WriteWarning("Not implemented yet.");
-                return 2;
+                context.Logger.WriteWarning("Untested feature!");
+                bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode);
+                return ok ? 0 : 1;
             }
         }
     }

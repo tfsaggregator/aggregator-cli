@@ -2,6 +2,7 @@
 using Microsoft.Azure.Management.Fluent;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -82,6 +83,32 @@ namespace aggregator.cli
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
             request.Headers.Authorization = await GetAuthenticationHeader();
             return request;
+        }
+
+        internal async Task StreamLogsAsync(TextWriter output)
+        {
+            // see https://github.com/projectkudu/kudu/wiki/Diagnostic-Log-Stream
+            using (var client = new HttpClient())
+            using (var request = await this.GetRequestAsync(HttpMethod.Get, $"api/logstream/application"))
+            {
+                logger.WriteInfo($"Connected to {instance.PlainName} logs");
+                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    logger.WriteVerbose($"Streaming {instance.PlainName} logs...");
+                    var stream = await response.Content.ReadAsStreamAsync();
+
+                    using (var reader = new StreamReader(stream))
+                    {
+                        while (!reader.EndOfStream && stream != null)
+                        {
+                            //We are ready to read the stream
+                            var line = reader.ReadLine();
+
+                            await output.WriteLineAsync(line);
+                        }
+                    }
+                }
+            }
         }
     }
 }
