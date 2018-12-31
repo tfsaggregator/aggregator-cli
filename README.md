@@ -2,9 +2,9 @@
 
 [![Build status: master](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=16)
 
-This is the successor to renowed TFS Aggregator.
+This is the successor to renowned TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
-The Web Service flavor will be discontinued in favor of this new tool for two reasons:
+The Web Service flavour will be discontinued in favour of this new tool for two reasons:
 - deployment and configuration of Web Service was too complex for most users;
 - both the Plugin and the Service rely heavily on TFS Object Model which is [deprecated](https://docs.microsoft.com/en-us/azure/devops/integrate/concepts/wit-client-om-deprecation).
 
@@ -46,7 +46,7 @@ If you specify the Resource Group, you can have more than one Instance in the Re
 
 After creating the Instance, you upload the code of Aggregator **Rules**.
 A Rule is code that reacts to one or more Azure DevOps event.
-Each Aggregator Rule becomes an Azure Function in the Aggragator instance i.e. the Azure Function Application.
+Each Aggregator Rule becomes an Azure Function in the Aggregator instance i.e. the Azure Function Application.
 The Rule language is C# (hopefully more in the future) and uses Aggregator Runtime and [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 2.0
 to do its work.
 When you create an Instance, a Rule or update them, CLI checks GitHub Releases
@@ -76,7 +76,7 @@ The PAT is also stored in the Azure Function settings: **whoever has access to t
 
 The Service Principal must have Contributor permission to the Azure Subscription or, in alternative, pre-create the Resource Group in Azure and give the service account Contributor permission to the Resource Group.
 ![Permission on existing Resource Group](doc/contributor-on-rg.png)
-If you go this route, remember add the `--resourceGroup` to all commands requiring an instance, otherwise the `instance` parameter adds an `aggregator-` prefixe to find the Resource Group.
+If you go this route, remember add the `--resourceGroup` to all commands requiring an instance, otherwise the `instance` parameter adds an `aggregator-` prefix to find the Resource Group.
 
 
 
@@ -90,21 +90,21 @@ To run Aggregator use `dotnet aggregator-cli.dll` followed by a verb and its opt
 
  Verb               | Use
 --------------------|----------------------------------------
-logon.azure         | Logon into Azure.
-logon.ado           | Logon into Azure DevOps.
-list.instances      | Lists Aggregator instances.
-install.instance    | Creates a new Aggregator instance in Azure.
-uninstall.instance  | Destroy an Aggregator instance in Azure.
-configure.instance  | Configures an existing Aggregator instance.
-list.rules          | List the rule in existing Aggregator instance in Azure.
+logon.azure         | Logon into Azure. This must be done before other verbs.
+logon.ado           | Logon into Azure DevOps. This must be done before other verbs.
+install.instance    | Creates a new Aggregator instance in Azure. 
 add.rule            | Add a rule to existing Aggregator instance in Azure.
-remove.rule         | Remove a rule from existing Aggregator instance in Azure.
-configure.rule      | Change a rule configuration.
-update.rule         | Update a rule code and/or runtime.
-invoke.rule         | Executes a rule locally or in an existing Aggregator instance.
+map.rule            | Maps an Aggregator Rule to existing Azure DevOps Projects, DevOps events are sent to the rule.
+list.instances      | Lists Aggregator instances in the specified Azure Region or Resource Group or in the entire Subscription.
+list.rules          | List the rules in an existing Aggregator instance in Azure.
 list.mappings       | Lists mappings from existing Azure DevOps Projects to Aggregator Rules.
-map.rule            | Maps an Aggregator Rule to existing Azure DevOps Projects.
+invoke.rule         | Executes a rule locally or in an existing Aggregator instance.
+configure.instance  | Configures an existing Aggregator instance (currently the Azure DevOps authentication).
+configure.rule      | Change a rule configuration (currently only enabling/disabling).
+update.rule         | Update the code of a rule and/or its runtime.
 unmap.rule          | Unmaps an Aggregator Rule from a Azure DevOps Project.
+remove.rule         | Remove a rule from existing Aggregator instance in Azure, removing any mapping to the Rule.
+uninstall.instance  | Destroy an Aggregator instance in Azure, removing any mapping to the Rules.
 help                | Display more information on a specific command.
 version             | Display version information.
 

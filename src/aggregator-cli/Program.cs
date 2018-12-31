@@ -33,6 +33,12 @@ namespace aggregator.cli
     {
         public static int Main(string[] args)
         {
+            var save = Console.ForegroundColor;
+            Console.CancelKeyPress += delegate {
+                // call methods to clean up
+                Console.ForegroundColor = save;
+            };
+
             var parser = new Parser(settings =>
             {
                 settings.CaseSensitive = false;
@@ -42,7 +48,7 @@ namespace aggregator.cli
             var types = new Type[] {
                 typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
-                typeof(ConfigureInstanceCommand),
+                typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
                 typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
                 typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
@@ -60,6 +66,7 @@ namespace aggregator.cli
                 .WithParsed<AddRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run())
+                .WithParsed<StreamLogsCommand>(cmd => rc = cmd.Run())
                 .WithParsed<UpdateRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<InvokeRuleCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run())
@@ -71,6 +78,7 @@ namespace aggregator.cli
                     Console.Error.Write(helpText);
                     rc = 1;
                 });
+            Console.ForegroundColor = save;
             return rc;
         }
     }
