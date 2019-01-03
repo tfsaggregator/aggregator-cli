@@ -336,9 +336,6 @@ namespace aggregator.cli
         internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode)
         {
             var kudu = new KuduApi(instance, azure, logger);
-            logger.WriteVerbose($"Connecting to {instance.PlainName}...");
-
-            Task streamTask = kudu.StreamLogsAsync(Console.Out);
 
             // build the request ...
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
@@ -385,13 +382,22 @@ namespace aggregator.cli
                     request.Headers.Add("x-functions-key", ruleKey);
                     request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-                    var requestTask = client.SendAsync(request);
-
-                    Task.WaitAll(streamTask, requestTask);
+                    using (var response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            string result = await response.Content.ReadAsStringAsync();
+                            logger.WriteInfo($"{result}");
+                            return true;
+                        }
+                        else
+                        {
+                            logger.WriteError($"Failed with {response.ReasonPhrase}");
+                            return false;
+                        }
+                    }
                 }
             }
-
-            return true;
         }
     }
 }
