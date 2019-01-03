@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    [Verb("stream.logs", HelpText = "Streams logs from an Aggregator instance.")]
-    class StreamLogsCommand : CommandBase
+    [Verb("test", HelpText = "It does something.", Hidden = true)]
+    class TestCommand : CommandBase
     {
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]

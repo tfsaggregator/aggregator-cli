@@ -46,6 +46,7 @@ namespace aggregator.cli
                 settings.CaseInsensitiveEnumValues = true;
             });
             var types = new Type[] {
+                typeof(TestCommand),
                 typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
                 typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
@@ -56,6 +57,7 @@ namespace aggregator.cli
             var parserResult = parser.ParseArguments(args, types);
             int rc = -1;
             parserResult
+                .WithParsed<TestCommand>(cmd => rc = cmd.Run())
                 .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())
                 .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run())
                 .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run())
