@@ -70,7 +70,7 @@ namespace aggregator.cli
             var result = new List<InstanceOutputData>();
             foreach (var app in apps)
             {
-                var name = InstanceName.FromFunctionAppName(app.Name);
+                var name = InstanceName.FromFunctionAppName(app.Name, resourceGroup);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     app.Region.Name,

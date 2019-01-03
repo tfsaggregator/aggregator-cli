@@ -29,9 +29,9 @@ namespace aggregator.cli
         }
 
         // used only in ListInstances
-        public static InstanceName FromFunctionAppName(string appName)
+        public static InstanceName FromFunctionAppName(string appName, string resourceGroup)
         {
-            return new InstanceName(appName.Remove(appName.Length - functionAppSuffix.Length), null);
+            return new InstanceName(appName.Remove(appName.Length - functionAppSuffix.Length), resourceGroup);
         }
 
         // used only in mappings.ListAsync
