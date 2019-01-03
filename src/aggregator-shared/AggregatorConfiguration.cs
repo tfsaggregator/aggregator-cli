@@ -32,6 +32,7 @@ namespace aggregator
             ac.SaveMode = Enum.TryParse(config["Aggregator_SaveMode"], out SaveMode sm)
                 ? sm
                 : SaveMode.Default;
+            ac.DryRun = false;
             return ac;
         }
 
@@ -48,5 +49,6 @@ namespace aggregator
         public DevOpsTokenType DevOpsTokenType { get; set; }
         public string DevOpsToken { get; set; }
         public SaveMode SaveMode { get; set; }
+        public bool DryRun { get; internal set; }
     }
 }

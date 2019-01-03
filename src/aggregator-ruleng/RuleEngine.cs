@@ -24,12 +24,13 @@ namespace aggregator.Engine
         private readonly Script<string> roslynScript;
         private readonly SaveMode saveMode;
 
-        public RuleEngine(IAggregatorLogger logger, string[] ruleCode, SaveMode mode)
+        public RuleEngine(IAggregatorLogger logger, string[] ruleCode, SaveMode mode, bool dryRun)
         {
             State = EngineState.Unknown;
 
             this.logger = logger;
             this.saveMode = mode;
+            this.DryRun = dryRun;
 
             var directives = new DirectivesParser(logger, ruleCode);
             if (!directives.Parse())
@@ -75,7 +76,7 @@ namespace aggregator.Engine
         /// State is used by unit tests
         /// </summary>
         public EngineState State { get; private set; }
-        public bool DryRun { get; set; }
+        public bool DryRun { get; private set; }
 
         public async Task<string> ExecuteAsync(string collectionUrl, Guid projectId, string projectName, string personalAccessToken, int workItemId, WorkItemTrackingHttpClientBase witClient)
         {

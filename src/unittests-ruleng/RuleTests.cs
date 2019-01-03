@@ -47,10 +47,7 @@ namespace unittests_ruleng
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
@@ -73,10 +70,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal(EngineState.Success, engine.State);
@@ -100,10 +94,7 @@ return string.Empty;
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal(EngineState.Error, engine.State);
@@ -157,10 +148,7 @@ if (parent != null)
 return message;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal("Parent is 1", result);
@@ -184,10 +172,7 @@ var wi = store.NewWorkItem(""Task"");
 wi.Title = ""Brand new"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Null(result);
@@ -216,10 +201,7 @@ newChild.Title = ""Brand new"";
 parent.Relations.AddChild(newChild);
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Null(result);
@@ -246,10 +228,7 @@ self.Description = self.Description + ""."";
 return self.Description;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default)
-            {
-                DryRun = true
-            };
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
 
             Assert.Equal("Hello.", result);

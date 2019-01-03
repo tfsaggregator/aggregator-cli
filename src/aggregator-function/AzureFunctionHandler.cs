@@ -83,6 +83,7 @@ namespace aggregator
                 .AddEnvironmentVariables()
                 .Build();
             var configuration = AggregatorConfiguration.Read(config);
+            configuration = InvokeOptions.ExtendFromUrl(configuration, req.RequestUri);
 
             var logger = new ForwarderLogger(log);
             var wrapper = new RuleWrapper(configuration, logger, context.FunctionName, context.FunctionDirectory);

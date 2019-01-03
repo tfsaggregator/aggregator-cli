@@ -323,8 +323,7 @@ namespace aggregator.cli
                     string[] ruleCode = File.ReadAllLines(ruleFilePath);
 
                     var engineLogger = new EngineWrapperLogger(logger);
-                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode);
-                    engine.DryRun = dryRun;
+                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
                     string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient);
                     logger.WriteInfo($"Rule returned '{result}'");
@@ -346,7 +345,7 @@ namespace aggregator.cli
             (string ruleUrl, string ruleKey) = await this.GetInvocationUrlAndKey(instance, ruleName);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            ruleUrl += $"?dryRun={dryRun}&saveMode={saveMode}";
+            ruleUrl = InvokeOptions.AppendToUrl(ruleUrl, dryRun, saveMode);
 
             string baseUrl = $"https://dev.azure.com/{account}";
             Guid teamProjectId = Guid.Empty;
