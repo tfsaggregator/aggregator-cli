@@ -174,17 +174,20 @@ namespace aggregator.cli
             // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
             var body = new ByteArrayContent(zipContent);
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy"))
             {
-                request.Content = body;
-                using (var response = await client.SendAsync(request))
+                client.Timeout = TimeSpan.FromMinutes(60);
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy"))
                 {
-                    bool ok = response.IsSuccessStatusCode;
-                    if (!ok)
+                    request.Content = body;
+                    using (var response = await client.SendAsync(request))
                     {
-                        logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                        bool ok = response.IsSuccessStatusCode;
+                        if (!ok)
+                        {
+                            logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                        }
+                        return ok;
                     }
-                    return ok;
                 }
             }
         }
