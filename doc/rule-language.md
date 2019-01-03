@@ -1,11 +1,17 @@
 # Directives
 
+The directives must appear in the first lines of a Rule file.
+They are parsed by Aggregator and removed before compiling the code.
+
 `.lang=C#`
 `.language=Csharp`
+
+Currently the only supported language is C#. You can use the `.lang` directive to specify the programming language used by the rule.
 
 
 
 # WorkItem Object
+The initial WorkItem object is contained in the `self` variable.
 
 
 ## Revisions
@@ -134,7 +140,8 @@ Returns the number of attached files.
 
 
 # WorkItemStore Object
-Retrieval, creation and removal of work items.
+The WorkItemStore object allows retrieval, creation and removal of work items.
+This object is contained in the `store` variable.
 
 `WorkItem GetWorkItem(int id)`
 Returns a single work item.
