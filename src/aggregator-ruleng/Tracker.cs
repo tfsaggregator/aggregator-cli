@@ -51,20 +51,23 @@ namespace aggregator.Engine
         }
 
         internal void TrackRevision(WorkItemWrapper workItemWrapper)
-        {
-            if (!tracked.ContainsKey(workItemWrapper.Id))
+        {           
+            if (tracked.TryGetValue(workItemWrapper.Id, out var value))
+            {                
+                value.Revisions.Add(workItemWrapper.Rev, workItemWrapper);
+            }
+            else
             {
                 // should never happen...
                 throw new InvalidOperationException($"Work item {workItemWrapper.Id} was never loaded");
             }
-            tracked[workItemWrapper.Id].Revisions.Add(workItemWrapper.Rev, workItemWrapper);
         }
 
         internal WorkItemWrapper LoadWorkItem(int id, Func<int, WorkItemWrapper> loader)
         {
             var key = new PermanentWorkItemId(id);
-            return tracked.ContainsKey(key)
-                ? tracked[key].Current
+            return tracked.TryGetValue(key, out var value)
+                ? value.Current
                 : loader(id);
         }
 
