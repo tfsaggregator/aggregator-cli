@@ -323,11 +323,10 @@ namespace aggregator.Engine
                 }
             }
 
-            // return value not used, we are fine if no exception is thrown 
+            // return value not used, we are fine if no exception is thrown
             await proxy.Invoke(batchRequests.ToArray());
 
             return (created, updated);
         }
-
     }
 }
