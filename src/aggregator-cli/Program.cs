@@ -24,7 +24,7 @@ namespace aggregator.cli
 
     configure.rule --verbose --instance INSTANCE --name RULE --file FILE --slot SLOT
         change rule code on a single deployment slot
-        
+
     invoke.rule --verbose --dryrun --instance INSTANCE --rule RULE --event EVENT --workItemId WORK_ITEM_ID --slot SLOT
         emulates the event on the rule
 
