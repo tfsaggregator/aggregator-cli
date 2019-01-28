@@ -147,7 +147,6 @@ namespace aggregator.Engine
             }
         }
 
-
         public WorkItemRelationWrapperCollection Relations
         {
             get
@@ -457,8 +456,8 @@ namespace aggregator.Engine
 
         private T GetFieldValue<T>(string field)
         {
-            return _item.Fields.ContainsKey(field)
-                ? (T)_item.Fields[field]
+            return _item.Fields.TryGetValue(field, out var value)
+                ? (T)value
                 : default(T);
         }
 
@@ -494,9 +493,8 @@ namespace aggregator.Engine
                 string url = patch.url;
                 int pos = url.LastIndexOf('/') + 1;
                 int relId = int.Parse(url.Substring(pos));
-                if (realIds.ContainsKey(relId))
+                if (realIds.TryGetValue(relId, out var newId))
                 {
-                    int newId = realIds[relId];
                     string newUrl = url.Substring(0, pos) + newId.ToString();
                     patch.url = newUrl;
                 }
