@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 [assembly: AssemblyCompany("TFS Aggregator Team")]
 #if DEBUG
@@ -13,3 +14,5 @@ using System.Reflection;
 [assembly: AssemblyProduct("Aggregator CLI")]
 [assembly: AssemblyTitle("Aggregator CLI")]
 [assembly: AssemblyVersion("0.4.0.0")]
+
+[assembly:InternalsVisibleTo("unittests-core")]

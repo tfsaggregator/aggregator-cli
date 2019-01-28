@@ -50,8 +50,7 @@ namespace aggregator.cli
             var requiredRuntimeVer = SemVersion.Parse(rel_name);
             logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
 
-            string localPackageVersion = GetLocalPackageVersion(RuntimePackageFile);
-            var localRuntimeVer = SemVersion.Parse(localPackageVersion);
+            var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
             logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
 
             // TODO check the uploaded version before overwriting?
@@ -91,8 +90,8 @@ namespace aggregator.cli
 
         internal async Task<SemVersion> GetDeployedRuntimeVersion(InstanceName instance, IAzure azure)
         {
-            string manifestVersion = "0.0.0";
             logger.WriteVerbose($"Retrieving functions runtime from {instance.PlainName} app");
+            SemVersion uploadedRuntimeVer;
             var kudu = new KuduApi(instance, azure, logger);
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini"))
@@ -102,24 +101,21 @@ namespace aggregator.cli
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // HACK refactor so that there is a single class parsing the manifest
-                    var parts = manifest.Split('=');
-                    if (parts[0] == "version")
-                        manifestVersion = parts[1];
+                    uploadedRuntimeVer = ManifestParser.Parse(manifest).Version;
                 }
                 else
                 {
                     logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase}");
+                    uploadedRuntimeVer = new SemVersion(0, 0, 0);
                 }
             }
-            var uploadedRuntimeVer = SemVersion.Parse(manifestVersion);
+
             logger.WriteVerbose($"Function Runtime version is {uploadedRuntimeVer}.");
             return uploadedRuntimeVer;
         }
 
-        private string GetLocalPackageVersion(string runtimePackageFile)
+        private async Task<SemVersion> GetLocalPackageVersionAsync(string runtimePackageFile)
         {
-            string manifestVersion = "0.0"; // this default allows SemVer to parse and compare
             if (File.Exists(runtimePackageFile))
             {
                 var zip = ZipFile.OpenRead(runtimePackageFile);
@@ -127,16 +123,14 @@ namespace aggregator.cli
                 using (var byteStream = manifestEntry.Open())
                 using (var reader = new StreamReader(byteStream))
                 {
-                    while (!reader.EndOfStream)
-                    {
-                        string line = reader.ReadLine();
-                        var parts = line.Split('=');
-                        if (parts[0] == "version")
-                            manifestVersion = parts[1];
-                    }
+                    var content = await reader.ReadToEndAsync();
+                    var info = ManifestParser.Parse(content);
+                    return info.Version;
                 }
             }
-            return manifestVersion;
+
+            // this default allows SemVer to parse and compare
+            return new SemVersion(0, 0);
         }
 
         private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHub(string tag = "latest")
