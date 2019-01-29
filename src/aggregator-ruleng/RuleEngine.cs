@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -16,7 +17,7 @@ namespace aggregator.Engine
     }
 
     /// <summary>
-    /// Entry point to execute rules, indipendent of environment
+    /// Entry point to execute rules, independent of environment
     /// </summary>
     public class RuleEngine
     {
@@ -111,6 +112,7 @@ namespace aggregator.Engine
             {
                 logger.WriteInfo($"Rule succeeded, no return value");
             }
+
             State = EngineState.Success;
 
             logger.WriteVerbose($"Post-execution, save any change (mode {saveMode})...");
@@ -125,6 +127,24 @@ namespace aggregator.Engine
             }
 
             return result.ReturnValue;
+        }
+
+        public (bool success, ImmutableArray<Microsoft.CodeAnalysis.Diagnostic> diagnostics) VerifyRule()
+        {
+            ImmutableArray<Microsoft.CodeAnalysis.Diagnostic> diagnostics = roslynScript.Compile();
+            (bool, ImmutableArray<Microsoft.CodeAnalysis.Diagnostic>) result;
+            if (diagnostics.Any())
+            {
+                State = EngineState.Error;
+                result = (false, diagnostics);
+            }
+            else
+            {
+                State = EngineState.Success;
+                result = (true, ImmutableArray.Create<Microsoft.CodeAnalysis.Diagnostic>());
+            }
+
+            return result;
         }
     }
 }

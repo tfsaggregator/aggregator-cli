@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -21,23 +16,23 @@ using Newtonsoft.Json;
 
 namespace aggregator.cli
 {
-    class AggregatorRules
+    internal class AggregatorRules
     {
-        private readonly IAzure azure;
-        private readonly ILogger logger;
+        private readonly IAzure _azure;
+        private readonly ILogger _logger;
+        private readonly Random _random = new Random();
 
         public AggregatorRules(IAzure azure, ILogger logger)
         {
-            this.azure = azure;
-            this.logger = logger;
+            _azure = azure;
+            _logger = logger;
         }
-
 
         internal async Task<IEnumerable<KuduFunction>> ListAsync(InstanceName instance)
         {
-            var instances = new AggregatorInstances(azure, logger);
-            var kudu = new KuduApi(instance, azure, logger);
-            logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
+            var instances = new AggregatorInstances(_azure, _logger);
+            var kudu = new KuduApi(instance, _azure, _logger);
+            _logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions"))
             using (var response = await client.SendAsync(request))
@@ -56,7 +51,7 @@ namespace aggregator.cli
                 }
                 else
                 {
-                    logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
+                    _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
                     return new KuduFunction[0];
                 }
             }
@@ -69,8 +64,8 @@ namespace aggregator.cli
 
         internal async Task<(string url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule)
         {
-            var instances = new AggregatorInstances(azure, logger);
-            var kudu = new KuduApi(instance, azure, logger);
+            var instances = new AggregatorInstances(_azure, _logger);
+            var kudu = new KuduApi(instance, _azure, _logger);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
@@ -94,7 +89,7 @@ namespace aggregator.cli
                     else
                     {
                         string error = await response.Content.ReadAsStringAsync();
-                        logger.WriteError($"Failed to retrieve function key: {error}");
+                        _logger.WriteError($"Failed to retrieve function key: {error}");
                         throw new ApplicationException("Failed to retrieve function key.");
                     }
                 }
@@ -103,20 +98,52 @@ namespace aggregator.cli
 
         internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath)
         {
-            var kudu = new KuduApi(instance, azure, logger);
+            var kudu = new KuduApi(instance, _azure, _logger);
 
-            logger.WriteVerbose($"Layout rule files");
+            _logger.WriteInfo($"Validate rule file {filePath}");
+
+            var ruleContent = await File.ReadAllLinesAsync(filePath);
+
+            var engineLogger = new EngineWrapperLogger(_logger);
+            try
+            {
+                var ruleEngine = new Engine.RuleEngine(engineLogger, ruleContent, SaveMode.Batch, true);
+                (var success, var diagnostics) = ruleEngine.VerifyRule();
+                if (success)
+                {
+                    _logger.WriteInfo($"Rule file is valid");
+                }
+                else
+                {
+                    _logger.WriteInfo($"Rule file is invalid");
+                    var messages = string.Join('\n', diagnostics.Select(d => d.ToString()));
+                    if (!string.IsNullOrEmpty(messages))
+                    {
+                        _logger.WriteError($"Errors in the rule file {filePath}:\n{messages}");
+                    }
+
+                    return false;
+                }
+            }
+            catch
+            {
+                _logger.WriteInfo($"Rule file is invalid");
+                return false;
+            }
+
+            _logger.WriteVerbose($"Layout rule files");
             string baseDirPath = LayoutRuleFiles(name, filePath);
-            logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
+            _logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
-            logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
+            _logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
             bool ok = await UploadRuleFiles(instance, name, baseDirPath);
             if (ok)
             {
-                logger.WriteInfo($"All {name} files uploaded to {instance.PlainName}.");
+                _logger.WriteInfo($"All {name} files uploaded to {instance.PlainName}.");
             }
+
             CleanupRuleFiles(baseDirPath);
-            logger.WriteInfo($"Cleaned local working directory.");
+            _logger.WriteInfo($"Cleaned local working directory.");
             return ok;
         }
 
@@ -133,7 +160,7 @@ namespace aggregator.cli
             Directory.CreateDirectory(tempDirPath);
 
             // copy rule content to fixed file name
-            File.Copy(filePath, Path.Combine(tempDirPath, $"{name}.rule"));
+            File.Copy(filePath, Path.Combine(tempDirPath, FormattableString.Invariant($"{name}.rule")));
 
             // copy templates
             var assembly = Assembly.GetExecutingAssembly();
@@ -143,6 +170,7 @@ namespace aggregator.cli
             {
                 reader.CopyTo(writer);
             }
+
             using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
             using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
             {
@@ -169,10 +197,10 @@ namespace aggregator.cli
 
             Note: when updating or deleting a file, ETag behavior will apply. You can pass a If-Match: "*" header to disable the ETag check.
             */
-            var kudu = new KuduApi(instance, azure, logger);
+            var kudu = new KuduApi(instance, _azure, _logger);
             string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
-            var instances = new AggregatorInstances(azure, logger);
+            var instances = new AggregatorInstances(_azure, _logger);
             using (var client = new HttpClient())
             {
                 bool exists = false;
@@ -180,7 +208,7 @@ namespace aggregator.cli
                 // check if function already exists
                 using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl))
                 {
-                    logger.WriteVerbose($"Checking if function {name} already exists in {instance.PlainName}...");
+                    _logger.WriteVerbose($"Checking if function {name} already exists in {instance.PlainName}...");
                     using (var response = await client.SendAsync(request))
                     {
                         exists = response.IsSuccessStatusCode;
@@ -189,7 +217,7 @@ namespace aggregator.cli
 
                 if (!exists)
                 {
-                    logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
+                    _logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
                     {
                         using (var response = await client.SendAsync(request))
@@ -197,18 +225,19 @@ namespace aggregator.cli
                             bool ok = response.IsSuccessStatusCode;
                             if (!ok)
                             {
-                                logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                                _logger.WriteError($"Upload failed with {response.ReasonPhrase}");
                                 return ok;
                             }
                         }
                     }
-                    logger.WriteInfo($"Function {name} created.");
+
+                    _logger.WriteInfo($"Function {name} created.");
                 }
 
                 var files = Directory.EnumerateFiles(baseDirPath, "*", SearchOption.AllDirectories);
                 foreach (var file in files)
                 {
-                    logger.WriteVerbose($"Uploading {Path.GetFileName(file)} to {instance.PlainName}...");
+                    _logger.WriteVerbose($"Uploading {Path.GetFileName(file)} to {instance.PlainName}...");
                     string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
                     {
@@ -220,23 +249,25 @@ namespace aggregator.cli
                             bool ok = response.IsSuccessStatusCode;
                             if (!ok)
                             {
-                                logger.WriteError($"Failed uploading {file} with {response.ReasonPhrase}");
+                                _logger.WriteError($"Failed uploading {file} with {response.ReasonPhrase}");
                                 return ok;
                             }
                         }
                     }
-                    logger.WriteInfo($"{Path.GetFileName(file)} uploaded to {instance.PlainName}.");
-                }//for
+
+                    _logger.WriteInfo($"{Path.GetFileName(file)} uploaded to {instance.PlainName}.");
+                }
             }
+
             return true;
         }
 
         internal async Task<bool> RemoveAsync(InstanceName instance, string name)
         {
-            var kudu = new KuduApi(instance, azure, logger);
-            var instances = new AggregatorInstances(azure, logger);
+            var kudu = new KuduApi(instance, _azure, _logger);
+            var instances = new AggregatorInstances(_azure, _logger);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
-            logger.WriteInfo($"Removing Function {name} in {instance.PlainName}...");
+            _logger.WriteInfo($"Removing Function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
             using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}"))
             using (var response = await client.SendAsync(request))
@@ -244,15 +275,16 @@ namespace aggregator.cli
                 bool ok = response.IsSuccessStatusCode;
                 if (!ok)
                 {
-                    logger.WriteError($"Failed removing Function {name} from {instance.PlainName} with {response.ReasonPhrase}");
+                    _logger.WriteError($"Failed removing Function {name} from {instance.PlainName} with {response.ReasonPhrase}");
                 }
+
                 return ok;
             }
         }
 
         internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable)
         {
-            var webFunctionApp = await azure
+            var webFunctionApp = await _azure
                 .AppServices
                 .WebApps
                 .GetByResourceGroupAsync(
@@ -269,12 +301,13 @@ namespace aggregator.cli
         internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion)
         {
             // check runtime package
-            var package = new FunctionRuntimePackage(logger);
-            bool ok = await package.UpdateVersion(requiredVersion, instance, azure);
+            var package = new FunctionRuntimePackage(_logger);
+            bool ok = await package.UpdateVersion(requiredVersion, instance, _azure);
             if (ok)
             {
                 ok = await AddAsync(instance, name, filePath);
             }
+
             return ok;
         }
 
@@ -282,13 +315,13 @@ namespace aggregator.cli
         {
             if (!File.Exists(ruleFilePath))
             {
-                logger.WriteError($"Rule code not found at {ruleFilePath}");
+                _logger.WriteError($"Rule code not found at {ruleFilePath}");
                 return false;
             }
 
             var devopsLogonData = DevOpsLogon.Load().connection;
 
-            logger.WriteVerbose($"Connecting to Azure DevOps using {devopsLogonData.Mode}...");
+            _logger.WriteVerbose($"Connecting to Azure DevOps using {devopsLogonData.Mode}...");
             var clientCredentials = default(VssCredentials);
             if (devopsLogonData.Mode == DevOpsTokenType.PAT)
             {
@@ -296,7 +329,7 @@ namespace aggregator.cli
             }
             else
             {
-                logger.WriteError($"Azure DevOps Token type {devopsLogonData.Mode} not supported!");
+                _logger.WriteError($"Azure DevOps Token type {devopsLogonData.Mode} not supported!");
                 throw new ArgumentOutOfRangeException(nameof(devopsLogonData.Mode));
             }
 
@@ -304,29 +337,29 @@ namespace aggregator.cli
             using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
             {
                 await devops.ConnectAsync();
-                logger.WriteInfo($"Connected to Azure DevOps");
+                _logger.WriteInfo($"Connected to Azure DevOps");
 
                 Guid teamProjectId;
                 string teamProjectName;
                 using (var projectClient = devops.GetClient<ProjectHttpClient>())
                 {
-                    logger.WriteVerbose($"Reading Azure DevOps project data...");
+                    _logger.WriteVerbose($"Reading Azure DevOps project data...");
                     var project = await projectClient.GetProject(projectName);
-                    logger.WriteInfo($"Project {projectName} data read.");
+                    _logger.WriteInfo($"Project {projectName} data read.");
                     teamProjectId = project.Id;
                     teamProjectName = project.Name;
                 }
 
                 using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
                 {
-                    logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+                    _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
                     string[] ruleCode = File.ReadAllLines(ruleFilePath);
 
-                    var engineLogger = new EngineWrapperLogger(logger);
+                    var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
                     string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient);
-                    logger.WriteInfo($"Rule returned '{result}'");
+                    _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;
                 }
@@ -335,12 +368,12 @@ namespace aggregator.cli
 
         internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode)
         {
-            var kudu = new KuduApi(instance, azure, logger);
+            var kudu = new KuduApi(instance, _azure, _logger);
 
             // build the request ...
-            logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
+            _logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
             (string ruleUrl, string ruleKey) = await this.GetInvocationUrlAndKey(instance, ruleName);
-            logger.WriteInfo($"{ruleName} Function Key retrieved.");
+            _logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             ruleUrl = InvokeOptions.AppendToUrl(ruleUrl, dryRun, saveMode);
 
@@ -371,8 +404,8 @@ namespace aggregator.cli
     }}
   }}
 }}";
-            logger.WriteVerbose($"Request to {ruleName} is:");
-            logger.WriteVerbose(body);
+            _logger.WriteVerbose($"Request to {ruleName} is:");
+            _logger.WriteVerbose(body);
 
             using (var client = new HttpClient())
             {
@@ -387,12 +420,12 @@ namespace aggregator.cli
                         if (response.IsSuccessStatusCode)
                         {
                             string result = await response.Content.ReadAsStringAsync();
-                            logger.WriteInfo($"{result}");
+                            _logger.WriteInfo($"{result}");
                             return true;
                         }
                         else
                         {
-                            logger.WriteError($"Failed with {response.ReasonPhrase}");
+                            _logger.WriteError($"Failed with {response.ReasonPhrase}");
                             return false;
                         }
                     }
