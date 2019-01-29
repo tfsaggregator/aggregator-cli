@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace aggregator.cli
 {
@@ -19,7 +17,7 @@ namespace aggregator.cli
                 = Console.BackgroundColor == ConsoleColor.Black
                 ? ConsoleColor.DarkMagenta
                 : ConsoleColor.DarkGray;
-            w.Write($"[{DateTime.Now.ToString("u")}] ");
+            w.Write($"[{DateTime.Now:u}] ");
         }
 
         public void WriteOutput(ILogDataObject data)

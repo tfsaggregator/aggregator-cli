@@ -12,7 +12,7 @@ namespace aggregator.Engine
 {
     public class WorkItemStore
     {
-        private EngineContext _context;
+        private readonly EngineContext _context;
 
         public WorkItemStore(EngineContext context)
         {
@@ -41,11 +41,11 @@ namespace aggregator.Engine
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
         {
-            string idList = ids.Aggregate("", (s, i) => s += $",{i}");
+            string idList = ids.Aggregate("", (s, i) => s += FormattableString.Invariant($",{i}"));
             _context.Logger.WriteVerbose($"Getting workitems {idList.Substring(1)}");
             return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
             {
-                string idList2 = workItemIds.Aggregate("", (s, i) => s += $",{i}");
+                string idList2 = workItemIds.Aggregate("", (s, i) => s += FormattableString.Invariant($",{i}"));
                 _context.Logger.WriteInfo($"Loading workitems {idList2.Substring(1)}");
                 var items = _context.Client.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
                 return items.ConvertAll(i => new WorkItemWrapper(_context, i));
@@ -69,9 +69,10 @@ namespace aggregator.Engine
         public WorkItemWrapper NewWorkItem(string workItemType, string projectName = null)
         {
             // TODO check workItemType and projectName values by querying AzDO
-            var item = new WorkItem()
+            var item = new WorkItem
             {
-                Fields = new Dictionary<string, object>() {
+                Fields = new Dictionary<string, object>
+                {
                     { CoreFieldRefNames.WorkItemType, workItemType },
                     { CoreFieldRefNames.TeamProject, projectName ?? _context.ProjectName }
                 },
@@ -82,7 +83,7 @@ namespace aggregator.Engine
             _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id.Value}");
             //HACK
             string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
-            item.Url = $"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}";
+            item.Url = FormattableString.Invariant($"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}");
             return wrapper;
         }
 
@@ -159,10 +160,11 @@ namespace aggregator.Engine
             string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
 
             BatchRequest[] batchRequests = new BatchRequest[created + updated];
-            Dictionary<string, string> headers = new Dictionary<string, string>() {
+            Dictionary<string, string> headers = new Dictionary<string, string>
+            {
                 { "Content-Type", "application/json-patch+json" }
             };
-            string credentials = Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes($":{_context.PersonalAccessToken}"));
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_context.PersonalAccessToken}"));
 
             int index = 0;
 
@@ -187,7 +189,7 @@ namespace aggregator.Engine
                 batchRequests[index++] = new BatchRequest
                 {
                     method = "PATCH",
-                    uri = $"/_apis/wit/workitems/{item.Id.Value}?{ApiVersion}",
+                    uri = FormattableString.Invariant($"/_apis/wit/workitems/{item.Id.Value}?{ApiVersion}"),
                     headers = headers,
                     body = item.Changes
                         .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
@@ -227,6 +229,7 @@ namespace aggregator.Engine
                                 succeeded = false;
                             }
                         }
+
                         if (!succeeded)
                             throw new ApplicationException($"Save failed.");
                     }
@@ -254,7 +257,8 @@ namespace aggregator.Engine
             // it fails adding a relation between a new (id<0) work item and an existing one (id>0)
             var proxy = new BatchProxy(_context, commit);
 
-            Dictionary<string, string> headers = new Dictionary<string, string>() {
+            Dictionary<string, string> headers = new Dictionary<string, string>
+            {
                 { "Content-Type", "application/json-patch+json" }
             };
 
@@ -297,6 +301,7 @@ namespace aggregator.Engine
                     item.ReplaceIdAndResetChanges(item.Id.Value, newId);
                     realIds.Add(oldId, newId);
                 }
+
                 foreach (var item in _context.Tracker.ChangedWorkItems)
                 {
                     item.RemapIdReferences(realIds);
@@ -316,7 +321,7 @@ namespace aggregator.Engine
                     batchRequests.Add(new BatchRequest
                     {
                         method = "PATCH",
-                        uri = $"/_apis/wit/workitems/{item.Id.Value}?{proxy.ApiVersion}",
+                        uri = FormattableString.Invariant($"/_apis/wit/workitems/{item.Id.Value}?{proxy.ApiVersion}"),
                         headers = headers,
                         body = changes.ToArray()
                     });

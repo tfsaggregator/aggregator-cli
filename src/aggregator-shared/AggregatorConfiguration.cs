@@ -21,9 +21,7 @@ namespace aggregator
     /// </summary>
     public class AggregatorConfiguration
     {
-        public AggregatorConfiguration() {}
-
-        static public AggregatorConfiguration Read(Microsoft.Extensions.Configuration.IConfiguration config)
+        public static AggregatorConfiguration Read(Microsoft.Extensions.Configuration.IConfiguration config)
         {
             var ac = new AggregatorConfiguration();
             Enum.TryParse(config["Aggregator_VstsTokenType"], out DevOpsTokenType vtt);
