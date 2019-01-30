@@ -103,62 +103,48 @@ namespace aggregator.cli
 
         internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath)
         {
-            var kudu = new KuduApi(instance, azure, logger);
-
-            logger.WriteVerbose($"Layout rule files");
-            string baseDirPath = LayoutRuleFiles(name, filePath);
+            logger.WriteVerbose("Layout rule files");
+            var inMemoryFiles = await PackagingFilesAsync(name, filePath);
             logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
             logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
-            bool ok = await UploadRuleFiles(instance, name, baseDirPath);
+            bool ok = await UploadRuleFilesAsync(instance, name, inMemoryFiles);
             if (ok)
             {
-                logger.WriteInfo($"All {name} files uploaded to {instance.PlainName}.");
+                logger.WriteInfo($"All {name} files successfully uploaded to {instance.PlainName}.");
             }
-            CleanupRuleFiles(baseDirPath);
-            logger.WriteInfo($"Cleaned local working directory.");
+
             return ok;
         }
 
-        private static string LayoutRuleFiles(string name, string filePath)
+        private static async Task<IDictionary<string, string>> PackagingFilesAsync(string name, string filePath)
         {
-            // working directory
-            var rand = new Random((int)DateTime.UtcNow.Ticks);
-            string baseDirPath = Path.Combine(
-                Path.GetTempPath(),
-                $"aggregator-{rand.Next().ToString()}");
-            string tempDirPath = Path.Combine(
-                baseDirPath,
-                name);
-            Directory.CreateDirectory(tempDirPath);
+            var inMemoryFiles = new Dictionary<string, string>();
 
-            // copy rule content to fixed file name
-            File.Copy(filePath, Path.Combine(tempDirPath, $"{name}.rule"));
+            var ruleContent = await File.ReadAllTextAsync(filePath);
+            inMemoryFiles.Add($"{name}.rule", ruleContent);
 
-            // copy templates
             var assembly = Assembly.GetExecutingAssembly();
-            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
+
+            using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
             // TODO we can deserialize a KuduFunctionConfig instead of using a fixed file...
-            using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
             {
-                reader.CopyTo(writer);
-            }
-            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
-            using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
-            {
-                reader.CopyTo(writer);
+                var reader = new StreamReader(stream);
+                var content = await reader.ReadToEndAsync();
+                inMemoryFiles.Add("function.json", content);
             }
 
-            return baseDirPath;
+            using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
+            {
+                var reader = new StreamReader(stream);
+                var content = await reader.ReadToEndAsync();
+                inMemoryFiles.Add("run.csx", content);
+            }
+
+            return inMemoryFiles;
         }
 
-        void CleanupRuleFiles(string baseDirPath)
-        {
-            // clean-up: everything is in memory
-            Directory.Delete(baseDirPath, true);
-        }
-
-        private async Task<bool> UploadRuleFiles(InstanceName instance, string name, string baseDirPath)
+        private async Task<bool> UploadRuleFilesAsync(InstanceName instance, string name, IDictionary<string, string> inMemoryFiles)
         {
             /*
             PUT /api/vfs/{path}
@@ -170,12 +156,11 @@ namespace aggregator.cli
             Note: when updating or deleting a file, ETag behavior will apply. You can pass a If-Match: "*" header to disable the ETag check.
             */
             var kudu = new KuduApi(instance, azure, logger);
-            string relativeUrl = $"api/vfs/site/wwwroot/{name}/";
+            var relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
-            var instances = new AggregatorInstances(azure, logger);
             using (var client = new HttpClient())
             {
-                bool exists = false;
+                var exists = false;
 
                 // check if function already exists
                 using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl))
@@ -198,36 +183,38 @@ namespace aggregator.cli
                             if (!ok)
                             {
                                 logger.WriteError($"Upload failed with {response.ReasonPhrase}");
-                                return ok;
+                                return false;
                             }
                         }
                     }
+
                     logger.WriteInfo($"Function {name} created.");
                 }
 
-                var files = Directory.EnumerateFiles(baseDirPath, "*", SearchOption.AllDirectories);
-                foreach (var file in files)
+                foreach (var (fileName, fileContent) in inMemoryFiles)
                 {
-                    logger.WriteVerbose($"Uploading {Path.GetFileName(file)} to {instance.PlainName}...");
-                    string fileUrl = $"{relativeUrl}{Path.GetFileName(file)}";
+                    logger.WriteVerbose($"Uploading {fileName} to {instance.PlainName}...");
+                    var fileUrl = $"{relativeUrl}{fileName}";
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
                     {
                         //HACK -> request.Headers.IfMatch.Add(new EntityTagHeaderValue("*", false)); <- won't work
                         request.Headers.Add("If-Match", "*");
-                        request.Content = new StringContent(File.ReadAllText(file));
+                        request.Content = new StringContent(fileContent);
                         using (var response = await client.SendAsync(request))
                         {
                             bool ok = response.IsSuccessStatusCode;
                             if (!ok)
                             {
-                                logger.WriteError($"Failed uploading {file} with {response.ReasonPhrase}");
-                                return ok;
+                                logger.WriteError($"Failed uploading {fileName} with {response.ReasonPhrase}");
+                                return false;
                             }
                         }
                     }
-                    logger.WriteInfo($"{Path.GetFileName(file)} uploaded to {instance.PlainName}.");
-                }//for
+
+                    logger.WriteInfo($"{fileName} successfully uploaded to {instance.PlainName}.");
+                }
             }
+
             return true;
         }
 
