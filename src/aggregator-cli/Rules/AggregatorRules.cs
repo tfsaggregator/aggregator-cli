@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -31,7 +25,6 @@ namespace aggregator.cli
             this.azure = azure;
             this.logger = logger;
         }
-
 
         internal async Task<IEnumerable<KuduFunction>> ListAsync(InstanceName instance)
         {
@@ -54,11 +47,9 @@ namespace aggregator.cli
                         return functionList;
                     }
                 }
-                else
-                {
-                    logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
-                    return new KuduFunction[0];
-                }
+
+                logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
+                return new KuduFunction[0];
             }
         }
 
@@ -91,12 +82,10 @@ namespace aggregator.cli
                             return invocation;
                         }
                     }
-                    else
-                    {
-                        string error = await response.Content.ReadAsStringAsync();
-                        logger.WriteError($"Failed to retrieve function key: {error}");
-                        throw new ApplicationException("Failed to retrieve function key.");
-                    }
+
+                    string error = await response.Content.ReadAsStringAsync();
+                    logger.WriteError($"Failed to retrieve function key: {error}");
+                    throw new InvalidOperationException("Failed to retrieve function key.");
                 }
             }
         }
@@ -106,7 +95,7 @@ namespace aggregator.cli
             var kudu = new KuduApi(instance, azure, logger);
 
             logger.WriteVerbose($"Layout rule files");
-            string baseDirPath = LayoutRuleFiles(name, filePath);
+            string baseDirPath = await LayoutRuleFilesAsync(name, filePath);
             logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
             logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
@@ -115,12 +104,13 @@ namespace aggregator.cli
             {
                 logger.WriteInfo($"All {name} files uploaded to {instance.PlainName}.");
             }
+
             CleanupRuleFiles(baseDirPath);
             logger.WriteInfo($"Cleaned local working directory.");
             return ok;
         }
 
-        private static string LayoutRuleFiles(string name, string filePath)
+        private static async Task<string> LayoutRuleFilesAsync(string name, string filePath)
         {
             // working directory
             var rand = new Random((int)DateTime.UtcNow.Ticks);
@@ -137,16 +127,17 @@ namespace aggregator.cli
 
             // copy templates
             var assembly = Assembly.GetExecutingAssembly();
-            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
+            using (var reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
             // TODO we can deserialize a KuduFunctionConfig instead of using a fixed file...
-            using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
+            using (var writer = new FileStream(Path.Combine(tempDirPath, "function.json"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
-                reader.CopyTo(writer);
+                await reader.CopyToAsync(writer);
             }
+
             using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
-            using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
+            using (var writer = new FileStream(Path.Combine(tempDirPath, "run.csx"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
-                reader.CopyTo(writer);
+                await reader.CopyToAsync(writer);
             }
 
             return baseDirPath;
@@ -202,6 +193,7 @@ namespace aggregator.cli
                             }
                         }
                     }
+
                     logger.WriteInfo($"Function {name} created.");
                 }
 
@@ -225,9 +217,11 @@ namespace aggregator.cli
                             }
                         }
                     }
+
                     logger.WriteInfo($"{Path.GetFileName(file)} uploaded to {instance.PlainName}.");
                 }//for
             }
+
             return true;
         }
 
@@ -246,6 +240,7 @@ namespace aggregator.cli
                 {
                     logger.WriteError($"Failed removing Function {name} from {instance.PlainName} with {response.ReasonPhrase}");
                 }
+
                 return ok;
             }
         }
@@ -275,6 +270,7 @@ namespace aggregator.cli
             {
                 ok = await AddAsync(instance, name, filePath);
             }
+
             return ok;
         }
 
@@ -390,11 +386,9 @@ namespace aggregator.cli
                             logger.WriteInfo($"{result}");
                             return true;
                         }
-                        else
-                        {
-                            logger.WriteError($"Failed with {response.ReasonPhrase}");
-                            return false;
-                        }
+
+                        logger.WriteError($"Failed with {response.ReasonPhrase}");
+                        return false;
                     }
                 }
             }

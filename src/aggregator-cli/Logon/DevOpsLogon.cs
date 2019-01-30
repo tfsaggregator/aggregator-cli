@@ -36,11 +36,12 @@ namespace aggregator.cli
                     clientCredentials = new VssCredentials();
                     break;
                 case DevOpsTokenType.PAT:
-                    clientCredentials=new VssBasicCredential("pat", Token);
+                    clientCredentials = new VssBasicCredential("pat", Token);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Mode));
             }
+
             var connection = new VssConnection(new Uri(Url), clientCredentials);
             await connection.ConnectAsync();
             return connection;

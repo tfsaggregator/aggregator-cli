@@ -6,7 +6,6 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.Azure.Management.Fluent;
-using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.Services.FormInput;
 
 namespace aggregator.cli

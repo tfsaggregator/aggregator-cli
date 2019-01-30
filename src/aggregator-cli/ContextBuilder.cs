@@ -1,8 +1,6 @@
 ﻿using Microsoft.Azure.Management.Fluent;
 using Microsoft.VisualStudio.Services.WebApi;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -10,9 +8,9 @@ namespace aggregator.cli
 
     internal class CommandContext
     {
-        internal ILogger Logger { get; private set; }
-        internal IAzure Azure { get; private set; }
-        internal VssConnection Devops { get; private set; }
+        internal ILogger Logger { get; }
+        internal IAzure Azure { get; }
+        internal VssConnection Devops { get; }
         internal CommandContext(ILogger logger, IAzure azure, VssConnection devops)
         {
             Logger = logger;
@@ -23,9 +21,9 @@ namespace aggregator.cli
 
     internal class ContextBuilder
     {
-        ILogger logger;
-        bool azureLogon = false;
-        bool devopsLogon = false;
+        private readonly ILogger logger;
+        private bool azureLogon;
+        private bool devopsLogon;
 
         internal ContextBuilder(ILogger logger) => this.logger = logger;
 
@@ -34,11 +32,13 @@ namespace aggregator.cli
             azureLogon = true;
             return this;
         }
+
         internal ContextBuilder WithDevOpsLogon()
         {
             devopsLogon = true;
             return this;
         }
+
         internal async Task<CommandContext> Build()
         {
             IAzure azure = null;
@@ -51,8 +51,9 @@ namespace aggregator.cli
                 if (reason != LogonResult.Succeeded)
                 {
                     string msg = TranslateResult(reason);
-                    throw new ApplicationException(string.Format(msg, "Azure","logon.azure"));
+                    throw new InvalidOperationException(string.Format(msg, "Azure","logon.azure"));
                 }
+
                 azure = await connection.LogonAsync();
                 logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
             }
@@ -64,8 +65,9 @@ namespace aggregator.cli
                 if (reason != LogonResult.Succeeded)
                 {
                     string msg = TranslateResult(reason);
-                    throw new ApplicationException(string.Format(msg, "Azure DevOps", "logon.ado"));
+                    throw new InvalidOperationException(string.Format(msg, "Azure DevOps", "logon.ado"));
                 }
+
                 devops = await connection.LogonAsync();
                 logger.WriteInfo($"Connected to {devops.Uri.Host}");
             }

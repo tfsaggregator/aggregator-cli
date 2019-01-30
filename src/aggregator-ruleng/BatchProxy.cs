@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -8,15 +7,15 @@ using Newtonsoft.Json;
 
 namespace aggregator.Engine
 {
-    class BatchProxy
+    internal class BatchProxy
     {
         private readonly bool _commit;
         private readonly EngineContext _context;
 
         internal BatchProxy(EngineContext context, bool commit)
         {
-            this._context = context;
-            this._commit = commit;
+            _context = context;
+            _commit = commit;
         }
 
         internal string ApiVersion => "api-version=4.1";
@@ -63,9 +62,10 @@ namespace aggregator.Engine
                                 succeeded = false;
                             }
                         }
+
                         if (!succeeded)
                         {
-                            throw new ApplicationException($"Save failed.");
+                            throw new InvalidOperationException($"Save failed.");
                         }
 
                         return batchResponse;
@@ -74,15 +74,13 @@ namespace aggregator.Engine
                     {
                         string stringResponse = await response.Content.ReadAsStringAsync();
                         _context.Logger.WriteError($"Save failed: {stringResponse}");
-                        throw new ApplicationException($"Save failed: {response.ReasonPhrase}.");
+                        throw new InvalidOperationException($"Save failed: {response.ReasonPhrase}.");
                     }
                 }//using
             }
-            else
-            {
-                _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
-                return null;
-            }//if
+
+            _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
+            return null;
         }
     }
 }

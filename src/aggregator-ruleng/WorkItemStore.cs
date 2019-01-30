@@ -100,7 +100,7 @@ namespace aggregator.Engine
                 case SaveMode.TwoPhases:
                     return await SaveChanges_TwoPhases(commit);
                 default:
-                    throw new ApplicationException($"Unsupported save mode: {mode}.");
+                    throw new InvalidOperationException($"Unsupported save mode: {mode}.");
             }
         }
 
@@ -123,6 +123,7 @@ namespace aggregator.Engine
                 {
                     _context.Logger.WriteInfo($"Dry-run mode: should create a {item.WorkItemType} workitem in {item.TeamProject}");
                 }
+
                 created++;
             }
 
@@ -140,8 +141,10 @@ namespace aggregator.Engine
                 {
                     _context.Logger.WriteInfo($"Dry-run mode: should update workitem {item.Id} in {item.TeamProject}");
                 }
+
                 updated++;
             }
+
             return (created, updated);
         }
 
@@ -180,6 +183,7 @@ namespace aggregator.Engine
                         .ToArray()
                 };
             }
+
             foreach (var item in _context.Tracker.ChangedWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {item.TeamProject}");
@@ -194,6 +198,7 @@ namespace aggregator.Engine
                         .ToArray()
                 };
             }
+
             var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
             string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.Indented, converters);
             _context.Logger.WriteVerbose(requestBody);
@@ -227,14 +232,15 @@ namespace aggregator.Engine
                                 succeeded = false;
                             }
                         }
+
                         if (!succeeded)
-                            throw new ApplicationException($"Save failed.");
+                            throw new InvalidOperationException("Save failed.");
                     }
                     else
                     {
                         string stringResponse = await response.Content.ReadAsStringAsync();
                         _context.Logger.WriteError($"Save failed: {stringResponse}");
-                        throw new ApplicationException($"Save failed: {response.ReasonPhrase}.");
+                        throw new InvalidOperationException($"Save failed: {response.ReasonPhrase}.");
                     }
                 }//using
             }
@@ -275,7 +281,7 @@ namespace aggregator.Engine
                     body = item.Changes
                         .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
                         // remove relations as we might incour in API failure
-                        .Where(c => c.Path != "/relations/-")
+                        .Where(c => !string.Equals(c.Path, "/relations/-", StringComparison.Ordinal))
                         .ToArray()
                 };
             }
@@ -297,6 +303,7 @@ namespace aggregator.Engine
                     item.ReplaceIdAndResetChanges(item.Id.Value, newId);
                     realIds.Add(oldId, newId);
                 }
+
                 foreach (var item in _context.Tracker.ChangedWorkItems)
                 {
                     item.RemapIdReferences(realIds);
