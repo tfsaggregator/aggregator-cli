@@ -5,13 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
     abstract class CommandBase
     {
-        ILogger logger = null;
+        ILogger logger;
 
         // Omitting long name, defaults to name of property, ie "--verbose"
         [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
@@ -19,11 +20,11 @@ namespace aggregator.cli
 
         protected ContextBuilder Context => new ContextBuilder(logger);
 
-        internal abstract Task<int> RunAsync();
+        internal abstract Task<int> RunAsync(CancellationToken cancellationToken);
 
-        internal int Run()
+        internal int Run(CancellationToken cancellationToken)
         {
-            this.logger = new ConsoleLogger(Verbose);
+            logger = new ConsoleLogger(Verbose);
             try
             {
                 var title = GetCustomAttribute<AssemblyTitleAttribute>();
@@ -35,16 +36,19 @@ namespace aggregator.cli
                 // Hello World
                 logger.WriteInfo($"{title.Title} v{infoVersion.InformationalVersion} (build: {fileVersion.Version} {config.Configuration}) (c) {copyright.Copyright}");
 
-                var t = this.RunAsync();
-                t.Wait();
+                var t = RunAsync(cancellationToken);
+                t.Wait(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 int rc = t.Result;
                 if (rc != 0)
                 {
                     logger.WriteError("Failed!");
-                } else
+                }
+                else
                 {
                     logger.WriteSuccess("Succeeded");
                 }
+
                 return rc;
             }
             catch (Exception ex)

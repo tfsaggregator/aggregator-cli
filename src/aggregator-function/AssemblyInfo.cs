@@ -1,5 +1,4 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 
 [assembly: AssemblyCompany("TFS Aggregator Team")]
 #if DEBUG

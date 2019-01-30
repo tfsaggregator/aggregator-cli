@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace aggregator.Engine
 {
-    class BatchProxy
+    internal class BatchProxy
     {
         private readonly bool _commit;
         private readonly EngineContext _context;
@@ -21,10 +21,10 @@ namespace aggregator.Engine
 
         internal string ApiVersion => "api-version=4.1";
 
-        internal async Task<WorkItemBatchPostResponse> Invoke(BatchRequest[] batchRequests)
+        internal async Task<WorkItemBatchPostResponse> InvokeAsync(BatchRequest[] batchRequests, CancellationToken cancellationToken)
         {
             string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
-            string credentials = Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes($":{_context.PersonalAccessToken}"));
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_context.PersonalAccessToken}"));
             var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
 
             string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.Indented, converters);
@@ -44,11 +44,11 @@ namespace aggregator.Engine
 
                     // send the request
                     var request = new HttpRequestMessage(method, $"{baseUriString}/_apis/wit/$batch?{ApiVersion}") { Content = batchRequest };
-                    var response = client.SendAsync(request).Result;
+                    var response = await client.SendAsync(request, cancellationToken);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        WorkItemBatchPostResponse batchResponse = response.Content.ReadAsAsync<WorkItemBatchPostResponse>().Result;
+                        WorkItemBatchPostResponse batchResponse = await response.Content.ReadAsAsync<WorkItemBatchPostResponse>(cancellationToken);
 
                         string stringResponse = JsonConvert.SerializeObject(batchResponse, Formatting.Indented);
                         _context.Logger.WriteVerbose($"Workitem(s) batch response:");
@@ -63,6 +63,7 @@ namespace aggregator.Engine
                                 succeeded = false;
                             }
                         }
+
                         if (!succeeded)
                         {
                             throw new ApplicationException($"Save failed.");

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -27,7 +28,7 @@ namespace aggregator.cli
             return (result.connection, result.reason);
         }
 
-        public async Task<VssConnection> LogonAsync()
+        public async Task<VssConnection> LogonAsync(CancellationToken cancellationToken)
         {
             var clientCredentials = default(VssCredentials);
             switch (Mode)
@@ -42,7 +43,7 @@ namespace aggregator.cli
                     throw new ArgumentOutOfRangeException(nameof(Mode));
             }
             var connection = new VssConnection(new Uri(Url), clientCredentials);
-            await connection.ConnectAsync();
+            await connection.ConnectAsync(cancellationToken);
             return connection;
         }
     }

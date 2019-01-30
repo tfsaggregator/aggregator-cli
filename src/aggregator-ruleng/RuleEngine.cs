@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -76,9 +77,9 @@ namespace aggregator.Engine
         /// State is used by unit tests
         /// </summary>
         public EngineState State { get; private set; }
-        public bool DryRun { get; private set; }
+        public bool DryRun { get; }
 
-        public async Task<string> ExecuteAsync(string collectionUrl, Guid projectId, string projectName, string personalAccessToken, int workItemId, WorkItemTrackingHttpClientBase witClient)
+        public async Task<string> ExecuteAsync(string collectionUrl, Guid projectId, string projectName, string personalAccessToken, int workItemId, WorkItemTrackingHttpClientBase witClient, CancellationToken cancellationToken)
         {
             if (State == EngineState.Error)
             {
@@ -97,7 +98,7 @@ namespace aggregator.Engine
             };
 
             logger.WriteInfo($"Executing Rule...");
-            var result = await roslynScript.RunAsync(globals);
+            var result = await roslynScript.RunAsync(globals, cancellationToken);
             if (result.Exception != null)
             {
                 logger.WriteError($"Rule failed with {result.Exception}");
@@ -114,7 +115,7 @@ namespace aggregator.Engine
             State = EngineState.Success;
 
             logger.WriteVerbose($"Post-execution, save any change (mode {saveMode})...");
-            var saveRes = await store.SaveChanges(saveMode, !this.DryRun);
+            var saveRes = await store.SaveChanges(saveMode, !DryRun, cancellationToken);
             if (saveRes.created + saveRes.updated > 0)
             {
                 logger.WriteInfo($"Changes saved to Azure DevOps (mode {saveMode}): {saveRes.created} created, {saveRes.updated} updated.");

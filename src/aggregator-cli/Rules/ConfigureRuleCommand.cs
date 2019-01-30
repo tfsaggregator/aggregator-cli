@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -23,17 +24,17 @@ namespace aggregator.cli
         [Option('e', "enable", SetName = "enable", HelpText = "Enable the rule.")]
         public bool Enable { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
-                .Build();
+                .BuildAsync(cancellationToken);
             var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool ok = false;
             if (Disable || Enable)
             {
-                ok = await rules.EnableAsync(instance, Name, Disable);
+                ok = await rules.EnableAsync(instance, Name, Disable, cancellationToken);
             }
             return ok ? 0 : 1;
         }

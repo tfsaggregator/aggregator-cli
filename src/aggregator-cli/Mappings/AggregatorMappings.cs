@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.Azure.Management.Fluent;
-using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.VisualStudio.Services.FormInput;
 
 namespace aggregator.cli
@@ -63,7 +63,7 @@ namespace aggregator.cli
             return result;
         }
 
-        internal async Task<Guid> Add(string projectName, string @event, InstanceName instance, string ruleName)
+        internal async Task<Guid> AddAsync(string projectName, string @event, InstanceName instance, string ruleName, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
             var projectClient = devops.GetClient<ProjectHttpClient>();
@@ -72,7 +72,7 @@ namespace aggregator.cli
 
             var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName);
+            (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
@@ -108,6 +108,8 @@ namespace aggregator.cli
                     }
                 }
             };
+
+            cancellationToken.ThrowIfCancellationRequested();
             var queryResult = await serviceHooksClient.QuerySubscriptionsAsync(query);
             if (queryResult.Results.Any())
             {
@@ -179,6 +181,7 @@ namespace aggregator.cli
             {
                 ruleSubs = ruleSubs.Where(s => s.EventType == @event);
             }
+
             if (projectName != "*")
             {
                 logger.WriteVerbose($"Reading Azure DevOps project data...");
@@ -188,12 +191,14 @@ namespace aggregator.cli
 
                 ruleSubs = ruleSubs.Where(s => s.PublisherInputs["projectId"] == project.Id.ToString());
             }
+
             if (rule != "*")
             {
                 ruleSubs = ruleSubs
                 .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
                     AggregatorRules.GetInvocationUrl(instance, rule)));
             }
+
             foreach (var ruleSub in ruleSubs)
             {
                 logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription} {ruleSub.EventType}...");

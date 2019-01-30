@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -71,7 +73,7 @@ namespace unittests_ruleng
         }
 
         [Fact]
-        public void NewWorkItem_Succeeds()
+        public async Task NewWorkItem_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri($"{collectionUrl}"), null);
@@ -80,7 +82,7 @@ namespace unittests_ruleng
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = sut.SaveChanges(SaveMode.Default, false).Result;
+            var save = await sut.SaveChanges(SaveMode.Default, false, CancellationToken.None);
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);

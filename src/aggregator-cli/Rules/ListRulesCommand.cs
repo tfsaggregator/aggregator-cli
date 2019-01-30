@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -15,23 +16,26 @@ namespace aggregator.cli
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
-                .Build();
+                .BuildAsync(cancellationToken);
             var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;
-            foreach (var item in await rules.ListAsync(instance))
+            foreach (var item in await rules.ListAsync(instance, cancellationToken))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 context.Logger.WriteOutput(new RuleOutputData(instance, item));
                 any = true;
             }
+
             if (!any)
             {
                 context.Logger.WriteInfo($"No rules found in aggregator instance {instance.PlainName}.");
             }
+
             return 0;
         }
     }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -19,10 +20,9 @@ namespace aggregator.cli
         [Option('t', "token", SetName = "PAT", HelpText = "Azure DevOps Personal Authentication Token.")]
         public string Token { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
-            var context = await Context.Build();
-
+            var context = await Context.BuildAsync(cancellationToken);
 
             var data = new DevOpsLogon()
             {
@@ -33,12 +33,13 @@ namespace aggregator.cli
             string path = data.Save();
             // now check for validity
             context.Logger.WriteInfo($"Connecting to Azure DevOps using {Mode} credential...");
-            var devops = await data.LogonAsync();
+            var devops = await data.LogonAsync(cancellationToken);
             if (devops == null)
             {
                 context.Logger.WriteError("Invalid Azure DevOps credentials");
                 return 2;
             }
+
             return 0;
         }
     }

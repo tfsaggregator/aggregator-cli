@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using CommandLine.Text;
 using System;
+using System.Threading;
 
 namespace aggregator.cli
 {
@@ -34,54 +35,67 @@ namespace aggregator.cli
         public static int Main(string[] args)
         {
             var save = Console.ForegroundColor;
-            Console.CancelKeyPress += delegate {
-                // call methods to clean up
-                Console.ForegroundColor = save;
-            };
-
-            var parser = new Parser(settings =>
+            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                settings.CaseSensitive = false;
-                // fails see https://github.com/commandlineparser/commandline/issues/198
-                settings.CaseInsensitiveEnumValues = true;
-            });
-            var types = new Type[] {
-                typeof(TestCommand),
-                typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
-                typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
-                typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
-                typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
-                typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
-                typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
-            };
-            var parserResult = parser.ParseArguments(args, types);
-            int rc = -1;
-            parserResult
-                .WithParsed<TestCommand>(cmd => rc = cmd.Run())
-                .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())
-                .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run())
-                .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run())
-                .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run())
-                .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run())
-                .WithParsed<ConfigureInstanceCommand>(cmd => rc = cmd.Run())
-                .WithParsed<ListRulesCommand>(cmd => rc = cmd.Run())
-                .WithParsed<AddRuleCommand>(cmd => rc = cmd.Run())
-                .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run())
-                .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run())
-                .WithParsed<StreamLogsCommand>(cmd => rc = cmd.Run())
-                .WithParsed<UpdateRuleCommand>(cmd => rc = cmd.Run())
-                .WithParsed<InvokeRuleCommand>(cmd => rc = cmd.Run())
-                .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run())
-                .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run())
-                .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run())
-                .WithNotParsed(errs =>
+                void cancelEventHandler(object sender, ConsoleCancelEventArgs e)
                 {
-                    var helpText = HelpText.AutoBuild(parserResult);
-                    Console.Error.Write(helpText);
-                    rc = 1;
+                    // call methods to clean up
+                    Console.ForegroundColor = save;
+                    if (!cancellationTokenSource.IsCancellationRequested)
+                    {
+                        cancellationTokenSource.Cancel();
+                    }
+                }
+
+                Console.CancelKeyPress += cancelEventHandler;
+
+                var parser = new Parser(settings =>
+                {
+                    settings.CaseSensitive = false;
+                    // fails see https://github.com/commandlineparser/commandline/issues/198
+                    settings.CaseInsensitiveEnumValues = true;
                 });
-            Console.ForegroundColor = save;
-            return rc;
+                var types = new Type[]
+                {
+                    typeof(TestCommand),
+                    typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
+                    typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
+                    typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
+                    typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
+                    typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
+                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
+                };
+                var parserResult = parser.ParseArguments(args, types);
+                int rc = -1;
+                var cancellationToken = cancellationTokenSource.Token;
+                parserResult
+                    .WithParsed<TestCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<ConfigureInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<ListRulesCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<AddRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<StreamLogsCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<UpdateRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<InvokeRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithNotParsed(errs =>
+                    {
+                        var helpText = HelpText.AutoBuild(parserResult);
+                        Console.Error.Write(helpText);
+                        rc = 1;
+                    });
+                Console.ForegroundColor = save;
+                Console.CancelKeyPress -= cancelEventHandler;
+                return rc;
+            }
         }
     }
 }

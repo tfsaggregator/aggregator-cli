@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -48,7 +49,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
         }
@@ -71,7 +72,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -95,7 +96,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Error, engine.State);
         }
@@ -149,7 +150,7 @@ return message;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Parent is 1", result);
         }
@@ -173,7 +174,7 @@ wi.Title = ""Brand new"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {projectName}");
@@ -202,7 +203,7 @@ parent.Relations.AddChild(newChild);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {projectName}");
@@ -229,7 +230,7 @@ return self.Description;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Hello.", result);
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {projectName}");

@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -17,9 +18,9 @@ namespace aggregator.cli
         [Option('t', "tenant", Required = true, HelpText = "Tenant Id.")]
         public string TenantId { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
-            var context = await Context.Build();
+            var context = await Context.BuildAsync(cancellationToken);
 
             var data = new AzureLogon()
             {
@@ -31,7 +32,7 @@ namespace aggregator.cli
             string path = data.Save();
             // now check for validity
             context.Logger.WriteInfo("Connecting to Azure...");
-            var azure = await data.LogonAsync();
+            var azure = data.Logon();
             if (azure == null)
             {
                 context.Logger.WriteError("Invalid azure credentials");

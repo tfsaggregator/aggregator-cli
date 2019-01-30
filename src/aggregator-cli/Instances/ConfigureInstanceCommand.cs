@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -23,26 +24,27 @@ namespace aggregator.cli
 
         [Option('m', "saveMode", SetName = "save", Required = false, HelpText = "Save behaviour.")]
         public SaveMode SaveMode { get; set; }
-        
+
         // TODO add --swap.slot to support App Service Deployment Slots
 
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
                 .WithDevOpsLogon() // need the token, so we can save it in the app settings
-                .Build();
+                .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name, ResourceGroup);
             bool ok = false;
             if (Authentication)
             {
-                ok = await instances.ChangeAppSettings(instance, Location, SaveMode);
+                ok = await instances.ChangeAppSettingsAsync(instance, Location, SaveMode, cancellationToken);
             } else
             {
                 context.Logger.WriteError($"Unsupported command option(s)");
             }
+
             return ok ? 0 : 1;
         }
     }

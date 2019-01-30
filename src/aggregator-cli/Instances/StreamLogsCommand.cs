@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -15,14 +16,14 @@ namespace aggregator.cli
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
-                .Build();
+                .BuildAsync(cancellationToken);
             var instance = new InstanceName(Instance, ResourceGroup);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
-            bool ok = await instances.StreamLogsAsync(instance);
+            bool ok = await instances.StreamLogsAsync(instance, cancellationToken);
             return ok ? 0 : 1;
         }
     }

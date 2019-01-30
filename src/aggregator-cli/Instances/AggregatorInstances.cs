@@ -6,8 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -23,10 +23,10 @@ namespace aggregator.cli
             this.logger = logger;
         }
 
-        public async Task<IEnumerable<ILogDataObject>> ListAllAsync()
+        public async Task<IEnumerable<ILogDataObject>> ListAllAsync(CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
-            var rgs = await azure.ResourceGroups.ListAsync();
+            var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
             var filter = rgs
                 .Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix));
             var result = new List<InstanceOutputData>();
@@ -36,16 +36,16 @@ namespace aggregator.cli
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
-                    await runtime.GetDeployedRuntimeVersion(name, azure))
+                    await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken))
                 );
             }
             return result;
         }
 
-        public async Task<IEnumerable<ILogDataObject>> ListByLocationAsync(string location)
+        public async Task<IEnumerable<ILogDataObject>> ListByLocationAsync(string location, CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
-            var rgs = await azure.ResourceGroups.ListAsync();
+            var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
             var filter = rgs.Where(rg =>
                     rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
                     && rg.RegionName.CompareTo(location) == 0);
@@ -56,36 +56,36 @@ namespace aggregator.cli
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
-                    await runtime.GetDeployedRuntimeVersion(name, azure))
+                    await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken))
                 );
             }
             return result;
         }
 
-        internal async Task<IEnumerable<ILogDataObject>> ListInResourceGroupAsync(string resourceGroup)
+        internal async Task<IEnumerable<ILogDataObject>> ListInResourceGroupAsync(string resourceGroup, CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
-            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup);
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup, cancellationToken: cancellationToken);
 
             var result = new List<InstanceOutputData>();
             foreach (var app in apps)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var name = InstanceName.FromFunctionAppName(app.Name, resourceGroup);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     app.Region.Name,
-                    await runtime.GetDeployedRuntimeVersion(name, azure))
+                    await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken))
                 );
             }
             return result;
         }
 
-
-        internal async Task<bool> Add(InstanceName instance, string location, string requiredVersion)
+        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             logger.WriteVerbose($"Checking if Resource Group {rgName} already exists");
-            if (!await azure.ResourceGroups.ContainAsync(rgName))
+            if (!await azure.ResourceGroups.ContainAsync(rgName, cancellationToken))
             {
                 if (instance.IsCustom)
                 {
@@ -131,7 +131,7 @@ namespace aggregator.cli
                     .WithTemplate(armTemplateString)
                     .WithParameters(templateParams)
                     .WithMode(DeploymentMode.Incremental)
-                    .CreateAsync();
+                    .CreateAsync(cancellationToken);
 
             // poll
             const int PollIntervalInSeconds = 3;
@@ -143,20 +143,20 @@ namespace aggregator.cli
                 SdkContext.DelayProvider.Delay(PollIntervalInSeconds * 1000);
                 totalDelay += PollIntervalInSeconds;
                 logger.WriteVerbose($"Deployment running ({totalDelay}s)");
-                await deployment.RefreshAsync();
+                await deployment.RefreshAsync(cancellationToken);
             }
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
 
             // check runtime package
             var package = new FunctionRuntimePackage(logger);
-            bool ok = await package.UpdateVersion(requiredVersion, instance, azure);
+            bool ok = await package.UpdateVersionAsync(requiredVersion, instance, azure, cancellationToken);
             if (ok)
             {
                 var devopsLogonData = DevOpsLogon.Load().connection;
                 if (devopsLogonData.Mode == DevOpsTokenType.PAT)
                 {
                     logger.WriteVerbose($"Saving Azure DevOps token");
-                    ok = await ChangeAppSettings(instance, devopsLogonData, SaveMode.Default);
+                    ok = await ChangeAppSettingsAsync(instance, devopsLogonData, SaveMode.Default, cancellationToken);
                     if (ok)
                     {
                         logger.WriteInfo($"Azure DevOps token saved");
@@ -175,14 +175,14 @@ namespace aggregator.cli
             return ok;
         }
 
-        internal async Task<bool> ChangeAppSettings(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode)
+        internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode, CancellationToken cancellationToken)
         {
             var webFunctionApp = await azure
                 .AppServices
                 .WebApps
                 .GetByResourceGroupAsync(
                     instance.ResourceGroupName,
-                    instance.FunctionAppName);
+                    instance.FunctionAppName, cancellationToken);
             var configuration = new AggregatorConfiguration
             {
                 DevOpsTokenType = devopsLogonData.Mode,
@@ -193,7 +193,7 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> Remove(InstanceName instance, string location)
+        internal async Task<bool> RemoveAsync(InstanceName instance, string location)
         {
             string rgName = instance.ResourceGroupName;
             logger.WriteVerbose($"Searching instance {instance.PlainName}...");
@@ -232,14 +232,14 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> ChangeAppSettings(InstanceName instance, string location, SaveMode saveMode)
+        internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, string location, SaveMode saveMode, CancellationToken cancellationToken)
         {
             bool ok;
             var devopsLogonData = DevOpsLogon.Load().connection;
             if (devopsLogonData.Mode == DevOpsTokenType.PAT)
             {
                 logger.WriteVerbose($"Saving Azure DevOps token");
-                ok = await ChangeAppSettings(instance, devopsLogonData, saveMode);
+                ok = await ChangeAppSettingsAsync(instance, devopsLogonData, saveMode, cancellationToken);
                 logger.WriteInfo($"Azure DevOps token saved");
             }
             else
@@ -251,7 +251,7 @@ namespace aggregator.cli
         }
 
 
-        internal async Task<bool> StreamLogsAsync(InstanceName instance)
+        internal async Task<bool> StreamLogsAsync(InstanceName instance, CancellationToken cancellationToken)
         {
             var kudu = new KuduApi(instance, azure, logger);
             logger.WriteVerbose($"Connecting to {instance.PlainName}...");
@@ -259,7 +259,7 @@ namespace aggregator.cli
             // Main takes care of resetting color
             Console.ForegroundColor = ConsoleColor.Green;
 
-            await kudu.StreamLogsAsync(Console.Out);
+            await kudu.StreamLogsAsync(Console.Out, cancellationToken);
 
             return true;
         }
