@@ -1,0 +1,61 @@
+resources:
+- repo: self
+
+pool:
+  vmImage: Hosted VS2017
+
+steps:
+- task: DeleteFiles@1
+  displayName: 'Delete Directory.Build.targets from src/aggregator-function'
+  inputs:
+    SourceFolder: 'src/aggregator-function'
+    Contents: Directory.Build.targets
+
+- task: gittools.gitversion.gitversion-task.GitVersion@3
+  displayName: 'Update versions in the AssemblyInfo files'
+  inputs:
+    updateAssemblyInfo: true
+
+- powershell: |
+   $manifest = "src/aggregator-function/aggregator-manifest.ini"
+   $lines = Get-Content $manifest
+   $lines | foreach { if ($_ -match 'version=.+') { "version=$(GitVersion.FullSemVer)" } else { $_ } } | Set-Content $manifest
+
+  displayName: 'Set version in aggregator-manifest.ini'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: 'src/aggregator-cli.sln'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
+  inputs:
+    projects: 'src/aggregator-cli.sln'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish FunctionRuntime and zip it'
+  inputs:
+    command: publish
+    publishWebProjects: false
+    projects: 'src/aggregator-function/aggregator-function.csproj'
+    modifyOutputPath: false
+
+- script: 'MOVE /Y %BUILD_SOURCESDIRECTORY%\src\aggregator-function\bin\Debug\netstandard2.0\publish.zip %BUILD_STAGINGDIRECTORY%\FunctionRuntime.zip'
+  displayName: 'Move FunctionRuntime.zip to Staging'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish CLI and zip it'
+  inputs:
+    command: publish
+    publishWebProjects: false
+    projects: 'src/aggregator-cli/aggregator-cli.csproj'
+    modifyOutputPath: false
+
+- script: 'MOVE /Y %BUILD_SOURCESDIRECTORY%\src\aggregator-cli\bin\Debug\netcoreapp2.1\publish.zip %BUILD_STAGINGDIRECTORY%\CLI.zip'
+  displayName: 'Move CLI.zip to Staging'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish staged artifacts as drop'
+
