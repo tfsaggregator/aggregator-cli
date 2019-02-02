@@ -1,5 +1,4 @@
-﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
@@ -14,9 +13,6 @@ namespace aggregator.Engine
         private EngineContext _context;
         private WorkItem _item;
         private WorkItemRelationWrapperCollection _relationCollection;
-
-        private readonly JsonPatchDocument _changes = new JsonPatchDocument();
-        private readonly bool _isReadOnly = false;
 
         internal WorkItemWrapper(EngineContext context, WorkItem item)
         {
@@ -103,7 +99,7 @@ namespace aggregator.Engine
                 Path = "/rev",
                 Value = item.Rev
             });
-            _isReadOnly = isReadOnly;
+            IsReadOnly = isReadOnly;
             _item = item;
             _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
             _context.Tracker.TrackRevision(this);
@@ -174,7 +170,7 @@ namespace aggregator.Engine
                     return store.GetWorkItems(ChildrenLinks);
                 }
                 else
-                    return new WorkItemWrapper[0];                 
+                    return new WorkItemWrapper[0];
             }
         }
 
@@ -201,8 +197,7 @@ namespace aggregator.Engine
             get
             {
                 return _relationCollection
-                    .Where(rel => rel.Rel == CoreRelationRefNames.Parent)
-                    .SingleOrDefault();
+                    .SingleOrDefault(rel => rel.Rel == CoreRelationRefNames.Parent);
             }
         }
 
@@ -392,19 +387,13 @@ namespace aggregator.Engine
             set { SetFieldValue(CoreFieldRefNames.IsDeleted, value); }
         }
 
-        public bool IsReadOnly
-        {
-            get { return _isReadOnly; }
-        }
+        public bool IsReadOnly { get; } = false;
 
         public bool IsNew => Id is TemporaryWorkItemId;
 
         public bool IsDirty { get; internal set; }
 
-        internal JsonPatchDocument Changes
-        {
-            get { return _changes; }
-        }
+        internal JsonPatchDocument Changes { get; } = new JsonPatchDocument();
 
         public object this[string field]
         {
@@ -481,7 +470,7 @@ namespace aggregator.Engine
                 }
             }
 
-            Changes.RemoveAll(op => op.Path.StartsWith("/fields/") || op.Path == "/id");
+            Changes.RemoveAll(op => op.Path.StartsWith("/fields/", StringComparison.OrdinalIgnoreCase) || op.Path == "/id");
         }
 
         internal void RemapIdReferences(IDictionary<int, int> realIds)

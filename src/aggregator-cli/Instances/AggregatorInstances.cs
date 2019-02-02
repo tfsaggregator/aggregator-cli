@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -48,7 +47,7 @@ namespace aggregator.cli
             var rgs = await azure.ResourceGroups.ListAsync();
             var filter = rgs.Where(rg =>
                     rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
-                    && rg.RegionName.CompareTo(location) == 0);
+                    && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
@@ -134,14 +133,14 @@ namespace aggregator.cli
                     .CreateAsync();
 
             // poll
-            const int PollIntervalInSeconds = 3;
+            const int pollIntervalInSeconds = 3;
             int totalDelay = 0;
             while (!(StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Succeeded") ||
                     StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Failed") ||
                     StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Cancelled")))
             {
-                SdkContext.DelayProvider.Delay(PollIntervalInSeconds * 1000);
-                totalDelay += PollIntervalInSeconds;
+                SdkContext.DelayProvider.Delay(pollIntervalInSeconds * 1000);
+                totalDelay += pollIntervalInSeconds;
                 logger.WriteVerbose($"Deployment running ({totalDelay}s)");
                 await deployment.RefreshAsync();
             }
@@ -203,10 +202,11 @@ namespace aggregator.cli
                 logger.WriteWarning($"Resource Group {rgName} not found in {location}.");
                 return false;
             }
+
             var functionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rgName, instance.FunctionAppName);
             if (functionApp == null)
             {
-                logger.WriteWarning($"Instance {functionApp.Name} not found in resource group {rgName}.");
+                logger.WriteWarning($"Instance {instance.FunctionAppName} not found in resource group {rgName}.");
                 return false;
             }
 
@@ -217,7 +217,7 @@ namespace aggregator.cli
             // we delete the RG only if was made by us
             logger.WriteVerbose($"Checking if last instance in resource group {rgName}");
             var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName);
-            if (apps == null || apps.Count() == 0)
+            if (apps == null || !apps.Any())
             {
                 if (instance.IsCustom)
                 {
@@ -229,6 +229,7 @@ namespace aggregator.cli
                 await azure.ResourceGroups.DeleteByNameAsync(rgName);
                 logger.WriteInfo($"Resource group {rgName} deleted.");
             }
+
             return true;
         }
 
@@ -247,6 +248,7 @@ namespace aggregator.cli
                 logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
                 ok = false;
             }
+
             return ok;
         }
 

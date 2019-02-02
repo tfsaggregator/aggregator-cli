@@ -2,7 +2,7 @@
 
 namespace aggregator
 {
-    public class InvokeOptions
+    public static class InvokeOptions
     {
         public static string AppendToUrl(string ruleUrl, bool dryRun, SaveMode saveMode)
         {

@@ -1,5 +1,4 @@
-﻿using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace aggregator
 {
@@ -8,9 +7,9 @@ namespace aggregator
     /// </summary>
     internal class ForwarderLogger : IAggregatorLogger
     {
-        private Microsoft.Extensions.Logging.ILogger log;
+        private readonly ILogger log;
 
-        public ForwarderLogger(Microsoft.Extensions.Logging.ILogger log)
+        public ForwarderLogger(ILogger log)
         {
             this.log = log;
         }
