@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -12,25 +11,25 @@ namespace unittests_ruleng
 {
     public class WorkItemStoreTests
     {
-        const string collectionUrl = "https://dev.azure.com/fake-organization";
-        Guid projectId = Guid.NewGuid();
-        const string projectName = "test-project";
-        const string personalAccessToken = "***personalAccessToken***";
-        string workItemsBaseUrl = $"{collectionUrl}/{projectName}/_apis/wit/workItems";
+        private const string CollectionUrl = "https://dev.azure.com/fake-organization";
+        private readonly Guid projectId = Guid.NewGuid();
+        private const string ProjectName = "test-project";
+        private const string PersonalAccessToken = "***personalAccessToken***";
+        private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
 
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri($"{collectionUrl}"), null);
+            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>() {}
+                Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
+            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -43,23 +42,24 @@ namespace unittests_ruleng
         public void GetWorkItems_ByIds_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri($"{collectionUrl}"), null);
-            var ids = new int[] { 42, 99 };
-            client.GetWorkItemsAsync((IEnumerable<int>)ids, expand: WorkItemExpand.All)
-                .ReturnsForAnyArgs(new List<WorkItem>() {
-                    new WorkItem()
+            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
+            var ids = new [] { 42, 99 };
+            client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
+                .ReturnsForAnyArgs(new List<WorkItem>
+                {
+                    new WorkItem
                     {
                         Id = ids[0],
-                        Fields = new Dictionary<string, object>() {}
+                        Fields = new Dictionary<string, object>()
                     },
-                    new WorkItem()
+                    new WorkItem
                     {
                         Id = ids[1],
-                        Fields = new Dictionary<string, object>() {}
+                        Fields = new Dictionary<string, object>()
                     }
                 });
 
-            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
+            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -74,8 +74,8 @@ namespace unittests_ruleng
         public void NewWorkItem_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri($"{collectionUrl}"), null);
-            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
+            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
+            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -93,14 +93,14 @@ namespace unittests_ruleng
         public void AddChild_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri($"{collectionUrl}"), null);
-            var context = new EngineContext(client, projectId, projectName, personalAccessToken, logger);
+            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
+            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
             int workItemId = 1;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>() {},
-                Relations = new List<WorkItemRelation>()
+                Fields = new Dictionary<string, object>(),
+                Relations = new List<WorkItemRelation>
                 {
                     new WorkItemRelation
                     {
@@ -118,7 +118,7 @@ namespace unittests_ruleng
             var sut = new WorkItemStore(context);
 
             var parent = sut.GetWorkItem(1);
-            Assert.Equal(2, parent.Relations.Count());
+            Assert.Equal(2, parent.Relations.Count);
 
             var newChild = sut.NewWorkItem("Task");
             newChild.Title = "Brand new";
@@ -127,7 +127,7 @@ namespace unittests_ruleng
             Assert.NotNull(newChild);
             Assert.True(newChild.IsNew);
             Assert.Equal(-1, newChild.Id.Value);
-            Assert.Equal(3, parent.Relations.Count());
+            Assert.Equal(3, parent.Relations.Count);
         }
     }
 }

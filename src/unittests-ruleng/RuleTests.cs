@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using NSubstitute;
 using Xunit;
 
 namespace unittests_ruleng
 {
-    static class StringExtensions
+    internal static class StringExtensions
     {
         internal static string[] Mince(this string ruleCode)
         {
@@ -21,23 +20,23 @@ namespace unittests_ruleng
 
     public class RuleTests
     {
-        const string collectionUrl = "https://dev.azure.com/fake-organization";
-        Guid projectId = Guid.NewGuid();
-        const string projectName = "test-project";
-        const string personalAccessToken = "***personalAccessToken***";
-        IAggregatorLogger logger = Substitute.For<IAggregatorLogger>();
-        WorkItemTrackingHttpClientBase client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri($"{collectionUrl}"), null);
-        string workItemsBaseUrl = $"{collectionUrl}/{projectName}/_apis/wit/workItems";
+        private const string CollectionUrl = "https://dev.azure.com/fake-organization";
+        private readonly Guid projectId = Guid.NewGuid();
+        private const string ProjectName = "test-project";
+        private const string PersonalAccessToken = "***personalAccessToken***";
+        private readonly IAggregatorLogger logger = Substitute.For<IAggregatorLogger>();
+        private readonly WorkItemTrackingHttpClientBase client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
+        private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
 
 
         [Fact]
-        public async void HelloWorldRule_Succeeds()
+        public async Task HelloWorldRule_Succeeds()
         {
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
@@ -48,19 +47,19 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
         }
 
         [Fact]
-        public async void LanguageDirective_Succeeds()
+        public async Task LanguageDirective_Succeeds()
         {
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
@@ -71,20 +70,20 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
         }
 
         [Fact]
-        public async void LanguageDirective_Fails()
+        public async Task LanguageDirective_Fails()
         {
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
@@ -95,24 +94,24 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Equal(EngineState.Error, engine.State);
         }
 
         [Fact]
-        public async void Parent_Succeeds()
+        public async Task Parent_Succeeds()
         {
             int workItemId = 2;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
                 },
-                Relations = new List<WorkItemRelation>()
+                Relations = new List<WorkItemRelation>
                 {
                     new WorkItemRelation
                     {
@@ -121,20 +120,20 @@ return string.Empty;
                     }
                 },
             });
-            client.GetWorkItemAsync(1, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(1, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = 1,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "User Story" },
-                    { "System.TeamProject", projectName },
+                    { "System.TeamProject", ProjectName },
                 },
-                Relations = new List<WorkItemRelation>()
+                Relations = new List<WorkItemRelation>
                 {
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{workItemsBaseUrl}/{workItemId}"
+                        Url = FormattableString.Invariant($"{workItemsBaseUrl}/{workItemId}")
                     }
                 },
             });
@@ -149,19 +148,19 @@ return message;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Equal("Parent is 1", result);
         }
 
         [Fact]
-        public async void New_Succeeds()
+        public async Task New_Succeeds()
         {
             int workItemId = 1;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "User Story" },
                     { "System.Title", "Hello" },
@@ -173,22 +172,22 @@ wi.Title = ""Brand new"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Null(result);
-            logger.Received().WriteInfo($"Found a request for a new Task workitem in {projectName}");
+            logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 1 created, 0 updated.");
         }
 
         [Fact]
-        public async void AddChild_Succeeds()
+        public async Task AddChild_Succeeds()
         {
             int workItemId = 1;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "User Story" },
                     { "System.Title", "Hello" },
@@ -202,23 +201,23 @@ parent.Relations.AddChild(newChild);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Null(result);
-            logger.Received().WriteInfo($"Found a request for a new Task workitem in {projectName}");
-            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {projectName}");
+            logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
+            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {ProjectName}");
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 1 created, 1 updated.");
         }
 
         [Fact]
-        public async void TouchDescription_Succeedes()
+        public async Task TouchDescription_Succeedes()
         {
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem()
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
-                Fields = new Dictionary<string, object>()
+                Fields = new Dictionary<string, object>
                 {
                     { "System.Description", "Hello" },
                 }
@@ -229,13 +228,12 @@ return self.Description;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(collectionUrl, projectId, projectName, personalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
 
             Assert.Equal("Hello.", result);
-            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {projectName}");
+            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {ProjectName}");
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 0 created, 1 updated.");
         }
-
     }
 }
