@@ -18,9 +18,9 @@ namespace aggregator.cli
 {
     internal class AggregatorRules
     {
+        private static readonly Random Randomizer = new Random((int)DateTime.UtcNow.Ticks);
         private readonly IAzure _azure;
         private readonly ILogger _logger;
-        private readonly Random _random = new Random();
 
         public AggregatorRules(IAzure azure, ILogger logger)
         {
@@ -150,10 +150,9 @@ namespace aggregator.cli
         private static string LayoutRuleFiles(string name, string filePath)
         {
             // working directory
-            var rand = new Random((int)DateTime.UtcNow.Ticks);
             string baseDirPath = Path.Combine(
                 Path.GetTempPath(),
-                $"aggregator-{rand.Next().ToString()}");
+                FormattableString.Invariant($"aggregator-{Randomizer.Next()}"));
             string tempDirPath = Path.Combine(
                 baseDirPath,
                 name);
@@ -379,7 +378,7 @@ namespace aggregator.cli
 
             string baseUrl = $"https://dev.azure.com/{account}";
             Guid teamProjectId = Guid.Empty;
-            string body = $@"{{
+            string body = FormattableString.Invariant($@"{{
   ""eventType"": ""{@event}"",
   ""publisherId"": ""tfs"",
   ""resource"": {{
@@ -403,7 +402,7 @@ namespace aggregator.cli
       ""id"": ""{teamProjectId}""
     }}
   }}
-}}";
+}}");
             _logger.WriteVerbose($"Request to {ruleName} is:");
             _logger.WriteVerbose(body);
 

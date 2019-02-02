@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace aggregator
 {
@@ -8,18 +6,17 @@ namespace aggregator
     {
         public static string AppendToUrl(string ruleUrl, bool dryRun, SaveMode saveMode)
         {
-            return ruleUrl + $"?dryRun={dryRun}&saveMode={saveMode}";
+            return ruleUrl + FormattableString.Invariant($"?dryRun={dryRun}&saveMode={saveMode}");
         }
 
         public static AggregatorConfiguration ExtendFromUrl(AggregatorConfiguration configuration, Uri requestUri)
         {
             var parameters = System.Web.HttpUtility.ParseQueryString(requestUri.Query);
 
-            bool dryRun = bool.TryParse(parameters["dryRun"], out dryRun) ? dryRun : false;
+            bool dryRun = bool.TryParse(parameters["dryRun"], out dryRun) && dryRun;
             configuration.DryRun = dryRun;
 
-            SaveMode saveMode;
-            if (Enum.TryParse(parameters["saveMode"], out saveMode))
+            if (Enum.TryParse(parameters["saveMode"], out SaveMode saveMode))
             {
                 configuration.SaveMode = saveMode;
             }
