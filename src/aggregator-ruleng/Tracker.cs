@@ -79,15 +79,25 @@ namespace aggregator.Engine
                 .Select(id => new PermanentWorkItemId(id))
                 .GroupBy(k => tracked.ContainsKey(k))
                 .ToDictionary(g => g.Key, g => g.ToList());
+            // groups[true] is the set of IDs already tracked
+            // groups[false] is the set of new IDs
 
             var inMemory = tracked
                 .Where(w => groups.ContainsKey(true)
                         ? groups[true].Contains(w.Key)
                         : false)
                 .Select(w => w.Value.Current);
-            var loaded = loader(groups[false].Select(k => k.Value));
 
-            return inMemory.Union(loaded).ToList();
+            if (groups.ContainsKey(false))
+            {
+                var loaded = loader(groups[false].Select(k => k.Value));
+
+                return inMemory.Union(loaded).ToList();
+            }
+            else
+            {
+                return inMemory.ToList();
+            }
         }
 
         internal bool IsTracked(WorkItemWrapper workItemWrapper)
