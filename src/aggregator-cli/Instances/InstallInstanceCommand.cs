@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -21,15 +22,15 @@ namespace aggregator.cli
         [Option("requiredVersion", Required = false, HelpText = "Version of Aggregator Runtime required.")]
         public string RequiredVersion { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
                 .WithDevOpsLogon() // need the token, so we can save it in the app settings
-                .Build();
+                .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name, ResourceGroup);
-            bool ok = await instances.Add(instance, Location, RequiredVersion);
+            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, cancellationToken);
             return ok ? 0 : 1;
         }
     }

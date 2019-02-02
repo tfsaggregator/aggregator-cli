@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
@@ -32,7 +27,7 @@ namespace aggregator
             this.functionDirectory = functionDirectory;
         }
 
-        internal async Task<string> Execute(dynamic data)
+        internal async Task<string> ExecuteAsync(dynamic data, CancellationToken cancellationToken)
         {
             string collectionUrl = data.resourceContainers.collection.baseUrl;
             string eventType = data.eventType;
@@ -49,15 +44,18 @@ namespace aggregator
             if (configuration.DevOpsTokenType == DevOpsTokenType.PAT)
             {
                 clientCredentials = new VssBasicCredential(configuration.DevOpsTokenType.ToString(), configuration.DevOpsToken);
-            } else
+            }
+            else
             {
                 logger.WriteError($"Azure DevOps Token type {configuration.DevOpsTokenType} not supported!");
                 throw new ArgumentOutOfRangeException(nameof(configuration.DevOpsTokenType));
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
             {
-                await devops.ConnectAsync();
+                await devops.ConnectAsync(cancellationToken);
                 logger.WriteInfo($"Connected to Azure DevOps");
                 using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
                 {
@@ -69,13 +67,30 @@ namespace aggregator
                     }
 
                     logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-                    string[] ruleCode = File.ReadAllLines(ruleFilePath);
+                    string[] ruleCode;
+                    using (var fileStream = File.OpenRead(ruleFilePath))
+                    {
+                        var reader = new StreamReader(fileStream);
+                        ruleCode = await ReadAllLinesAsync(reader);
+                    }
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
-                    return await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, configuration.DevOpsToken, workItemId, witClient);
+                    return await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, configuration.DevOpsToken, workItemId, witClient, cancellationToken);
                 }
             }
+        }
+
+        private static async Task<string[]> ReadAllLinesAsync(TextReader streamReader)
+        {
+            var lines = new List<string>();
+            string line;
+            while ((line = await streamReader.ReadLineAsync()) != null)
+            {
+                lines.Add(line);
+            }
+
+            return lines.ToArray();
         }
     }
 }

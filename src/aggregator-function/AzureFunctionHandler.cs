@@ -1,5 +1,3 @@
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -7,7 +5,9 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 
 namespace aggregator
 {
@@ -16,36 +16,38 @@ namespace aggregator
     /// </summary>
     public class AzureFunctionHandler
     {
-        private readonly Microsoft.Extensions.Logging.ILogger log;
-        private readonly ExecutionContext context;
+        private readonly ILogger _log;
+        private readonly ExecutionContext _context;
 
-        public AzureFunctionHandler(Microsoft.Extensions.Logging.ILogger logger, ExecutionContext context)
+        public AzureFunctionHandler(ILogger logger, ExecutionContext context)
         {
-            this.log = logger;
-            this.context = context;
+            _log = logger;
+            _context = context;
         }
 
-        public async Task<HttpResponseMessage> Run(HttpRequestMessage req)
+        public async Task<HttpResponseMessage> RunAsync(HttpRequestMessage req, CancellationToken cancellationToken)
         {
-            log.LogDebug($"Context: {context.InvocationId} {context.FunctionName} {context.FunctionDirectory} {context.FunctionAppDirectory}");
+            _log.LogDebug($"Context: {_context.InvocationId} {_context.FunctionName} {_context.FunctionDirectory} {_context.FunctionAppDirectory}");
 
             var aggregatorVersion = GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
             try
             {
-                string rule = context.FunctionName;
-                log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{rule}'");
+                var rule = _context.FunctionName;
+                _log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{rule}'");
             }
             catch (Exception ex)
             {
-                log.LogWarning($"Failed parsing request headers: {ex.Message}");
+                _log.LogWarning($"Failed parsing request headers: {ex.Message}");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Get request body
-            string jsonContent = await req.Content.ReadAsStringAsync();
+            var jsonContent = await req.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(jsonContent))
             {
-                log.LogWarning($"Failed parsing request body: empty");
+                _log.LogWarning($"Failed parsing request body: empty");
 
                 var resp = new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
@@ -53,6 +55,7 @@ namespace aggregator
                 };
                 return resp;
             }
+
             dynamic data = JsonConvert.DeserializeObject(jsonContent);
             string eventType = data.eventType;
 
@@ -70,26 +73,26 @@ namespace aggregator
             {
                 var resp = req.CreateResponse(HttpStatusCode.OK, new
                 {
-                    message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{context.FunctionName}'"
+                    message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{_context.FunctionName}'"
                 });
                 resp.Headers.Add("X-Aggregator-Version", aggregatorVersion);
-                resp.Headers.Add("X-Aggregator-Rule", context.FunctionName);
+                resp.Headers.Add("X-Aggregator-Rule", _context.FunctionName);
                 return resp;
             }
 
             var config = new ConfigurationBuilder()
-                .SetBasePath(context.FunctionAppDirectory)
+                .SetBasePath(_context.FunctionAppDirectory)
                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
             var configuration = AggregatorConfiguration.Read(config);
             configuration = InvokeOptions.ExtendFromUrl(configuration, req.RequestUri);
 
-            var logger = new ForwarderLogger(log);
-            var wrapper = new RuleWrapper(configuration, logger, context.FunctionName, context.FunctionDirectory);
+            var logger = new ForwarderLogger(_log);
+            var wrapper = new RuleWrapper(configuration, logger, _context.FunctionName, _context.FunctionDirectory);
             try
             {
-                string execResult = await wrapper.Execute(data);
+                string execResult = await wrapper.ExecuteAsync(data, cancellationToken);
 
                 if (string.IsNullOrEmpty(execResult))
                 {
@@ -98,7 +101,7 @@ namespace aggregator
                 }
                 else
                 {
-                    log.LogInformation($"Returning '{execResult}' from '{context.FunctionName}'");
+                    _log.LogInformation($"Returning '{execResult}' from '{_context.FunctionName}'");
 
                     var resp = new HttpResponseMessage(HttpStatusCode.OK)
                     {
@@ -109,7 +112,7 @@ namespace aggregator
             }
             catch (Exception ex)
             {
-                log.LogWarning($"Rule '{context.FunctionName}' failed: {ex.Message}");
+                _log.LogWarning($"Rule '{_context.FunctionName}' failed: {ex.Message}");
 
                 var resp = new HttpResponseMessage(HttpStatusCode.NotImplemented)
                 {

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -29,7 +30,7 @@ namespace aggregator.cli
 
         private string RuntimePackageFile => "FunctionRuntime.zip";
 
-        internal async Task<bool> UpdateVersion(string requiredVersion, InstanceName instance, IAzure azure)
+        internal async Task<bool> UpdateVersionAsync(string requiredVersion, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
             string tag = string.IsNullOrWhiteSpace(requiredVersion)
                 ? "latest"
@@ -40,7 +41,7 @@ namespace aggregator.cli
                     : requiredVersion);
 
             logger.WriteVerbose($"Checking runtime package versions in GitHub");
-            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHub(tag);
+            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHubAsync(tag);
             if (string.IsNullOrEmpty(rel_name))
             {
                 logger.WriteError($"Requested runtime {requiredVersion} version does not exists.");
@@ -54,14 +55,14 @@ namespace aggregator.cli
             logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
 
             // TODO check the uploaded version before overwriting?
-            SemVersion uploadedRuntimeVer = await GetDeployedRuntimeVersion(instance, azure);
+            SemVersion uploadedRuntimeVer = await GetDeployedRuntimeVersion(instance, azure, cancellationToken);
 
             if (requiredRuntimeVer > uploadedRuntimeVer || localRuntimeVer > uploadedRuntimeVer)
             {
                 if (requiredRuntimeVer > localRuntimeVer)
                 {
                     logger.WriteVerbose($"Downloading runtime package {rel_name}");
-                    await Download(rel_url);
+                    await DownloadAsync(rel_url, cancellationToken);
                     logger.WriteInfo($"Runtime package downloaded.");
                 }
                 else
@@ -70,7 +71,7 @@ namespace aggregator.cli
                 }
 
                 logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
-                bool ok = await UploadRuntimeZip(instance, azure);
+                bool ok = await UploadRuntimeZip(instance, azure, cancellationToken);
                 if (ok)
                 {
                     logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
@@ -88,14 +89,14 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<SemVersion> GetDeployedRuntimeVersion(InstanceName instance, IAzure azure)
+        internal async Task<SemVersion> GetDeployedRuntimeVersion(InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Retrieving functions runtime from {instance.PlainName} app");
             SemVersion uploadedRuntimeVer;
             var kudu = new KuduApi(instance, azure, logger);
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini"))
-            using (var response = await client.SendAsync(request))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini", cancellationToken))
+            using (var response = await client.SendAsync(request, cancellationToken))
             {
                 string manifest = await response.Content.ReadAsStringAsync();
 
@@ -133,7 +134,7 @@ namespace aggregator.cli
             return new SemVersion(0, 0);
         }
 
-        private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHub(string tag = "latest")
+        private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHubAsync(string tag = "latest")
         {
             var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", infoVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");
@@ -151,18 +152,20 @@ namespace aggregator.cli
             return (name: release.Name, when: release.PublishedAt, url: asset.BrowserDownloadUrl);
         }
 
-        private async Task<string> Download(string downloadUrl)
+        private async Task<string> DownloadAsync(string downloadUrl, CancellationToken cancellationToken)
         {
             using (var httpClient = new WebClient())
+            using (cancellationToken.Register(httpClient.CancelAsync))
             {
                 await httpClient.DownloadFileTaskAsync(downloadUrl, RuntimePackageFile);
             }
+
             return RuntimePackageFile;
         }
 
-        private async Task<bool> UploadRuntimeZip(InstanceName instance, IAzure azure)
+        private async Task<bool> UploadRuntimeZip(InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
-            var zipContent = File.ReadAllBytes(RuntimePackageFile);
+            var zipContent = await File.ReadAllBytesAsync(RuntimePackageFile, cancellationToken);
             var kudu = new KuduApi(instance, azure, logger);
             // POST /api/zipdeploy?isAsync=true
             // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
@@ -170,10 +173,10 @@ namespace aggregator.cli
             using (var client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromMinutes(60);
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy"))
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy", cancellationToken))
                 {
                     request.Content = body;
-                    using (var response = await client.SendAsync(request))
+                    using (var response = await client.SendAsync(request, cancellationToken))
                     {
                         bool ok = response.IsSuccessStatusCode;
                         if (!ok)

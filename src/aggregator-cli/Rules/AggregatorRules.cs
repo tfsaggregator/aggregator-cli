@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -28,14 +29,13 @@ namespace aggregator.cli
             _logger = logger;
         }
 
-        internal async Task<IEnumerable<KuduFunction>> ListAsync(InstanceName instance)
+        internal async Task<IEnumerable<KuduFunction>> ListAsync(InstanceName instance, CancellationToken cancellationToken)
         {
-            var instances = new AggregatorInstances(_azure, _logger);
             var kudu = new KuduApi(instance, _azure, _logger);
             _logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions"))
-            using (var response = await client.SendAsync(request))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions", cancellationToken))
+            using (var response = await client.SendAsync(request, cancellationToken))
             {
                 var stream = await response.Content.ReadAsStreamAsync();
 
@@ -60,16 +60,16 @@ namespace aggregator.cli
             return $"{instance.FunctionAppUrl}/api/{rule}";
         }
 
-        internal async Task<(string url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule)
+        internal async Task<(string url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule, CancellationToken cancellationToken)
         {
             var instances = new AggregatorInstances(_azure, _logger);
             var kudu = new KuduApi(instance, _azure, _logger);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets"))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets", cancellationToken))
             {
-                using (var response = await client.SendAsync(request))
+                using (var response = await client.SendAsync(request, cancellationToken))
                 {
                     if (response.IsSuccessStatusCode)
                     {
@@ -92,7 +92,7 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath)
+        internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath, CancellationToken cancellationToken)
         {
             _logger.WriteInfo($"Validate rule file {filePath}");
 
@@ -130,7 +130,7 @@ namespace aggregator.cli
             _logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
             _logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
-            bool ok = await UploadRuleFilesAsync(instance, name, inMemoryFiles);
+            bool ok = await UploadRuleFilesAsync(instance, name, inMemoryFiles, cancellationToken);
             if (ok)
             {
                 _logger.WriteInfo($"All {name} files successfully uploaded to {instance.PlainName}.");
@@ -166,7 +166,7 @@ namespace aggregator.cli
             return inMemoryFiles;
         }
 
-        private async Task<bool> UploadRuleFilesAsync(InstanceName instance, string name, IDictionary<string, string> inMemoryFiles)
+        private async Task<bool> UploadRuleFilesAsync(InstanceName instance, string name, IDictionary<string, string> inMemoryFiles, CancellationToken cancellationToken)
         {
             /*
             PUT /api/vfs/{path}
@@ -185,7 +185,7 @@ namespace aggregator.cli
                 var exists = false;
 
                 // check if function already exists
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl))
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl, cancellationToken))
                 {
                     _logger.WriteVerbose($"Checking if function {name} already exists in {instance.PlainName}...");
                     using (var response = await client.SendAsync(request))
@@ -197,9 +197,9 @@ namespace aggregator.cli
                 if (!exists)
                 {
                     _logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
-                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl))
+                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl, cancellationToken))
                     {
-                        using (var response = await client.SendAsync(request))
+                        using (var response = await client.SendAsync(request, cancellationToken))
                         {
                             bool ok = response.IsSuccessStatusCode;
                             if (!ok)
@@ -217,12 +217,12 @@ namespace aggregator.cli
                 {
                     _logger.WriteVerbose($"Uploading {fileName} to {instance.PlainName}...");
                     var fileUrl = $"{relativeUrl}{fileName}";
-                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl))
+                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl, cancellationToken))
                     {
                         //HACK -> request.Headers.IfMatch.Add(new EntityTagHeaderValue("*", false)); <- won't work
                         request.Headers.Add("If-Match", "*");
                         request.Content = new StringContent(fileContent);
-                        using (var response = await client.SendAsync(request))
+                        using (var response = await client.SendAsync(request, cancellationToken))
                         {
                             bool ok = response.IsSuccessStatusCode;
                             if (!ok)
@@ -240,15 +240,14 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> RemoveAsync(InstanceName instance, string name)
+        internal async Task<bool> RemoveAsync(InstanceName instance, string name, CancellationToken cancellationToken)
         {
             var kudu = new KuduApi(instance, _azure, _logger);
-            var instances = new AggregatorInstances(_azure, _logger);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
             _logger.WriteInfo($"Removing Function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}"))
-            using (var response = await client.SendAsync(request))
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}", cancellationToken))
+            using (var response = await client.SendAsync(request, cancellationToken))
             {
                 bool ok = response.IsSuccessStatusCode;
                 if (!ok)
@@ -260,14 +259,15 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable)
+        internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable, CancellationToken cancellationToken)
         {
             var webFunctionApp = await _azure
                 .AppServices
                 .WebApps
                 .GetByResourceGroupAsync(
                     instance.ResourceGroupName,
-                    instance.FunctionAppName);
+                    instance.FunctionAppName, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             webFunctionApp
                 .Update()
                 .WithAppSetting($"AzureWebJobs.{name}.Disabled", disable.ToString().ToLower())
@@ -276,20 +276,20 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion)
+        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion, CancellationToken cancellationToken)
         {
             // check runtime package
             var package = new FunctionRuntimePackage(_logger);
-            bool ok = await package.UpdateVersion(requiredVersion, instance, _azure);
+            bool ok = await package.UpdateVersionAsync(requiredVersion, instance, _azure, cancellationToken);
             if (ok)
             {
-                ok = await AddAsync(instance, name, filePath);
+                ok = await AddAsync(instance, name, filePath, cancellationToken);
             }
 
             return ok;
         }
 
-        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode)
+        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, CancellationToken cancellationToken)
         {
             if (!File.Exists(ruleFilePath))
             {
@@ -314,7 +314,7 @@ namespace aggregator.cli
             string collectionUrl = devopsLogonData.Url;
             using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
             {
-                await devops.ConnectAsync();
+                await devops.ConnectAsync(cancellationToken);
                 _logger.WriteInfo($"Connected to Azure DevOps");
 
                 Guid teamProjectId;
@@ -331,12 +331,12 @@ namespace aggregator.cli
                 using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
                 {
                     _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-                    string[] ruleCode = File.ReadAllLines(ruleFilePath);
+                    var ruleCode = await File.ReadAllLinesAsync(ruleFilePath, cancellationToken);
 
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
-                    string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient);
+                    string result = await engine.ExecuteAsync(collectionUrl, teamProjectId, teamProjectName, devopsLogonData.Token, workItemId, witClient, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;
@@ -344,13 +344,11 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode)
+        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode, CancellationToken cancellationToken)
         {
-            var kudu = new KuduApi(instance, _azure, _logger);
-
             // build the request ...
             _logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (string ruleUrl, string ruleKey) = await this.GetInvocationUrlAndKey(instance, ruleName);
+            var (ruleUrl, ruleKey) = await GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             _logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             ruleUrl = InvokeOptions.AppendToUrl(ruleUrl, dryRun, saveMode);
@@ -393,7 +391,7 @@ namespace aggregator.cli
                     request.Headers.Add("x-functions-key", ruleKey);
                     request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-                    using (var response = await client.SendAsync(request))
+                    using (var response = await client.SendAsync(request, cancellationToken))
                     {
                         if (response.IsSuccessStatusCode)
                         {

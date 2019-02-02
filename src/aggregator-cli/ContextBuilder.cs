@@ -1,6 +1,9 @@
 ﻿using Microsoft.Azure.Management.Fluent;
 using Microsoft.VisualStudio.Services.WebApi;
 using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -39,7 +42,7 @@ namespace aggregator.cli
             return this;
         }
 
-        internal async Task<CommandContext> Build()
+        internal async Task<CommandContext> BuildAsync(CancellationToken cancellationToken)
         {
             IAzure azure = null;
             VssConnection devops = null;
@@ -54,7 +57,7 @@ namespace aggregator.cli
                     throw new InvalidOperationException(string.Format(msg, "Azure","logon.azure"));
                 }
 
-                azure = await connection.LogonAsync();
+                azure = connection.Logon();
                 logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
             }
 
@@ -68,7 +71,7 @@ namespace aggregator.cli
                     throw new InvalidOperationException(string.Format(msg, "Azure DevOps", "logon.ado"));
                 }
 
-                devops = await connection.LogonAsync();
+                devops = await connection.LogonAsync(cancellationToken);
                 logger.WriteInfo($"Connected to {devops.Uri.Host}");
             }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -24,12 +25,12 @@ namespace aggregator.cli
         [Option('r', "rule", Required = true, HelpText = "Aggregator rule name.")]
         public string Rule { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
                 .WithDevOpsLogon()
-                .Build();
+                .BuildAsync(cancellationToken);
             var instance = new InstanceName(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
             bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);

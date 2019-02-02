@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -43,23 +44,23 @@ namespace aggregator.cli
         public string Name { get; set; }
 
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
                 .WithDevOpsLogon()
-                .Build();
+                .BuildAsync(cancellationToken);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             if (Local)
             {
-                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode);
+                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode, cancellationToken);
                 return ok ? 0 : 1;
             }
             else
             {
                 var instance = new InstanceName(Instance, ResourceGroup);
                 context.Logger.WriteWarning("Untested feature!");
-                bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode);
+                bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode, cancellationToken);
                 return ok ? 0 : 1;
             }
         }

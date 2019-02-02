@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
@@ -21,24 +22,23 @@ namespace aggregator.cli
         [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from Azure DevOps (default is to remove them).")]
         public bool Mappings { get; set; }
 
-        internal override async Task<int> RunAsync()
+        internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
                 .WithAzureLogon()
                 .WithDevOpsLogon()
-                .Build();
+                .BuildAsync(cancellationToken);
 
             var instance = new InstanceName(Name, ResourceGroup);
 
-            bool ok;
             if (!Mappings)
             {
                 var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
-                ok = await mappings.RemoveInstanceAsync(instance);
+                _ = await mappings.RemoveInstanceAsync(instance);
             }
 
             var instances = new AggregatorInstances(context.Azure, context.Logger);
-            ok = await instances.Remove(instance, Location);
+            var ok = await instances.RemoveAsync(instance, Location);
             return ok ? 0 : 1;
         }
     }
