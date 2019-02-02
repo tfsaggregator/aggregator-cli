@@ -1,10 +1,13 @@
 ﻿#r "../bin/aggregator-function.dll"
 #r "../bin/aggregator-shared.dll"
 
+using System.Threading;
+
 using aggregator;
 
-public static async Task<object> Run(HttpRequestMessage req, ILogger logger, ExecutionContext context)
+public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, ILogger logger, Microsoft.Azure.WebJobs.ExecutionContext context, CancellationToken cancellationToken)
 {
     var handler = new AzureFunctionHandler(logger, context);
-    return await handler.Run(req);
+    var result = await handler.RunAsync(req, cancellationToken);
+    return result;
 }

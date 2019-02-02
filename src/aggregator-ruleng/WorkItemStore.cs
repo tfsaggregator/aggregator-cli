@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace aggregator.Engine
@@ -87,7 +88,7 @@ namespace aggregator.Engine
             return wrapper;
         }
 
-        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit)
+        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, CancellationToken cancellationToken)
         {
             switch (mode)
             {
@@ -95,17 +96,20 @@ namespace aggregator.Engine
                     _context.Logger.WriteVerbose($"No save mode specified, assuming {SaveMode.TwoPhases}.");
                     goto case SaveMode.TwoPhases;
                 case SaveMode.Item:
-                    return await SaveChanges_ByItem(commit);
+                    var resultItem = await SaveChanges_ByItem(commit, cancellationToken);
+                    return resultItem;
                 case SaveMode.Batch:
-                    return await SaveChanges_Batch(commit);
+                    var resultBatch = await SaveChanges_Batch(commit, cancellationToken);
+                    return resultBatch;
                 case SaveMode.TwoPhases:
-                    return await SaveChanges_TwoPhases(commit);
+                    var resultTwoPhases = await SaveChanges_TwoPhases(commit, cancellationToken);
+                    return resultTwoPhases;
                 default:
                     throw new InvalidOperationException($"Unsupported save mode: {mode}.");
             }
         }
 
-        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit)
+        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, CancellationToken cancellationToken)
         {
             int created = 0;
             int updated = 0;
@@ -114,10 +118,11 @@ namespace aggregator.Engine
                 if (commit)
                 {
                     _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
-                    var wi = await _context.Client.CreateWorkItemAsync(
+                    _ = await _context.Client.CreateWorkItemAsync(
                         item.Changes,
                         _context.ProjectId,
-                        item.WorkItemType
+                        item.WorkItemType,
+                        cancellationToken: cancellationToken
                     );
                 }
                 else
@@ -133,9 +138,10 @@ namespace aggregator.Engine
                 if (commit)
                 {
                     _context.Logger.WriteInfo($"Updating workitem {item.Id}");
-                    var wi = await _context.Client.UpdateWorkItemAsync(
+                    _ = await _context.Client.UpdateWorkItemAsync(
                         item.Changes,
-                        item.Id.Value
+                        item.Id.Value,
+                        cancellationToken: cancellationToken
                     );
                 }
                 else
@@ -149,7 +155,7 @@ namespace aggregator.Engine
             return (created, updated);
         }
 
-        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit)
+        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
@@ -218,11 +224,11 @@ namespace aggregator.Engine
 
                     // send the request
                     var request = new HttpRequestMessage(method, $"{baseUriString}/_apis/wit/$batch?{ApiVersion}") { Content = batchRequest };
-                    var response = client.SendAsync(request).Result;
+                    var response = await client.SendAsync(request, cancellationToken);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        WorkItemBatchPostResponse batchResponse = response.Content.ReadAsAsync<WorkItemBatchPostResponse>().Result;
+                        WorkItemBatchPostResponse batchResponse = await response.Content.ReadAsAsync<WorkItemBatchPostResponse>(cancellationToken);
                         string stringResponse = JsonConvert.SerializeObject(batchResponse, Formatting.Indented);
                         _context.Logger.WriteVerbose(stringResponse);
                         bool succeeded = true;
@@ -254,7 +260,7 @@ namespace aggregator.Engine
             return (created, updated);
         }
 
-        private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit)
+        private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
@@ -289,7 +295,7 @@ namespace aggregator.Engine
                 };
             }
 
-            var batchResponse = await proxy.Invoke(newWorkItemsBatchRequests);
+            var batchResponse = await proxy.InvokeAsync(newWorkItemsBatchRequests, cancellationToken);
             if (batchResponse != null)
             {
                 _context.Logger.WriteVerbose($"Updating work item ids...");
@@ -334,7 +340,7 @@ namespace aggregator.Engine
             }
 
             // return value not used, we are fine if no exception is thrown
-            await proxy.Invoke(batchRequests.ToArray());
+            await proxy.InvokeAsync(batchRequests.ToArray(), cancellationToken);
 
             return (created, updated);
         }

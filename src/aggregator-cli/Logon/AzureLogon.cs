@@ -32,9 +32,7 @@ namespace aggregator.cli
             return (result.connection, result.reason);
         }
 
-#pragma warning disable CS1998
-        public async Task<IAzure> LogonAsync()
-#pragma warning restore CS1998
+        public IAzure Logon()
         {
             try
             {

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
@@ -47,7 +49,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
         }
@@ -70,7 +72,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -94,7 +96,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Error, engine.State);
         }
@@ -148,7 +150,7 @@ return message;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Parent is 1", result);
         }
@@ -172,7 +174,7 @@ wi.Title = ""Brand new"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
@@ -201,7 +203,7 @@ parent.Relations.AddChild(newChild);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
@@ -211,7 +213,7 @@ parent.Relations.AddChild(newChild);
         }
 
         [Fact]
-        public async Task TouchDescription_Succeedes()
+        public async Task TouchDescription_Succeeds()
         {
             int workItemId = 42;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
@@ -228,7 +230,7 @@ return self.Description;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Hello.", result);
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {ProjectName}");
