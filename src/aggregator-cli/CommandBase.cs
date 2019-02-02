@@ -45,6 +45,7 @@ namespace aggregator.cli
                 {
                     logger.WriteSuccess("Succeeded");
                 }
+
                 return rc;
             }
             catch (Exception ex)

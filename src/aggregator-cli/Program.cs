@@ -29,7 +29,7 @@ namespace aggregator.cli
         emulates the event on the rule
 
     */
-    public class Program
+    public static class Program
     {
         public static int Main(string[] args)
         {
@@ -45,7 +45,8 @@ namespace aggregator.cli
                 // fails see https://github.com/commandlineparser/commandline/issues/198
                 settings.CaseInsensitiveEnumValues = true;
             });
-            var types = new Type[] {
+            var types = new []
+            {
                 typeof(TestCommand),
                 typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                 typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
@@ -55,7 +56,7 @@ namespace aggregator.cli
                 typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
             };
             var parserResult = parser.ParseArguments(args, types);
-            int rc = -1;
+            var rc = -1;
             parserResult
                 .WithParsed<TestCommand>(cmd => rc = cmd.Run())
                 .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run())

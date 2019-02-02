@@ -49,11 +49,9 @@ namespace aggregator.cli
                         return functionList;
                     }
                 }
-                else
-                {
-                    _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
-                    return new KuduFunction[0];
-                }
+
+                _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
+                return new KuduFunction[0];
             }
         }
 
@@ -86,12 +84,10 @@ namespace aggregator.cli
                             return invocation;
                         }
                     }
-                    else
-                    {
-                        string error = await response.Content.ReadAsStringAsync();
-                        _logger.WriteError($"Failed to retrieve function key: {error}");
-                        throw new ApplicationException("Failed to retrieve function key.");
-                    }
+
+                    string error = await response.Content.ReadAsStringAsync();
+                    _logger.WriteError($"Failed to retrieve function key: {error}");
+                    throw new InvalidOperationException("Failed to retrieve function key.");
                 }
             }
         }
@@ -132,7 +128,7 @@ namespace aggregator.cli
             }
 
             _logger.WriteVerbose($"Layout rule files");
-            string baseDirPath = LayoutRuleFiles(name, filePath);
+            string baseDirPath = await LayoutRuleFilesAsync(name, filePath);
             _logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
 
             _logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
@@ -147,7 +143,7 @@ namespace aggregator.cli
             return ok;
         }
 
-        private static string LayoutRuleFiles(string name, string filePath)
+        private static async Task<string> LayoutRuleFilesAsync(string name, string filePath)
         {
             // working directory
             string baseDirPath = Path.Combine(
@@ -163,17 +159,17 @@ namespace aggregator.cli
 
             // copy templates
             var assembly = Assembly.GetExecutingAssembly();
-            using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
+            using (var reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
             // TODO we can deserialize a KuduFunctionConfig instead of using a fixed file...
-            using (var writer = File.Create(Path.Combine(tempDirPath, "function.json")))
+            using (var writer = new FileStream(Path.Combine(tempDirPath, "function.json"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
-                reader.CopyTo(writer);
+                await reader.CopyToAsync(writer);
             }
 
             using (Stream reader = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
-            using (var writer = File.Create(Path.Combine(tempDirPath, "run.csx")))
+            using (var writer = new FileStream(Path.Combine(tempDirPath, "run.csx"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
-                reader.CopyTo(writer);
+                await reader.CopyToAsync(writer);
             }
 
             return baseDirPath;
@@ -255,7 +251,7 @@ namespace aggregator.cli
                     }
 
                     _logger.WriteInfo($"{Path.GetFileName(file)} uploaded to {instance.PlainName}.");
-                }
+                }//for
             }
 
             return true;
@@ -422,11 +418,9 @@ namespace aggregator.cli
                             _logger.WriteInfo($"{result}");
                             return true;
                         }
-                        else
-                        {
-                            _logger.WriteError($"Failed with {response.ReasonPhrase}");
-                            return false;
-                        }
+
+                        _logger.WriteError($"Failed with {response.ReasonPhrase}");
+                        return false;
                     }
                 }
             }

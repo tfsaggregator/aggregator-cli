@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 
 namespace aggregator
 {
     /// <summary>
     /// This class tracks the VSTS/AzureDevOps Events exposed both in CLI and Rules
     /// </summary>
-    public class DevOpsEvents
+    public static class DevOpsEvents
     {
         // TODO this table should be visible in the help
-        static string[] validValues = new string[] {
+        static string[] validValues = new[] {
             "workitem.created",
             "workitem.deleted",
             "workitem.restored",

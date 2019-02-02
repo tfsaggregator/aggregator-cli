@@ -1,12 +1,8 @@
 ﻿using CommandLine;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-
     [Verb("logon.ado", HelpText = "Logon into Azure DevOps.")]
     class LogonDevOpsCommand : CommandBase
     {
@@ -23,14 +19,13 @@ namespace aggregator.cli
         {
             var context = await Context.Build();
 
-
             var data = new DevOpsLogon()
             {
                 Url = this.Url,
                 Mode = this.Mode,
                 Token = this.Token
             };
-            string path = data.Save();
+            _ = data.Save();
             // now check for validity
             context.Logger.WriteInfo($"Connecting to Azure DevOps using {Mode} credential...");
             var devops = await data.LogonAsync();
@@ -39,6 +34,7 @@ namespace aggregator.cli
                 context.Logger.WriteError("Invalid Azure DevOps credentials");
                 return 2;
             }
+
             return 0;
         }
     }

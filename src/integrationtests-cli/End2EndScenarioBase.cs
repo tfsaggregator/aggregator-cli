@@ -6,30 +6,30 @@ namespace integrationtests.cli
 {
     public abstract class End2EndScenarioBase
     {
-        private readonly ITestOutputHelper xunitOutput;
+        private readonly ITestOutputHelper _output;
 
-        public End2EndScenarioBase(ITestOutputHelper output)
+        protected End2EndScenarioBase(ITestOutputHelper output)
         {
-            this.xunitOutput = output;
+            _output = output;
         }
 
         protected (int rc, string output) RunAggregatorCommand(string commandLine)
         {
             var args = commandLine.Split(' ');
 
-            var save_out = Console.Out;
-            var save_err = Console.Error;
+            var saveOut = Console.Out;
+            var saveErr = Console.Error;
             var buffered = new StringWriter();
             Console.SetOut(buffered);
             Console.SetError(buffered);
 
-            int rc = aggregator.cli.Program.Main(args);
+            var rc = aggregator.cli.Program.Main(args);
 
-            Console.SetOut(save_out);
-            Console.SetError(save_err);
+            Console.SetOut(saveOut);
+            Console.SetError(saveErr);
 
-            string output = buffered.ToString();
-            xunitOutput.WriteLine(output);
+            var output = buffered.ToString();
+            _output.WriteLine(output);
 
             return (rc, output);
         }
