@@ -86,9 +86,9 @@ namespace aggregator.cli
                     // this should never happen!!!
                     return "Valid credential, logon succeeded";
                 case LogonResult.NoLogonData:
-                    return "No cached {0} credential: use the {1} command.";
+                    return "No cached {0} credential: run the {1} command.";
                 case LogonResult.LogonExpired:
-                    return "Cached {0} credential expired: use the {1} command.";
+                    return "Cached {0} credential expired: run the {1} command.";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(reason));
             }
