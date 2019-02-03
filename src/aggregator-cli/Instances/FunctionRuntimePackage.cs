@@ -44,21 +44,7 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateVersionFromUrlAsync(string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
-            DateTimeOffset? lastModified = await GetLastModifiedAtUrl(sourceUrl, cancellationToken);
-            if (!lastModified.HasValue)
-            {
-                logger.WriteError($"Failed reading from {sourceUrl}.");
-                return false;
-            }
-            DateTimeOffset? cachedLastWrite = GetLastWriteAtCachedRuntime();
-            if (lastModified != cachedLastWrite)
-            {
-                logger.WriteVerbose($"Downloading runtime package from {sourceUrl}");
-                await DownloadAsync(sourceUrl, cancellationToken);
-                logger.WriteInfo($"Runtime package downloaded.");
-                // make sure that dates match next time
-                File.SetLastWriteTime(RuntimePackageFile, lastModified.GetValueOrDefault(DateTimeOffset.UtcNow).UtcDateTime);
-            }
+            await RefreshLocalPackageFromUrl(sourceUrl, cancellationToken);
 
             var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
             logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
@@ -89,6 +75,45 @@ namespace aggregator.cli
             }
         }
 
+        private async Task RefreshLocalPackageFromUrl(string sourceUrl, CancellationToken cancellationToken)
+        {
+            DateTimeOffset? cachedLastWrite = GetLastWriteAtCachedRuntime();
+
+            using (var client = new HttpClient())
+            // HACK assume that source URL does not require authentication!
+            // note: HEAD verb does not work with GitHub, so we use a GET with a 0-bytes range
+            using (var request = new HttpRequestMessage(HttpMethod.Get, sourceUrl))
+            {
+                if (cachedLastWrite.HasValue)
+                {
+                    request.Headers.IfModifiedSince = cachedLastWrite;
+                }
+                using (var response = await client.SendAsync(request, cancellationToken))
+                {
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.OK:
+                            logger.WriteVerbose($"Downloading runtime package from {sourceUrl}");
+                            using (var fileStream = File.Create(RuntimePackageFile))
+                            {
+                                //TODO cancellationToken
+                                await response.Content.CopyToAsync(fileStream);
+                            }
+                            logger.WriteInfo($"Runtime package downloaded.");
+                            break;
+
+                        case HttpStatusCode.NotModified:
+                            logger.WriteInfo($"Runtime package at {sourceUrl} matches local cache.");
+                            break;
+
+                        default:
+                            logger.WriteError($"{sourceUrl} returned {response.ReasonPhrase}.");
+                            break;
+                    }//switch
+                }
+            }
+        }
+
         private DateTimeOffset? GetLastWriteAtCachedRuntime()
         {
             DateTimeOffset? cachedLastWrite = null;
@@ -99,21 +124,6 @@ namespace aggregator.cli
             }
 
             return cachedLastWrite;
-        }
-
-        private static async Task<DateTimeOffset?> GetLastModifiedAtUrl(string sourceUrl, CancellationToken cancellationToken)
-        {
-            DateTimeOffset? lastModified = null;
-
-            using (var client = new HttpClient())
-            // HACK assume that source URL does not require authentication!
-            using (var request = new HttpRequestMessage(HttpMethod.Head, sourceUrl))
-            using (var response = await client.SendAsync(request, cancellationToken))
-            {
-                lastModified = response.Content.Headers.LastModified;
-            }
-
-            return lastModified;
         }
 
         internal async Task<bool> UpdateVersionFromGitHubAsync(string requiredVersion, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
