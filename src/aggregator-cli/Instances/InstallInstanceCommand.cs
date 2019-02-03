@@ -19,8 +19,11 @@ namespace aggregator.cli
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
 
-        [Option("requiredVersion", Required = false, HelpText = "Version of Aggregator Runtime required.")]
+        [Option("requiredVersion", SetName = "nourl", Required = false, HelpText = "Version of Aggregator Runtime required.")]
         public string RequiredVersion { get; set; }
+
+        [Option("sourceUrl", SetName="url", Required = false, HelpText = "URL of Aggregator Runtime.")]
+        public string SourceUrl { get; set; }
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
@@ -30,7 +33,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name, ResourceGroup);
-            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, cancellationToken);
+            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, cancellationToken);
             return ok ? 0 : 1;
         }
     }

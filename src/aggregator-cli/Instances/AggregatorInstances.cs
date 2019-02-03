@@ -81,7 +81,7 @@ namespace aggregator.cli
             return result;
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             logger.WriteVerbose($"Checking if Resource Group {rgName} already exists");
@@ -149,7 +149,7 @@ namespace aggregator.cli
 
             // check runtime package
             var package = new FunctionRuntimePackage(logger);
-            bool ok = await package.UpdateVersionAsync(requiredVersion, instance, azure, cancellationToken);
+            bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, azure, cancellationToken);
             if (ok)
             {
                 var devopsLogonData = DevOpsLogon.Load().connection;

@@ -276,11 +276,11 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion, CancellationToken cancellationToken)
+        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             // check runtime package
             var package = new FunctionRuntimePackage(_logger);
-            bool ok = await package.UpdateVersionAsync(requiredVersion, instance, _azure, cancellationToken);
+            bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
             if (ok)
             {
                 ok = await AddAsync(instance, name, filePath, cancellationToken);

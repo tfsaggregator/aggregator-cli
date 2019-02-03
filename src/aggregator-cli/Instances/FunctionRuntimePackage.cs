@@ -30,7 +30,93 @@ namespace aggregator.cli
 
         private string RuntimePackageFile => "FunctionRuntime.zip";
 
-        internal async Task<bool> UpdateVersionAsync(string requiredVersion, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
+        internal async Task<bool> UpdateVersionAsync(string requiredVersion, string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(sourceUrl))
+            {
+                return await UpdateVersionFromGitHubAsync(requiredVersion, instance, azure, cancellationToken);
+            }
+            else
+            {
+                return await UpdateVersionFromUrlAsync(sourceUrl, instance, azure, cancellationToken);
+            }
+        }
+
+        internal async Task<bool> UpdateVersionFromUrlAsync(string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
+        {
+            DateTimeOffset? lastModified = await GetLastModifiedAtUrl(sourceUrl, cancellationToken);
+            if (!lastModified.HasValue)
+            {
+                logger.WriteError($"Failed reading from {sourceUrl}.");
+                return false;
+            }
+            DateTimeOffset? cachedLastWrite = GetLastWriteAtCachedRuntime();
+            if (lastModified != cachedLastWrite)
+            {
+                logger.WriteVerbose($"Downloading runtime package from {sourceUrl}");
+                await DownloadAsync(sourceUrl, cancellationToken);
+                logger.WriteInfo($"Runtime package downloaded.");
+                // make sure that dates match next time
+                File.SetLastWriteTime(RuntimePackageFile, lastModified.GetValueOrDefault(DateTimeOffset.UtcNow).UtcDateTime);
+            }
+
+            var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
+            logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
+
+            // TODO check the uploaded version before overwriting?
+            SemVersion uploadedRuntimeVer = await GetDeployedRuntimeVersion(instance, azure, cancellationToken);
+
+            if (localRuntimeVer > uploadedRuntimeVer)
+            {
+                logger.WriteInfo($"Using cached runtime package {localRuntimeVer}");
+
+                logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
+                bool ok = await UploadRuntimeZip(instance, azure, cancellationToken);
+                if (ok)
+                {
+                    logger.WriteInfo($"Runtime package uploaded to {instance.PlainName}.");
+                }
+                else
+                {
+                    logger.WriteError($"Failed uploading Runtime to {instance.DnsHostName}.");
+                }
+                return ok;
+            }
+            else
+            {
+                logger.WriteInfo($"Runtime package is up to date.");
+                return true;
+            }
+        }
+
+        private DateTimeOffset? GetLastWriteAtCachedRuntime()
+        {
+            DateTimeOffset? cachedLastWrite = null;
+
+            if (File.Exists(RuntimePackageFile))
+            {
+                cachedLastWrite = File.GetLastWriteTimeUtc(RuntimePackageFile);
+            }
+
+            return cachedLastWrite;
+        }
+
+        private static async Task<DateTimeOffset?> GetLastModifiedAtUrl(string sourceUrl, CancellationToken cancellationToken)
+        {
+            DateTimeOffset? lastModified = null;
+
+            using (var client = new HttpClient())
+            // HACK assume that source URL does not require authentication!
+            using (var request = new HttpRequestMessage(HttpMethod.Head, sourceUrl))
+            using (var response = await client.SendAsync(request, cancellationToken))
+            {
+                lastModified = response.Content.Headers.LastModified;
+            }
+
+            return lastModified;
+        }
+
+        internal async Task<bool> UpdateVersionFromGitHubAsync(string requiredVersion, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
             string tag = string.IsNullOrWhiteSpace(requiredVersion)
                 ? "latest"
