@@ -12,19 +12,19 @@ namespace aggregator.cli
 {
     abstract class CommandBase
     {
-        ILogger logger;
-
         // Omitting long name, defaults to name of property, ie "--verbose"
         [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
-        protected ContextBuilder Context => new ContextBuilder(logger);
+        protected ContextBuilder Context => new ContextBuilder(Logger);
+
+        internal ILogger Logger { get; private set; }
 
         internal abstract Task<int> RunAsync(CancellationToken cancellationToken);
 
         internal int Run(CancellationToken cancellationToken)
         {
-            logger = new ConsoleLogger(Verbose);
+            Logger = new ConsoleLogger(Verbose);
             try
             {
                 var title = GetCustomAttribute<AssemblyTitleAttribute>();
@@ -34,7 +34,7 @@ namespace aggregator.cli
                 var copyright = GetCustomAttribute<AssemblyCopyrightAttribute>();
 
                 // Hello World
-                logger.WriteInfo($"{title.Title} v{infoVersion.InformationalVersion} (build: {fileVersion.Version} {config.Configuration}) (c) {copyright.Copyright}");
+                Logger.WriteInfo($"{title.Title} v{infoVersion.InformationalVersion} (build: {fileVersion.Version} {config.Configuration}) (c) {copyright.Copyright}");
 
                 var t = RunAsync(cancellationToken);
                 t.Wait(cancellationToken);
@@ -42,18 +42,18 @@ namespace aggregator.cli
                 int rc = t.Result;
                 if (rc != 0)
                 {
-                    logger.WriteError("Failed!");
+                    Logger.WriteError("Failed!");
                 }
                 else
                 {
-                    logger.WriteSuccess("Succeeded");
+                    Logger.WriteSuccess("Succeeded");
                 }
 
                 return rc;
             }
             catch (Exception ex)
             {
-                logger.WriteError(ex.Message);
+                Logger.WriteError(ex.Message);
                 return 99;
             }
         }
