@@ -26,7 +26,22 @@
       "metadata": {
         "description": "Location for all resources."
       }
+    },
+    "hostingPlanSkuName": {
+      "type": "string",
+      "defaultValue": "Y1",
+      "metadata": {
+        "description": "Name of the resource SKU"
+      }
+    },
+    "hostingPlanSkuTier": {
+      "type": "string",
+      "defaultValue": "Dynamic",
+      "metadata": {
+        "description": "Service tier of the resource SKU"
+      }
     }
+
   },
   "variables": {
     "functionAppName": "[parameters('appName')]",
@@ -47,13 +62,14 @@
     },
     {
       "type": "Microsoft.Web/serverfarms",
-      "apiVersion": "2015-04-01",
+      "apiVersion": "2016-09-01",
       "name": "[variables('hostingPlanName')]",
       "location": "[parameters('location')]",
       "properties": {
-        "name": "[variables('hostingPlanName')]",
-        "computeMode": "Dynamic",
-        "sku": "Dynamic"
+      },
+      "sku": {
+        "name": "[parameters('hostingPlanSkuName')]",
+        "tier": "[parameters('hostingPlanSkuTier')]"
       }
     },
     {
