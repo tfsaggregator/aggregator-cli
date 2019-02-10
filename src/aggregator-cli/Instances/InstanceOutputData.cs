@@ -20,7 +20,7 @@ namespace aggregator.cli
 
         public string AsHumanReadable()
         {
-            return $"Instance {name} v{version} on {region}";
+            return $"Instance {name} in {region} using runtime v{version}";
         }
     }
 }
