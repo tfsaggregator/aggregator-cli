@@ -106,16 +106,11 @@ namespace aggregator.Engine
                 logger.WriteError($"Rule failed with {result.Exception}");
                 State = EngineState.Error;
             }
-            else if (result.ReturnValue != null)
-            {
-                logger.WriteInfo($"Rule succeeded with {result.ReturnValue}");
-            }
             else
             {
-                logger.WriteInfo($"Rule succeeded, no return value");
+                logger.WriteInfo($"Rule succeeded with {result.ReturnValue ?? "no return value"}");
+                State = EngineState.Success;
             }
-
-            State = EngineState.Success;
 
             logger.WriteVerbose($"Post-execution, save any change (mode {saveMode})...");
             var saveRes = await store.SaveChanges(saveMode, !DryRun, cancellationToken);
