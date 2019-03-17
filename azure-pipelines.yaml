@@ -32,6 +32,12 @@ steps:
     projects: 'src/aggregator-cli.sln'
 
 - task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
+  inputs:
+    command: test
+    projects: 'src/**/*unittest*.csproj'
+
+- task: DotNetCoreCLI@2
   displayName: 'dotnet publish FunctionRuntime and zip it'
   inputs:
     command: publish
