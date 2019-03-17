@@ -1,6 +1,28 @@
 pool:
   vmImage: vs2017-win2016
 
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - releases/*
+  tags:
+    include:
+    - v*
+  paths:
+    include:
+    - src/*
+
+pr:
+  autoCancel: false
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - src/*
+
 steps:
 - task: DeleteFiles@1
   displayName: 'Delete Directory.Build.targets from src/aggregator-function'
@@ -61,4 +83,3 @@ steps:
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish staged artifacts as drop'
-
