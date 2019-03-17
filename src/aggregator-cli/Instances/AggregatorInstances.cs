@@ -127,7 +127,7 @@ namespace aggregator.cli
             };
 
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
-            logger.WriteInfo($"Started deployment {deploymentName}");
+            logger.WriteInfo($"Started deployment (id: {deploymentName})");
             var deployment = await azure.Deployments.Define(deploymentName)
                     .WithExistingResourceGroup(rgName)
                     .WithTemplate(armTemplateString)

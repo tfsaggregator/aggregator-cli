@@ -47,14 +47,14 @@ namespace aggregator.cli
             await RefreshLocalPackageFromUrl(sourceUrl, cancellationToken);
 
             var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
-            logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
+            logger.WriteVerbose($"Locally cached Runtime package version is {localRuntimeVer}.");
 
             // TODO check the uploaded version before overwriting?
             SemVersion uploadedRuntimeVer = await GetDeployedRuntimeVersion(instance, azure, cancellationToken);
 
             if (localRuntimeVer > uploadedRuntimeVer)
             {
-                logger.WriteInfo($"Using cached runtime package {localRuntimeVer}");
+                logger.WriteInfo($"Using local cached runtime package {localRuntimeVer}");
 
                 logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
                 bool ok = await UploadRuntimeZip(instance, azure, cancellationToken);
@@ -148,7 +148,7 @@ namespace aggregator.cli
             logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
 
             var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
-            logger.WriteVerbose($"Cached Runtime package version is {localRuntimeVer}.");
+            logger.WriteVerbose($"Locally cached Runtime package version is {localRuntimeVer}.");
 
             // TODO check the uploaded version before overwriting?
             SemVersion uploadedRuntimeVer = await GetDeployedRuntimeVersion(instance, azure, cancellationToken);
@@ -163,7 +163,7 @@ namespace aggregator.cli
                 }
                 else
                 {
-                    logger.WriteInfo($"Using cached runtime package {localRuntimeVer}");
+                    logger.WriteInfo($"Using local cached runtime package {localRuntimeVer}");
                 }
 
                 logger.WriteVerbose($"Uploading runtime package to {instance.DnsHostName}");
