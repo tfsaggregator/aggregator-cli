@@ -95,7 +95,8 @@ namespace aggregator.Engine
             var globals = new Globals
             {
                 self = self,
-                store = store
+                store = store,
+                logger = logger
             };
 
             logger.WriteInfo($"Executing Rule...");

@@ -8,5 +8,6 @@ namespace aggregator.Engine
     {
         public WorkItemWrapper self;
         public WorkItemStore store;
+        public IAggregatorLogger logger;
     }
 }
