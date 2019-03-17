@@ -46,6 +46,7 @@
   "variables": {
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[concat(parameters('appName'),'-plan')]",
+    "appInsightName": "[concat(parameters('appName'),'-ai')]",
     "storageAccountName": "[concat('aggregator', uniquestring(resourceGroup().id))]",
     "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
   },
@@ -58,6 +59,21 @@
       "kind": "Storage",
       "sku": {
         "name": "[parameters('storageAccountType')]"
+      }
+    },
+    {
+      "type": "microsoft.insights/components",
+      "kind": "web",
+      "name": "[variables('appInsightName')]",
+      "apiVersion": "2015-05-01",
+      "location": "[parameters('location')]",
+      "tags": {
+        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('functionAppName'))]": "Resource",
+        "displayName": "AppInsightsComponent"
+      },
+      "properties": {
+        "Application_Type": "web",
+        "applicationId": "[variables('appInsightName')]"
       }
     },
     {
@@ -79,6 +95,7 @@
       "location": "[parameters('location')]",
       "kind": "functionapp",
       "dependsOn": [
+        "[resourceId('microsoft.insights/components', variables('appInsightName'))]",
         "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
@@ -121,6 +138,10 @@
             {
               "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
               "value": "false"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(concat('microsoft.insights/components/', variables('appInsightName'))).InstrumentationKey]"
             },
             {
               "name": "Aggregator_VstsTokenType",
