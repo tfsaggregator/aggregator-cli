@@ -8,6 +8,12 @@
         "description": "The name of the function app that you wish to create."
       }
     },
+    "aggregatorVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "Aggregator version string to use in tags."
+      }
+    },
     "storageAccountType": {
       "type": "string",
       "defaultValue": "Standard_LRS",
@@ -59,6 +65,9 @@
       "kind": "Storage",
       "sku": {
         "name": "[parameters('storageAccountType')]"
+      },
+      "tags": {
+        "aggregatorVersion": "[parameters('aggregatorVersion')]"
       }
     },
     {
@@ -69,7 +78,7 @@
       "location": "[parameters('location')]",
       "tags": {
         "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('functionAppName'))]": "Resource",
-        "displayName": "AppInsightsComponent"
+        "aggregatorVersion": "[parameters('aggregatorVersion')]"
       },
       "properties": {
         "Application_Type": "web",
@@ -86,6 +95,9 @@
       "sku": {
         "name": "[parameters('hostingPlanSkuName')]",
         "tier": "[parameters('hostingPlanSkuTier')]"
+      },
+      "tags": {
+        "aggregatorVersion": "[parameters('aggregatorVersion')]"
       }
     },
     {
@@ -99,6 +111,9 @@
         "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
+      "tags": {
+        "aggregatorVersion": "[parameters('aggregatorVersion')]"
+      },
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "siteConfig": {
