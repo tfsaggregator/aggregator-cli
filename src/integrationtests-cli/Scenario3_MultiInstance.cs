@@ -37,8 +37,8 @@ namespace integrationtests.cli
         }
 
         [Theory, Order(2)]
-        [InlineData("my4")]
-        [InlineData("my5")]
+        [InlineData("my45")]
+        [InlineData("my54")]
         void InstallInstances(string instance)
         {
             (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {resourceGroup} --location {location}");
@@ -53,13 +53,13 @@ namespace integrationtests.cli
             (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {resourceGroup}");
 
             Assert.Equal(0, rc);
-            Assert.Contains("Instance my4", output);
-            Assert.Contains("Instance my5", output);
+            Assert.Contains("Instance my45", output);
+            Assert.Contains("Instance my54", output);
         }
 
         [Theory, Order(4)]
-        [InlineData("my4", "test4")]
-        [InlineData("my5", "test5")]
+        [InlineData("my45", "test4")]
+        [InlineData("my54", "test5")]
         void AddRules(string instance, string rule)
         {
             (int rc, string output) = RunAggregatorCommand($"add.rule --instance {instance} --resourceGroup {resourceGroup} --name {rule} --file {rule}.rule");
@@ -69,8 +69,8 @@ namespace integrationtests.cli
         }
 
         [Theory, Order(5)]
-        [InlineData("my4", "test4")]
-        [InlineData("my5", "test5")]
+        [InlineData("my45", "test4")]
+        [InlineData("my54", "test5")]
         void ListRules(string instance, string rule)
         {
             (int rc, string output) = RunAggregatorCommand($"list.rules --instance {instance} --resourceGroup {resourceGroup}");
@@ -81,8 +81,8 @@ namespace integrationtests.cli
         }
 
         [Theory, Order(6)]
-        [InlineData("my4", "test4")]
-        [InlineData("my5", "test5")]
+        [InlineData("my45", "test4")]
+        [InlineData("my54", "test5")]
         void MapRules(string instance, string rule)
         {
             (int rc, string output) = RunAggregatorCommand($"map.rule --project {project} --event workitem.created --instance {instance} --resourceGroup {resourceGroup} --rule {rule}");
@@ -92,8 +92,8 @@ namespace integrationtests.cli
         }
 
         [Theory, Order(7)]
-        [InlineData("my4", "test4")]
-        [InlineData("my5", "test5")]
+        [InlineData("my45", "test4")]
+        [InlineData("my54", "test5")]
         void ListMappings(string instance, string rule)
         {
             (int rc, string output) = RunAggregatorCommand($"list.mappings --instance {instance} --resourceGroup {resourceGroup}");
@@ -104,7 +104,7 @@ namespace integrationtests.cli
         }
 
         [Theory, Order(8)]
-        [InlineData("my4")]
+        [InlineData("my45")]
         void UninstallInstances(string instance)
         {
             (int rc, string output) = RunAggregatorCommand($"uninstall.instance --name {instance} --resourceGroup {resourceGroup} --location {location}");
@@ -119,12 +119,12 @@ namespace integrationtests.cli
             (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {resourceGroup}");
 
             Assert.Equal(0, rc);
-            Assert.DoesNotContain("Instance my4", output);
-            Assert.Contains("Instance my5", output);
+            Assert.DoesNotContain("Instance my45", output);
+            Assert.Contains("Instance my54", output);
         }
 
         [Theory, Order(10)]
-        [InlineData("my5", "test5")]
+        [InlineData("my54", "test5")]
         void UnmapRules(string instance, string rule)
         {
             (int rc, string output) = RunAggregatorCommand($"unmap.rule --project {project} --event workitem.created --instance {instance} --resourceGroup {resourceGroup} --rule {rule}");
