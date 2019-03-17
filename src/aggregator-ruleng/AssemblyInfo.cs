@@ -13,3 +13,5 @@ using System.Reflection;
 [assembly: AssemblyProduct("Aggregator CLI")]
 [assembly: AssemblyTitle("Aggregator Rule Engine")]
 [assembly: AssemblyVersion("0.5.0.0")]
+
+[assembly:InternalsVisibleTo("unittests-core")]
