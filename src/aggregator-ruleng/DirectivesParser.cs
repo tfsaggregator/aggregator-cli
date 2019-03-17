@@ -12,6 +12,8 @@ namespace aggregator.Engine
         int firstCodeLine = 0;
         private readonly IAggregatorLogger logger;
         string[] ruleCode;
+        List<string> references = new List<string>();
+        List<string> imports = new List<string>();
 
         internal DirectivesParser(IAggregatorLogger logger, string[] ruleCode)
         {
@@ -20,6 +22,8 @@ namespace aggregator.Engine
 
             //defaults
             Language = Languages.Csharp;
+            References = references;
+            Imports = imports;
         }
 
         /// <summary>
@@ -58,6 +62,35 @@ namespace aggregator.Engine
                             }
                         }
                         break;
+
+                    case "r":
+                    case "ref":
+                    case "reference":
+                        if (parts.Length < 2)
+                        {
+                            logger.WriteWarning($"Invalid reference directive {directive}");
+                            return false;
+                        }
+                        else
+                        {
+                            references.Add(parts[1]);
+                        }
+                        break;
+
+                    case "import":
+                    case "imports":
+                    case "namespace":
+                        if (parts.Length < 2)
+                        {
+                            logger.WriteWarning($"Invalid import directive {directive}");
+                            return false;
+                        }
+                        else
+                        {
+                            imports.Add(parts[1]);
+                        }
+                        break;
+
                     default:
                         logger.WriteWarning($"Unrecognized directive {directive}");
                         return false;
@@ -81,5 +114,7 @@ namespace aggregator.Engine
         }
 
         internal Languages Language { get; private set; }
+        internal IReadOnlyList<string> References { get; private set; }
+        internal IReadOnlyList<string> Imports { get; private set; }
     }
 }

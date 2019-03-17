@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -43,24 +44,15 @@ namespace aggregator.Engine
 
             if (directives.Language == DirectivesParser.Languages.Csharp)
             {
-                var types = new List<Type>() {
-                        typeof(object),
-                        typeof(System.Linq.Enumerable),
-                        typeof(System.Collections.Generic.CollectionExtensions),
-                        typeof(Microsoft.VisualStudio.Services.WebApi.IdentityRef)
-                    };
-                var references = types.ConvertAll(t => t.Assembly).Distinct();
+                var references = LoadReferences(directives);
+                var imports = GetImports(directives);
 
                 var scriptOptions = ScriptOptions.Default
                     .WithEmitDebugInformation(true)
                     .WithReferences(references)
                     // Add namespaces
-                    .WithImports(
-                        "System",
-                        "System.Linq",
-                        "System.Collections.Generic",
-                        "Microsoft.VisualStudio.Services.WebApi"
-                    );
+                    .WithImports(imports)
+                    ;
 
                 this.roslynScript = CSharpScript.Create<string>(
                     code: directives.GetRuleCode(),
@@ -72,6 +64,40 @@ namespace aggregator.Engine
                 logger.WriteError($"Cannot execute rule: language is not supported.");
                 State = EngineState.Error;
             }
+        }
+
+        private static IEnumerable<Assembly> LoadReferences(DirectivesParser directives)
+        {
+            var types = new List<Type>() {
+                        typeof(object),
+                        typeof(System.Linq.Enumerable),
+                        typeof(System.Collections.Generic.CollectionExtensions),
+                        typeof(Microsoft.VisualStudio.Services.WebApi.IdentityRef),
+                        typeof(WorkItemWrapper)
+                    };
+            var references = types.ConvertAll(t => t.Assembly);
+            // user references
+            foreach (var reference in directives.References)
+            {
+                var name = new AssemblyName(reference);
+                references.Add(Assembly.Load(name));
+            }
+
+            return references.Distinct();
+        }
+
+        private static IEnumerable<string> GetImports(DirectivesParser directives)
+        {
+            var imports = new List<string>
+                    {
+                        "System",
+                        "System.Linq",
+                        "System.Collections.Generic",
+                        "Microsoft.VisualStudio.Services.WebApi",
+                        "aggregator.Engine"
+                    };
+            imports.AddRange(directives.Imports);
+            return imports.Distinct();
         }
 
         /// <summary>

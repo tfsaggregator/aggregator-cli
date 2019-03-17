@@ -3,10 +3,23 @@
 The directives must appear in the first lines of a Rule file.
 They are parsed by Aggregator and removed before compiling the code.
 
+## language directive
 `.lang=C#`
 `.language=Csharp`
 
 Currently the only supported language is C#. You can use the `.lang` directive to specify the programming language used by the rule.
+
+## reference directive
+Loads the specified assembly in the Rule execution context
+
+Example
+`.reference=System.Xml.XDocument`
+
+## import directive
+Equivalent to C# namespace
+`.import=System.Collections.Generic`
+
+
 
 
 
@@ -244,3 +257,11 @@ Represents a User identity. Use mostly as a read-only object. Use the `DisplayNa
 `string UniqueName`
 
 `string Url`
+
+
+# Logger Object
+The Function logger object is contained in the `logger` variable. It support four methods:
+- `WriteVerbose(message)`
+- `WriteInfo(message)`
+- `WriteWarning(message)`
+- `WriteError(message)`

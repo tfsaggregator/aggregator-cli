@@ -237,5 +237,79 @@ return self.Description;
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 0 created, 1 updated.");
         }
+
+        [Fact]
+        public async Task ReferenceDirective_Succeeds()
+        {
+            int workItemId = 42;
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                }
+            });
+            string ruleCode = @".r=System.Xml.XDocument
+var doc = new System.Xml.Linq.XDocument();
+return string.Empty;
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+
+            Assert.Equal(EngineState.Success, engine.State);
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public async Task ImportDirective_Succeeds()
+        {
+            int workItemId = 42;
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                }
+            });
+            string ruleCode = @".import=System.Diagnostics
+Debug.WriteLine(""test"");
+return string.Empty;
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+
+            Assert.Equal(EngineState.Success, engine.State);
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public async Task ImportDirective_Fail()
+        {
+            int workItemId = 42;
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                }
+            });
+            string ruleCode = @"
+Debug.WriteLine(""test"");
+return string.Empty;
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
+                () => engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None)
+            );
+        }
     }
 }
