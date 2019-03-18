@@ -7,8 +7,8 @@
 [assembly: AssemblyConfiguration("Release")]
 #endif
 [assembly: AssemblyCopyright("TFS Aggregator Team")]
-[assembly: AssemblyFileVersion("0.5.0.0")]
-[assembly: AssemblyInformationalVersion("0.5.0")]
+[assembly: AssemblyFileVersion("0.9.0.0")]
+[assembly: AssemblyInformationalVersion("0.9.0+local.development")]
 [assembly: AssemblyProduct("Aggregator CLI")]
 [assembly: AssemblyTitle("Aggregator Runtime")]
-[assembly: AssemblyVersion("0.5.0.0")]
+[assembly: AssemblyVersion("0.9.0.0")]

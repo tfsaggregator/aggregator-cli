@@ -15,7 +15,7 @@ namespace aggregator.cli
 {
     class FunctionRuntimePackage
     {
-        private readonly string infoVersion;
+        private readonly string cliVersion;
         private readonly ILogger logger;
 
         internal FunctionRuntimePackage(ILogger logger)
@@ -23,9 +23,9 @@ namespace aggregator.cli
             this.logger = logger;
             // check this assembly version
             var here = Assembly.GetExecutingAssembly();
-            infoVersion = here
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                .InformationalVersion;
+            cliVersion = here
+                .GetCustomAttribute<AssemblyFileVersionAttribute>()
+                .Version;
         }
 
         private string RuntimePackageFile => "FunctionRuntime.zip";
@@ -44,6 +44,7 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateVersionFromUrlAsync(string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
+            logger.WriteVerbose($"Refreshing local cache from {sourceUrl}.");
             await RefreshLocalPackageFromUrl(sourceUrl, cancellationToken);
 
             var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
@@ -143,6 +144,7 @@ namespace aggregator.cli
                 logger.WriteError($"Requested runtime {requiredVersion} version does not exists.");
                 return false;
             }
+            logger.WriteVerbose($"Found {rel_name} on {rel_when} in GitHub .");
             if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
             var requiredRuntimeVer = SemVersion.Parse(rel_name);
             logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
@@ -232,7 +234,7 @@ namespace aggregator.cli
 
         private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHubAsync(string tag = "latest")
         {
-            var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", infoVersion));
+            var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", cliVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");
             // latest is default
             var release = releases[0];
