@@ -69,7 +69,8 @@ namespace aggregator
                 });
             }
 
-            if (data.resource.url == "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5")
+            string resourceUrl = data.resource.url;
+            if (resourceUrl.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
             {
                 var resp = req.CreateResponse(HttpStatusCode.OK, new
                 {
