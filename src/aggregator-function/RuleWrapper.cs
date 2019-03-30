@@ -53,6 +53,7 @@ namespace aggregator
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            // TODO improve from https://github.com/Microsoft/vsts-work-item-migrator
             using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
             {
                 await devops.ConnectAsync(cancellationToken);

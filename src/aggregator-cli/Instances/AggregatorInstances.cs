@@ -107,7 +107,8 @@ namespace aggregator.cli
                 logger.WriteInfo($"Resource group {rgName} created.");
             }
 
-            // IDEA the template should create a Storage account and/or a Key Vault
+            // IDEA the template should create a Storage account and/or a Key Vault for Rules' use
+            // TODO https://github.com/gjlumsden/AzureFunctionsSlots suggest that slots must be created in template
             var resourceName = "aggregator.cli.Instances.instance-template.json";
             string armTemplateString;
             var assembly = Assembly.GetExecutingAssembly();

@@ -24,7 +24,7 @@ Equivalent to C# namespace
 
 
 # WorkItem Object
-The initial WorkItem object is contained in the `self` variable.
+The initial WorkItem object, the one which triggered the rule, is contained in the `self` variable.
 
 
 ## Revisions
@@ -81,59 +81,81 @@ Returns the number of related work items.
 ## Core Fields helpers
 Data fields of the work item. See [Work item field index](https://docs.microsoft.com/en-us/azure/devops/boards/work-items/guidance/work-item-field?view=vsts) for a complete description.
 
-`WorkItemId<int> Id` Read-only. Negative when `IsNew` equals `true`.
-
-`int Rev` Read-only.
-
-`string Url` Read-only.
-
-`string WorkItemType` Read-only.
-
-`string State`
-
 `int AreaId`
+The unique ID of the area to which this work item is assigned.
 
 `string AreaPath`
+Groups work items into product feature or team areas. The area must be a valid node in the project hierarchy.
 
 `IdentityRef AssignedTo`
+The name of the team member who currently owns the work item.
 
 `IdentityRef AuthorizedAs`
 
-`IdentityRef ChangedBy`
-
-`DateTime? ChangedDate`
-
-`IdentityRef CreatedBy`
-
-`DateTime? CreatedDate`
-
-`string Description`
-
-`string History`
-
-`int IterationId`
-
-`string IterationPath`
-
-`string Reason`
-
-`DateTime? RevisedDate`
-
 `DateTime? AuthorizedDate`
 
-`string TeamProject`
+`IdentityRef ChangedBy`
+The name of the team member who modified the work item most recently. 
+
+`DateTime? ChangedDate`
+The date and time when a work item was modified.
+
+`IdentityRef CreatedBy`
+The name of the team member who created the work item.
+
+`DateTime? CreatedDate`
+The date and time when a work item was created.
+
+`string Description`
+Use this field to provide indepth information about a work item.
+
+`string History`
+The record of changes that were made to the work item after it was created.
+
+`WorkItemId<int> Id` Read-only.
+The unique identifier that is assigned to a work item.
+ Negative when `IsNew` equals `true`.
+
+`int IterationId`
+The unique ID of the iteration to which this work item is assigned.
+
+`string IterationPath`
+Groups work items by named sprints or time periods. The iteration must be a valid node in the project hierarchy.
+
+`string Reason`
+The reason why the work item is in the current state.
+
+`int Rev` Read-only.
+A number that is assigned to the historical revision of a work item. 
+
+`DateTime? RevisedDate`
+The date and time stamp when a test case or shared step is revised.
+
+`string State`
+The current state of the work item.
 
 `string Tags`
+A tag corresponds to a one or two keyword phrase that you define and that supports your needs to filter a backlog or query, or define a query. 
+
+`string TeamProject`
+The project to which a work item belongs.
 
 `string Title`
+A short description that summarizes what the work item is and helps team members distinguish it from other work items in a list.
+
+`string Url` Read-only.
 
 `double Watermark` Read-only.
+A system managed field (not editable) that increments with changes made to a work item.
+
+`string WorkItemType` Read-only.
+The name of the work item type.
 
 
 ## Fields
 `object this[string field]`
 Read-write access to non-core fields.
-Prefer using reference name, like _System.Title_, instead of language specific, like _Titolo_ or _Titel_.
+Must use reference name, like _System.Title_, instead of language specific, like _Titolo_ or _Titel_.
 
 
 ## Status properties
