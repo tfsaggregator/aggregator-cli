@@ -339,3 +339,4 @@ src/aggregator-cli/FunctionRuntime.zip
 *.exe
 *.diagsession
 experiments/
+src/aggregator-function/test*/*

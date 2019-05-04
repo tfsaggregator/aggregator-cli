@@ -24,7 +24,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-A
 		..\doc\rule-language.md = ..\doc\rule-language.md
 		..\doc\service-hook-example.png = ..\doc\service-hook-example.png
 		..\doc\service-principal.png = ..\doc\service-principal.png
-		..\doc\test-matrix.md = ..\doc\test-matrix.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-ruleng", "unittests-ruleng\unittests-ruleng.csproj", "{19AE3176-D15F-4A2B-AB49-1B9DE6EA3EE4}"
