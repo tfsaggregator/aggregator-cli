@@ -31,9 +31,15 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
+            bool ok = DevOpsEvents.IsValidEvent(Event);
+            if (!ok)
+            {
+                context.Logger.WriteError($"Invalid event type.");
+                return 2;
+            }
             var instance = new InstanceName(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
-            bool ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
+            ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
             return ok ? 0 : 1;
         }
     }

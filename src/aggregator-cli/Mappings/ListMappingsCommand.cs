@@ -25,6 +25,12 @@ namespace aggregator.cli
             var context = await Context
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
+            if (string.IsNullOrEmpty(Instance)
+                && string.IsNullOrEmpty(Project))
+            {
+                context.Logger.WriteError("Specify at least one filtering parameter.");
+                return 2;
+            }
             var instance = string.IsNullOrEmpty(Instance) ? null : new InstanceName(Instance, ResourceGroup);
             // HACK we pass null as the next calls do not use the Azure connection
             var mappings = new AggregatorMappings(context.Devops, null, context.Logger);
