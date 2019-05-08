@@ -38,9 +38,9 @@ namespace aggregator
         {
             webApp
                 .Update()
-                .WithAppSetting("Aggregator_VstsTokenType", DevOpsTokenType.ToString())
-                .WithAppSetting("Aggregator_VstsToken", DevOpsToken)
-                .WithAppSetting("Aggregator_SaveMode", SaveMode.ToString())
+                .WithStickyAppSetting("Aggregator_VstsTokenType", DevOpsTokenType.ToString())
+                .WithStickyAppSetting("Aggregator_VstsToken", DevOpsToken)
+                .WithStickyAppSetting("Aggregator_SaveMode", SaveMode.ToString())
                 .Apply();
         }
 

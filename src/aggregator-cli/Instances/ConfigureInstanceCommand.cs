@@ -25,7 +25,11 @@ namespace aggregator.cli
         [Option('m', "saveMode", SetName = "save", Required = false, HelpText = "Save behaviour.")]
         public SaveMode SaveMode { get; set; }
 
-        // TODO add --swap.slot to support App Service Deployment Slots
+        // support App Service Deployment Slots
+        [Option('s', "slot", SetName = "slot", Required = true, HelpText = "Set slot deployment.")]
+        public string Slot { get; set; }
+        [Option('w', "swap", SetName = "slot", Required = true, HelpText = "Swap deploy slot.")]
+        public bool Swap { get; set; }
 
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
@@ -40,7 +44,13 @@ namespace aggregator.cli
             if (Authentication)
             {
                 ok = await instances.ChangeAppSettingsAsync(instance, Location, SaveMode, cancellationToken);
-            } else
+            }
+            else if (Swap)
+            {
+                ok = await instances.SwapToSlot(instance, Location, Slot, cancellationToken);
+                //Swap;
+            }
+            else
             {
                 context.Logger.WriteError($"Unsupported command option(s)");
             }

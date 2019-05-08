@@ -34,6 +34,12 @@ namespace aggregator.cli
         [Option('t', "hostingPlanTier", SetName = "plan", Required = false, Default = "Dynamic", HelpText = "Azure AppPlan Service tier hosting the Aggregator instances .")]
         public string HostingPlanTier { get; set; }
 
+        // support App Service Deployment Slots
+        [Option('s', "slots", SetName = "slot", Required = true, HelpText = "Set slot deployment.")]
+        public IEnumerable<string> Slots { get; set; }
+        [Option('z', "avzone", SetName = "slot", Required = false, HelpText = "Set slot Availability Zone.")]
+        public string AvZone { get; set; }
+
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var validHostingPlanSkus = new string[] { "Y1", "F1", "D1", "B1", "S1", "S2", "S3", "P1", "P2", "P3", "P1V2", "P2V2", "P3V2" };
@@ -55,7 +61,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name, ResourceGroup);
-            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, cancellationToken);
+            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, Slots, AvZone, cancellationToken);
             return ok ? 0 : 1;
         }
     }

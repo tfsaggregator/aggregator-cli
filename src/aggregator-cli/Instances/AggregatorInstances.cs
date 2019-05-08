@@ -87,7 +87,7 @@ namespace aggregator.cli
             return Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false).FirstOrDefault() as T;
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, IEnumerable<string> slotNames, string avZone, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             logger.WriteVerbose($"Checking if Resource Group {rgName} already exists");
@@ -263,6 +263,13 @@ namespace aggregator.cli
                 logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
                 ok = false;
             }
+            return ok;
+        }
+
+        internal async Task<bool> SwapToSlot(InstanceName instance, string location, string slot, CancellationToken cancellationToken)
+        {
+            bool ok = false;
+
 
             return ok;
         }
