@@ -33,7 +33,7 @@ namespace aggregator.Engine
 
             if (_commit)
             {
-                using (var client = new HttpClient())
+                using (var client = HttpClientFactory.Create())
                 {
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
