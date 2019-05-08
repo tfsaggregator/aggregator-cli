@@ -129,10 +129,13 @@ namespace aggregator.cli
             string appName = instance.FunctionAppName;
             var infoVersion = GetCustomAttribute<AssemblyInformationalVersionAttribute>();
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
-                    {"appName", new Dictionary<string, object>{{"value", appName } }},
-                    {"aggregatorVersion", new Dictionary<string, object>{{"value", infoVersion.InformationalVersion } }},
-                    {"hostingPlanSkuName", new Dictionary<string, object>{{"value", "Y1" } }},
-                    {"hostingPlanSkuTier", new Dictionary<string, object>{{"value", "Dynamic" } }},
+                // TODO give use more control by setting more parameters
+                {"location", new Dictionary<string, object>{{"value", location } }},
+                {"storageAccountType", new Dictionary<string, object>{{"value", "Standard_LRS" } }},                    
+                {"appName", new Dictionary<string, object>{{"value", appName } }},
+                {"aggregatorVersion", new Dictionary<string, object>{{"value", infoVersion.InformationalVersion } }},
+                {"hostingPlanSkuName", new Dictionary<string, object>{{"value", "Y1" } }},
+                {"hostingPlanSkuTier", new Dictionary<string, object>{{"value", "Dynamic" } }},
             };
 
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
