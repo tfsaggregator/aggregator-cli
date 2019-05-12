@@ -90,10 +90,48 @@ namespace aggregator.cli
         internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
+            bool ok = await MakeSureResourceGroupExistsAsync(instance.IsCustom, location, rgName, cancellationToken);
+            if (!ok)
+                return false;
+
+            ok = await DeployArmTemplateAsync(instance, location, rgName, cancellationToken);
+            if (!ok)
+                return false;
+
+            // check runtime package
+            var package = new FunctionRuntimePackage(logger);
+            ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, azure, cancellationToken);
+            if (ok)
+            {
+                var devopsLogonData = DevOpsLogon.Load().connection;
+                if (devopsLogonData.Mode == DevOpsTokenType.PAT)
+                {
+                    logger.WriteVerbose($"Saving Azure DevOps token");
+                    ok = await ChangeAppSettingsAsync(instance, devopsLogonData, SaveMode.Default, cancellationToken);
+                    if (ok)
+                    {
+                        logger.WriteInfo($"Azure DevOps token saved");
+                    }
+                    else
+                    {
+                        logger.WriteError($"Failed to save Azure DevOps token");
+                    }
+                }
+                else
+                {
+                    logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
+                    ok = false;
+                }
+            }
+            return ok;
+        }
+
+        private async Task<bool> MakeSureResourceGroupExistsAsync(bool customInstance, string location, string rgName, CancellationToken cancellationToken)
+        {
             logger.WriteVerbose($"Checking if Resource Group {rgName} already exists");
             if (!await azure.ResourceGroups.ContainAsync(rgName, cancellationToken))
             {
-                if (instance.IsCustom)
+                if (customInstance)
                 {
                     logger.WriteError($"Resource group {rgName} is custom and cannot be created.");
                     return false;
@@ -106,7 +144,12 @@ namespace aggregator.cli
                     .CreateAsync();
                 logger.WriteInfo($"Resource group {rgName} created.");
             }
+            // success
+            return true;
+        }
 
+        private async Task<bool> DeployArmTemplateAsync(InstanceName instance, string location, string rgName, CancellationToken cancellationToken)
+        {
             // IDEA the template should create a Storage account and/or a Key Vault for Rules' use
             // TODO https://github.com/gjlumsden/AzureFunctionsSlots suggest that slots must be created in template
             var resourceName = "aggregator.cli.Instances.instance-template.json";
@@ -124,6 +167,7 @@ namespace aggregator.cli
             {
                 // not good, blah
                 logger.WriteWarning($"Something is wrong with the ARM template");
+                return false;
             }
 
             string appName = instance.FunctionAppName;
@@ -131,7 +175,7 @@ namespace aggregator.cli
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
                 // TODO give use more control by setting more parameters
                 {"location", new Dictionary<string, object>{{"value", location } }},
-                {"storageAccountType", new Dictionary<string, object>{{"value", "Standard_LRS" } }},                    
+                {"storageAccountType", new Dictionary<string, object>{{"value", "Standard_LRS" } }},
                 {"appName", new Dictionary<string, object>{{"value", appName } }},
                 {"aggregatorVersion", new Dictionary<string, object>{{"value", infoVersion.InformationalVersion } }},
                 {"hostingPlanSkuName", new Dictionary<string, object>{{"value", "Y1" } }},
@@ -161,32 +205,7 @@ namespace aggregator.cli
             }
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
 
-            // check runtime package
-            var package = new FunctionRuntimePackage(logger);
-            bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, azure, cancellationToken);
-            if (ok)
-            {
-                var devopsLogonData = DevOpsLogon.Load().connection;
-                if (devopsLogonData.Mode == DevOpsTokenType.PAT)
-                {
-                    logger.WriteVerbose($"Saving Azure DevOps token");
-                    ok = await ChangeAppSettingsAsync(instance, devopsLogonData, SaveMode.Default, cancellationToken);
-                    if (ok)
-                    {
-                        logger.WriteInfo($"Azure DevOps token saved");
-                    }
-                    else
-                    {
-                        logger.WriteError($"Failed to save Azure DevOps token");
-                    }
-                }
-                else
-                {
-                    logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
-                    ok = false;
-                }
-            }
-            return ok;
+            return deployment.ProvisioningState == "Succeeded";
         }
 
         internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode, CancellationToken cancellationToken)
