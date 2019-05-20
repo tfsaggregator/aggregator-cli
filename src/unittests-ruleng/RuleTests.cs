@@ -49,7 +49,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
         }
@@ -72,7 +72,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -96,7 +96,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Error, engine.State);
         }
@@ -150,7 +150,7 @@ return message;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Parent is 1", result);
         }
@@ -174,7 +174,7 @@ wi.Title = ""Brand new"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
@@ -203,7 +203,7 @@ parent.Relations.AddChild(newChild);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
@@ -230,7 +230,7 @@ return self.Description;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal("Hello.", result);
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {ProjectName}");
@@ -257,7 +257,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -282,7 +282,7 @@ return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -308,7 +308,7 @@ return string.Empty;
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.ExecuteAsync(CollectionUrl, projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None)
+                () => engine.ExecuteAsync(projectId, ProjectName, PersonalAccessToken, workItemId, client, CancellationToken.None)
             );
         }
     }
