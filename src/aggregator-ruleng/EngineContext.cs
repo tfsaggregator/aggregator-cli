@@ -8,18 +8,16 @@ namespace aggregator.Engine
 {
     public class EngineContext
     {
-        public EngineContext(WorkItemTrackingHttpClientBase client, string projectName, string personalAccessToken, IAggregatorLogger logger)
+        public EngineContext(WorkItemTrackingHttpClient client, string projectName, IAggregatorLogger logger)
         {
             Client = client;
             Logger = logger;
             Tracker = new Tracker();
             ProjectName = projectName;
-            PersonalAccessToken = personalAccessToken;
         }
 
         public string ProjectName { get; internal set; }
-        public string PersonalAccessToken { get; internal set; }
-        internal WorkItemTrackingHttpClientBase Client { get; }
+        internal WorkItemTrackingHttpClient Client { get; }
         internal IAggregatorLogger Logger { get; }
         internal Tracker Tracker { get; }
     }

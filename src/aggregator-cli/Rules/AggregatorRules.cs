@@ -334,7 +334,7 @@ namespace aggregator.cli
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
-                    string result = await engine.ExecuteAsync(teamProjectName, devopsLogonData.Token, workItemId, witClient, cancellationToken);
+                    string result = await engine.ExecuteAsync(teamProjectName, workItemId, witClient, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;
