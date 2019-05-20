@@ -120,7 +120,7 @@ namespace aggregator.Engine
                     _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
                     _ = await _context.Client.CreateWorkItemAsync(
                         item.Changes,
-                        _context.ProjectId,
+                        _context.ProjectName,
                         item.WorkItemType,
                         cancellationToken: cancellationToken
                     );

@@ -34,7 +34,6 @@ namespace aggregator
             int workItemId = (eventType != "workitem.updated")
                 ? data.resource.id
                 : data.resource.workItemId;
-            Guid teamProjectId = data.resourceContainers.project.id;
             string teamProjectName = (eventType != "workitem.updated")
                 ? data.resource.fields["System.TeamProject"]
                 : data.resource.revision.fields["System.TeamProject"];
@@ -77,7 +76,7 @@ namespace aggregator
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
-                    return await engine.ExecuteAsync(teamProjectId, teamProjectName, configuration.DevOpsToken, workItemId, witClient, cancellationToken);
+                    return await engine.ExecuteAsync(teamProjectName, configuration.DevOpsToken, workItemId, witClient, cancellationToken);
                 }
             }
         }

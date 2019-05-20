@@ -106,14 +106,14 @@ namespace aggregator.Engine
         public EngineState State { get; private set; }
         public bool DryRun { get; }
 
-        public async Task<string> ExecuteAsync(Guid projectId, string projectName, string personalAccessToken, int workItemId, WorkItemTrackingHttpClientBase witClient, CancellationToken cancellationToken)
+        public async Task<string> ExecuteAsync(string projectName, string personalAccessToken, int workItemId, WorkItemTrackingHttpClientBase witClient, CancellationToken cancellationToken)
         {
             if (State == EngineState.Error)
             {
                 return string.Empty;
             }
 
-            var context = new EngineContext(witClient, projectId, projectName, personalAccessToken, logger);
+            var context = new EngineContext(witClient, projectName, personalAccessToken, logger);
             var store = new WorkItemStore(context);
             var self = store.GetWorkItem(workItemId);
             logger.WriteInfo($"Initial WorkItem {workItemId} retrieved from {witClient.BaseAddress}");
