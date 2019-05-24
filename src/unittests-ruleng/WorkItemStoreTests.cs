@@ -15,6 +15,7 @@ namespace unittests_ruleng
     public class WorkItemStoreTests
     {
         private const string CollectionUrl = "https://dev.azure.com/fake-organization";
+        private readonly Guid projectId = Guid.NewGuid();
         private const string ProjectName = "test-project";
         private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
 
@@ -30,7 +31,7 @@ namespace unittests_ruleng
                 Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(client, ProjectName, logger);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -60,7 +61,7 @@ namespace unittests_ruleng
                     }
                 });
 
-            var context = new EngineContext(client, ProjectName, logger);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -77,7 +78,7 @@ namespace unittests_ruleng
             var logger = Substitute.For<IAggregatorLogger>();
             var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             client.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
-            var context = new EngineContext(client, ProjectName, logger);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -96,7 +97,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
-            var context = new EngineContext(client, ProjectName, logger);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             int workItemId = 1;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
