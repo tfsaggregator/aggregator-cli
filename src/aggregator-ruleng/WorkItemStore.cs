@@ -172,10 +172,10 @@ namespace aggregator.Engine
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
-                var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName, 
-                                                                         item.WorkItemType, 
-                                                                         item.Changes, 
-                                                                         bypassRules: false, 
+                var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName,
+                                                                         item.WorkItemType,
+                                                                         item.Changes,
+                                                                         bypassRules: false,
                                                                          suppressNotifications: false);
                 batchRequests.Add(request);
             }
@@ -239,7 +239,7 @@ namespace aggregator.Engine
             int updated = _context.Tracker.ChangedWorkItems.Count();
 
             //TODO strange handling, better would be a redesign here: Add links as new Objects and do not create changes when they occur but when accessed to Changes property
-            List<WitBatchRequest> batchRequests = new List<WitBatchRequest>();
+            var batchRequests = new List<WitBatchRequest>();
             foreach (var item in _context.Tracker.NewWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
@@ -254,33 +254,25 @@ namespace aggregator.Engine
 
                 var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName,
                                                                          item.WorkItemType,
-                                                                         document, 
+                                                                         document,
                                                                          bypassRules: false,
                                                                          suppressNotifications: false);
                 batchRequests.Add(request);
             }
-            var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
 
-            if (batchResponses.Any())
+            if (commit)
             {
-                var realIds = _context.Tracker.NewWorkItems
-                                      .Zip(batchResponses, (item, response) =>
-                                                           {
-                                                               var oldId = item.Id.Value;
-                                                               var newId = response.ParseBody<WorkItem>().Id.Value;
+                var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
 
-                                                               //TODO oldId should be known by item, and not needed to be passed as parameter
-                                                               item.ReplaceIdAndResetChanges(oldId, newId);
-                                                               return new { oldId, newId };
-                                                           })
-                                      .ToDictionary(kvp => kvp.oldId, kvp => kvp.newId);
-
-                foreach (var item in _context.Tracker.ChangedWorkItems)
+                if (batchResponses.Any())
                 {
-                    item.RemapIdReferences(realIds);
+                    UpdateIdsInRelations(batchResponses);
                 }
             }
-
+            else
+            {
+                _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
+            }
 
             batchRequests.Clear();
             var allWorkItems = _context.Tracker.NewWorkItems.Concat(_context.Tracker.ChangedWorkItems);
@@ -288,23 +280,51 @@ namespace aggregator.Engine
             {
                 var changes = item.Changes
                                   .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test);
-                if (changes.Any())
+                if (!changes.Any())
                 {
-                    _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
-
-                    var request = _context.Client.CreateWorkItemBatchRequest(item.Id.Value,
-                                                                             item.Changes,
-                                                                             bypassRules: false,
-                                                                             suppressNotifications: false);
-                    batchRequests.Add(request);
+                    continue;
                 }
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
 
-
+                var request = _context.Client.CreateWorkItemBatchRequest(item.Id.Value,
+                                                                         item.Changes,
+                                                                         bypassRules: false,
+                                                                         suppressNotifications: false);
+                batchRequests.Add(request);
             }
 
-            await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+            if (commit)
+            {
+                await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
+            }
 
             return (created, updated);
+        }
+
+        private void UpdateIdsInRelations(IEnumerable<WitBatchResponse> batchResponses)
+        {
+            var realIds = _context.Tracker
+                                  .NewWorkItems
+                                  // the response order matches the request order
+                                  .Zip(batchResponses, (item, response) =>
+                                  {
+                                      var oldId = item.Id.Value;
+                                      var newId = response.ParseBody<WorkItem>().Id.Value;
+
+                                      //TODO oldId should be known by item, and not needed to be passed as parameter
+                                      item.ReplaceIdAndResetChanges(oldId, newId);
+                                      return new {oldId, newId};
+                                  })
+                                  .ToDictionary(kvp => kvp.oldId, kvp => kvp.newId);
+
+            foreach (var item in _context.Tracker.ChangedWorkItems)
+            {
+                item.RemapIdReferences(realIds);
+            }
         }
     }
 }
