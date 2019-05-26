@@ -8,6 +8,11 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <CodeAnalysisRuleSet>aggregator-ruleng.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <CodeAnalysisRuleSet>aggregator-ruleng.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="SonarQube - aggregator-cli Sonar way" ToolsVersion="16.0">
+  <Include Path="..\.sonarlint\tfsaggregator_aggregator-clicsharp.ruleset" Action="Default" />
+</RuleSet>
