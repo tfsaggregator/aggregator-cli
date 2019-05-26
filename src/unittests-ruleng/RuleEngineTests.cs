@@ -22,7 +22,7 @@ namespace unittests_ruleng
         }
 
         [Fact]
-        public void GivenAnInvaildRule_WhenTheRuleIsVerified_ThenTheResult_ShouldNotBeSuccessfull()
+        public void GivenAnInvalidRule_WhenTheRuleIsVerified_ThenTheResult_ShouldNotBeSuccessfull()
         {
             //Given
             var engine = new RuleEngine(Substitute.For<IAggregatorLogger>(), new [] { "(" }, SaveMode.Batch, true);
