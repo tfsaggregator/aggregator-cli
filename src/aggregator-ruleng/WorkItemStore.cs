@@ -42,12 +42,10 @@ namespace aggregator.Engine
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
         {
-            string idList = ids.Aggregate("", (s, i) => s += FormattableString.Invariant($",{i}"));
-            _context.Logger.WriteVerbose($"Getting workitems {idList.Substring(1)}");
+            _context.Logger.WriteVerbose($"Getting workitems {ids.ToSeparatedString()}");
             return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
             {
-                string idList2 = workItemIds.Aggregate("", (s, i) => s += FormattableString.Invariant($",{i}"));
-                _context.Logger.WriteInfo($"Loading workitems {idList2.Substring(1)}");
+                _context.Logger.WriteInfo($"Loading workitems {workItemIds.ToSeparatedString()}");
                 var items = _context.Client.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
                 return items.ConvertAll(i => new WorkItemWrapper(_context, i));
             });
