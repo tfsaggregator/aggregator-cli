@@ -2,9 +2,11 @@ using System;
 
 using Xunit;
 using Xunit.Abstractions;
+using XUnitPriorityOrderer;
 
 namespace integrationtests.cli
 {
+    [TestCaseOrderer(CasePriorityOrderer.TypeName, CasePriorityOrderer.AssembyName)]
     public class AddRuleTests : End2EndScenarioBase
     {
         public AddRuleTests(ITestOutputHelper output)
@@ -13,7 +15,20 @@ namespace integrationtests.cli
             // does nothing
         }
 
-        [Fact]
+        [Fact, Order(1)]
+        void Logon()
+        {
+            (int rc, string output) = RunAggregatorCommand(
+                $"logon.azure --subscription {TestLogonData.SubscriptionId} --client {TestLogonData.ClientId} --password {TestLogonData.ClientSecret} --tenant {TestLogonData.TenantId}");
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+            (int rc2, string output2) = RunAggregatorCommand(
+                $"logon.ado --url {TestLogonData.DevOpsUrl} --mode PAT --token {TestLogonData.PAT}");
+            Assert.Equal(0, rc2);
+            Assert.DoesNotContain("] Failed!", output2);
+        }
+
+        [Fact, Order(2)]
         public void GivenAnInvalidRuleFile_WhenAddingThisRule_ThenTheProcessing_ShouldBeAborted()
         {
             //Given

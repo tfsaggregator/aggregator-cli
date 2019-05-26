@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 
 namespace integrationtests.cli
 {
@@ -8,10 +10,10 @@ namespace integrationtests.cli
         {
             dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(File.ReadAllText(filename));
 
-            Subscription = data.subscription;
+            SubscriptionId = data.subscription;
             ClientId = data.client;
-            ClientPassword = data.password;
-            Tenant=data.tenant;
+            ClientSecret = data.password;
+            TenantId = data.tenant;
 
             Location = data.location;
             ResourceGroup = data.resourceGroup;
@@ -19,19 +21,32 @@ namespace integrationtests.cli
             DevOpsUrl = data.devopsUrl;
             ProjectName = data.projectName;
             PAT = data.pat;
+
+            UniqueSuffix = GetRandomString(8);
+        }
+
+        private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")
+        {
+            var randomGen = new Random((int)DateTime.Now.Ticks);
+            return new string(
+                Enumerable.Range(0, size)
+                .Select(x => allowedChars[randomGen.Next(0, allowedChars.Length)])
+                .ToArray()
+                );
         }
 
         // Azure Service Principal
-        public string Subscription { get; private set; }
-        public string ClientId { get; private set; }
-        public string ClientPassword { get; private set; }
-        public string Tenant { get; private set; }
+        public string SubscriptionId { get; }
+        public string ClientId { get; }
+        public string ClientSecret { get; }
+        public string TenantId { get; }
         // Azure Resources
-        public string Location { get; private set; }
-        public string ResourceGroup { get; private set; }
+        public string Location { get; }
+        public string ResourceGroup { get; }
         // Azure DevOps
-        public string DevOpsUrl { get; private set; }
-        public string ProjectName { get; private set; }
-        public string PAT { get; private set; }
+        public string DevOpsUrl { get; }
+        public string ProjectName { get; }
+        public string PAT { get; }
+        public string UniqueSuffix { get; }
     }
 }
