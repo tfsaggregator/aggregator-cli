@@ -6,6 +6,8 @@ namespace integrationtests.cli
 {
     public abstract class End2EndScenarioBase
     {
+        static protected TestLogonData TestLogonData = new TestLogonData("logon-data.json");
+
         private readonly ITestOutputHelper _output;
 
         protected End2EndScenarioBase(ITestOutputHelper output)

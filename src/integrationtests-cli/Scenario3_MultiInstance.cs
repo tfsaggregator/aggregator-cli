@@ -17,21 +17,15 @@ namespace integrationtests.cli
         {
         }
 
-        const string location = "westeurope";
-        const string resourceGroup = "test-aggregator45";
-        const string project = "WorkItemTracking";
-
         [Fact, Order(1)]
         void Logon()
         {
-            dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(File.ReadAllText("logon-data.json"));
-
             (int rc, string output) = RunAggregatorCommand(
-                $"logon.azure --subscription {data.subscription} --client {data.client} --password {data.password} --tenant {data.tenant}");
+                $"logon.azure --subscription {TestLogonData.Subscription} --client {TestLogonData.ClientId} --password {TestLogonData.ClientPassword} --tenant {TestLogonData.Tenant}");
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
             (int rc2, string output2) = RunAggregatorCommand(
-                $"logon.ado --url {data.devopsUrl} --mode PAT --token {data.pat}");
+                $"logon.ado --url {TestLogonData.DevOpsUrl} --mode PAT --token {TestLogonData.PAT}");
             Assert.Equal(0, rc2);
             Assert.DoesNotContain("] Failed!", output2);
         }
@@ -41,7 +35,7 @@ namespace integrationtests.cli
         [InlineData("my54")]
         void InstallInstances(string instance)
         {
-            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {resourceGroup} --location {location}");
+            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -50,7 +44,7 @@ namespace integrationtests.cli
         [Fact, Order(3)]
         void ListInstances()
         {
-            (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {resourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(0, rc);
             Assert.Contains("Instance my45", output);
@@ -62,7 +56,7 @@ namespace integrationtests.cli
         [InlineData("my54", "test5")]
         void AddRules(string instance, string rule)
         {
-            (int rc, string output) = RunAggregatorCommand($"add.rule --instance {instance} --resourceGroup {resourceGroup} --name {rule} --file {rule}.rule");
+            (int rc, string output) = RunAggregatorCommand($"add.rule --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --name {rule} --file {rule}.rule");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -73,7 +67,7 @@ namespace integrationtests.cli
         [InlineData("my54", "test5")]
         void ListRules(string instance, string rule)
         {
-            (int rc, string output) = RunAggregatorCommand($"list.rules --instance {instance} --resourceGroup {resourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.rules --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(0, rc);
             Assert.Contains($"Rule {instance}/{rule}", output);
@@ -85,7 +79,7 @@ namespace integrationtests.cli
         [InlineData("my54", "test5")]
         void MapRules(string instance, string rule)
         {
-            (int rc, string output) = RunAggregatorCommand($"map.rule --project {project} --event workitem.created --instance {instance} --resourceGroup {resourceGroup} --rule {rule}");
+            (int rc, string output) = RunAggregatorCommand($"map.rule --project {TestLogonData.ProjectName} --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -96,7 +90,7 @@ namespace integrationtests.cli
         [InlineData("my54", "test5")]
         void ListMappings(string instance, string rule)
         {
-            (int rc, string output) = RunAggregatorCommand($"list.mappings --instance {instance} --resourceGroup {resourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.mappings --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(0, rc);
             Assert.Contains($"invokes rule {instance}/{rule}", output);
@@ -107,7 +101,7 @@ namespace integrationtests.cli
         [InlineData("my45")]
         void UninstallInstances(string instance)
         {
-            (int rc, string output) = RunAggregatorCommand($"uninstall.instance --name {instance} --resourceGroup {resourceGroup} --location {location}");
+            (int rc, string output) = RunAggregatorCommand($"uninstall.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -116,7 +110,7 @@ namespace integrationtests.cli
         [Fact, Order(9)]
         void ListInstancesAfterUninstall()
         {
-            (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {resourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("Instance my45", output);
@@ -127,7 +121,7 @@ namespace integrationtests.cli
         [InlineData("my54", "test5")]
         void UnmapRules(string instance, string rule)
         {
-            (int rc, string output) = RunAggregatorCommand($"unmap.rule --project {project} --event workitem.created --instance {instance} --resourceGroup {resourceGroup} --rule {rule}");
+            (int rc, string output) = RunAggregatorCommand($"unmap.rule --project {TestLogonData.ProjectName} --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
