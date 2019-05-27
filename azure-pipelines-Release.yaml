@@ -35,8 +35,13 @@ steps:
   inputs:
     projects: 'src/aggregator-cli.sln'
 
+- task: DownloadSecureFile@1
+  displayName: 'Get test configuration data'
+  inputs:
+    secureFile: logon-data.json
+
 - task: DotNetCoreCLI@2
-  displayName: 'dotnet test'
+  displayName: 'dotnet test (All)'
   inputs:
     command: test
     projects: 'src/**/*test*.csproj'

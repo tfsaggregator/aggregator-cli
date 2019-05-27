@@ -6,7 +6,9 @@ namespace integrationtests.cli
 {
     public abstract class End2EndScenarioBase
     {
-        static protected TestLogonData TestLogonData = new TestLogonData("logon-data.json");
+        static protected TestLogonData TestLogonData = new TestLogonData(
+            Environment.GetEnvironmentVariable("DOWNLOADSECUREFILE_SECUREFILEPATH")
+            ?? "logon-data.json");
 
         private readonly ITestOutputHelper _output;
 

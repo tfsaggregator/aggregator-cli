@@ -1,6 +1,7 @@
 # aggregator-cli
 
-[![Build status: master](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/Aggregator3-CI?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=21)
+[![Build Status: CI](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/aggregator-cli-CI?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=24&branchName=master)
+[![Build Status: Release](https://dev.azure.com/TfsAggregator/Aggregator3/_apis/build/status/aggregator-cli-release?branchName=master)](https://dev.azure.com/TfsAggregator/Aggregator3/_build/latest?definitionId=23&branchName=master)
 
 This is the successor to renowned TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
