@@ -1,0 +1,47 @@
+name: aggregator-cli-CI
+
+pool:
+  vmImage: vs2017-win2016
+
+trigger:
+  batch: true
+  paths:
+    include:
+    - src/*
+
+pr:
+  paths:
+    include:
+    - src/*
+
+steps:
+- task: DeleteFiles@1
+  displayName: 'Delete Directory.Build.targets from src/aggregator-function'
+  inputs:
+    SourceFolder: 'src/aggregator-function'
+    Contents: Directory.Build.targets
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: 'src/aggregator-cli.sln'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
+  inputs:
+    projects: 'src/aggregator-cli.sln'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test (Unit)'
+  inputs:
+    command: test
+    projects: 'src/**/*unittest*.csproj'
+    condition: "and(succeeded(), ne(variables['Build.Reason'], 'PullRequest')"
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test (All)'
+  inputs:
+    command: test
+    projects: 'src/**/*test*.csproj'
+    condition: "and(succeeded(), eq(variables['Build.Reason'], 'PullRequest')"

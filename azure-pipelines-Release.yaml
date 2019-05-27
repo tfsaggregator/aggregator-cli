@@ -1,27 +1,9 @@
+name: aggregator-cli-release
+
 pool:
   vmImage: vs2017-win2016
 
-trigger:
-  batch: true
-  branches:
-    include:
-    - master
-    - releases/*
-  tags:
-    include:
-    - v*
-  paths:
-    include:
-    - src/*
-
-pr:
-  autoCancel: false
-  branches:
-    include:
-    - master
-  paths:
-    include:
-    - src/*
+trigger: none
 
 steps:
 - task: DeleteFiles@1
@@ -57,7 +39,7 @@ steps:
   displayName: 'dotnet test'
   inputs:
     command: test
-    projects: 'src/**/*unittest*.csproj'
+    projects: 'src/**/*test*.csproj'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet publish FunctionRuntime and zip it'
