@@ -175,7 +175,7 @@ namespace aggregator.cli
             var ruleSubs = subscriptions
                 // TODO can we trust this equality?
                 // && s.ActionDescription == $"To host {instance.DnsHostName}"
-                .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
+                .Where(s => s.ConsumerInputs.GetValue("url","").StartsWith(
                     instance.FunctionAppUrl));
             if (@event != "*")
             {
@@ -195,7 +195,7 @@ namespace aggregator.cli
             if (rule != "*")
             {
                 ruleSubs = ruleSubs
-                .Where(s => s.ConsumerInputs["url"].ToString().StartsWith(
+                .Where(s => s.ConsumerInputs.GetValue("url", "").StartsWith(
                     AggregatorRules.GetInvocationUrl(instance, rule)));
             }
 

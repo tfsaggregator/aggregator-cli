@@ -155,7 +155,7 @@ The name of the work item type.
 ## Fields
 `object this[string field]`
 Read-write access to non-core fields.
-Must use reference name, like _System.Title_, instead of language specific, like _Titolo_ or _Titel_.
+Must use reference name, like _System.Title_, instead of language specific, like _Titolo_, _Titel_ or _Title_.
 
 
 ## Status properties
@@ -268,7 +268,7 @@ Represents a User identity. Use mostly as a read-only object. Use the `DisplayNa
 
 `string ImageUrl` Read-only; 
 
-`bool Inactive` Read-only; `true` if 
+`bool Inactive` Read-only; `true` if account is not active.
 
 `bool IsAadIdentity`
 

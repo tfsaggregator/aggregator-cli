@@ -53,7 +53,11 @@ namespace aggregator.cli
             }
             catch (Exception ex)
             {
-                Logger.WriteError(ex.Message);
+                Logger.WriteError(
+                    ex.InnerException == null
+                    ? ex.Message
+                    : ex.InnerException.Message
+                    );
                 return 99;
             }
         }
