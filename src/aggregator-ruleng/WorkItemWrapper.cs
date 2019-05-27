@@ -44,6 +44,7 @@ namespace aggregator.Engine
             }
         }
 
+        //TODO Fields null, and does not work with pseudo Url created in WorkItemStore.NewWorkItem, delete unused constructor
         public WorkItemWrapper(EngineContext context, string project, string type)
         {
             _context = context;

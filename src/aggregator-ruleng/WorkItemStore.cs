@@ -9,6 +9,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+
+
 namespace aggregator.Engine
 {
     public class WorkItemStore
@@ -118,7 +121,7 @@ namespace aggregator.Engine
                     _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
                     _ = await _context.Client.CreateWorkItemAsync(
                         item.Changes,
-                        _context.ProjectId,
+                        _context.ProjectName,
                         item.WorkItemType,
                         cancellationToken: cancellationToken
                     );
@@ -159,50 +162,31 @@ namespace aggregator.Engine
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
             // BUG this code won't work if there is a relation between a new (id<0) work item and an existing one (id>0): it is an API limit
 
-            const string ApiVersion = "api-version=4.1";
-
             int created = _context.Tracker.NewWorkItems.Count();
             int updated = _context.Tracker.ChangedWorkItems.Count();
 
-            string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
-
-            BatchRequest[] batchRequests = new BatchRequest[created + updated];
-            Dictionary<string, string> headers = new Dictionary<string, string>
-            {
-                { "Content-Type", "application/json-patch+json" }
-            };
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($":{_context.PersonalAccessToken}"));
-
-            int index = 0;
-
+            List<WitBatchRequest> batchRequests = new List<WitBatchRequest>();
             foreach (var item in _context.Tracker.NewWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
-                batchRequests[index++] = new BatchRequest
-                {
-                    method = "PATCH",
-                    uri = $"/{item.TeamProject}/_apis/wit/workitems/${item.WorkItemType}?{ApiVersion}",
-                    headers = headers,
-                    body = item.Changes
-                        .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
-                        .ToArray()
-                };
+                var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName,
+                                                                         item.WorkItemType,
+                                                                         item.Changes,
+                                                                         bypassRules: false,
+                                                                         suppressNotifications: false);
+                batchRequests.Add(request);
             }
 
             foreach (var item in _context.Tracker.ChangedWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {item.TeamProject}");
 
-                batchRequests[index++] = new BatchRequest
-                {
-                    method = "PATCH",
-                    uri = FormattableString.Invariant($"/_apis/wit/workitems/{item.Id.Value}?{ApiVersion}"),
-                    headers = headers,
-                    body = item.Changes
-                        .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
-                        .ToArray()
-                };
+                var request = _context.Client.CreateWorkItemBatchRequest(item.Id.Value,
+                                                                         item.Changes,
+                                                                         bypassRules: false,
+                                                                         suppressNotifications: false);
+                batchRequests.Add(request);
             }
 
             var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
@@ -211,44 +195,22 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                using (var client = HttpClientFactory.Create())
+                var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
+                var hasFailures = failedResponses.Any();
+
+                if (hasFailures)
                 {
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                    string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
+                    _context.Logger.WriteVerbose(stringResponse);
 
-                    var batchRequest = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                    var method = new HttpMethod("POST");
-
-                    // send the request
-                    var request = new HttpRequestMessage(method, $"{baseUriString}/_apis/wit/$batch?{ApiVersion}") { Content = batchRequest };
-                    var response = await client.SendAsync(request, cancellationToken);
-
-                    if (response.IsSuccessStatusCode)
+                    foreach (var batchResponse in failedResponses)
                     {
-                        WorkItemBatchPostResponse batchResponse = await response.Content.ReadAsAsync<WorkItemBatchPostResponse>(cancellationToken);
-                        string stringResponse = JsonConvert.SerializeObject(batchResponse, Formatting.Indented);
-                        _context.Logger.WriteVerbose(stringResponse);
-                        bool succeeded = true;
-                        foreach (var batchElement in batchResponse.values)
-                        {
-                            if (batchElement.code != 200)
-                            {
-                                _context.Logger.WriteError($"Save failed: {batchElement.body}");
-                                succeeded = false;
-                            }
-                        }
+                        _context.Logger.WriteError($"Save failed: {batchResponse.Body}");
+                    }
 
-                        if (!succeeded)
-                            throw new InvalidOperationException("Save failed.");
-                    }
-                    else
-                    {
-                        string stringResponse = await response.Content.ReadAsStringAsync();
-                        _context.Logger.WriteError($"Save failed: {stringResponse}");
-                        throw new InvalidOperationException($"Save failed: {response.ReasonPhrase}.");
-                    }
-                }//using
+                    throw new InvalidOperationException("Save failed.");
+                }
             }
             else
             {
@@ -257,90 +219,110 @@ namespace aggregator.Engine
 
             return (created, updated);
         }
+        private static bool IsSuccessStatusCode(int statusCode)
+        {
+            return (statusCode >= 200) && (statusCode <= 299);
+        }
 
+        //TODO no error handling here? SaveChanges_Batch has at least the DryRun support and error handling
+        //TODO Improve complex handling with ReplaceIdAndResetChanges and RemapIdReferences
         private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
             // The workitembatchupdate API has a huge limit:
             // it fails adding a relation between a new (id<0) work item and an existing one (id>0)
-            var proxy = new BatchProxy(_context, commit);
-
-            Dictionary<string, string> headers = new Dictionary<string, string>
-            {
-                { "Content-Type", "application/json-patch+json" }
-            };
 
             int created = _context.Tracker.NewWorkItems.Count();
             int updated = _context.Tracker.ChangedWorkItems.Count();
 
-            BatchRequest[] newWorkItemsBatchRequests = new BatchRequest[created];
-            int index = 0;
+            //TODO strange handling, better would be a redesign here: Add links as new Objects and do not create changes when they occur but when accessed to Changes property
+            var batchRequests = new List<WitBatchRequest>();
             foreach (var item in _context.Tracker.NewWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
-                newWorkItemsBatchRequests[index++] = new BatchRequest
-                {
-                    method = "PATCH",
-                    uri = $"/{item.TeamProject}/_apis/wit/workitems/${item.WorkItemType}?{proxy.ApiVersion}",
-                    headers = headers,
-                    body = item.Changes
-                        .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
-                        // remove relations as we might incour in API failure
-                        .Where(c => !string.Equals(c.Path, "/relations/-", StringComparison.Ordinal))
-                        .ToArray()
-                };
+                //TODO HACK better something like this: _context.Tracker.NewWorkItems.Where(wi => !wi.Relations.HasAdds(toNewItems: true))
+                var changesWithoutRelation = item.Changes
+                                                 .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test)
+                                                 // remove relations as we might incour in API failure
+                                                 .Where(c => !string.Equals(c.Path, "/relations/-", StringComparison.Ordinal));
+                var document = new JsonPatchDocument();
+                document.AddRange(changesWithoutRelation);
+
+                var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName,
+                                                                         item.WorkItemType,
+                                                                         document,
+                                                                         bypassRules: false,
+                                                                         suppressNotifications: false);
+                batchRequests.Add(request);
             }
 
-            var batchResponse = await proxy.InvokeAsync(newWorkItemsBatchRequests, cancellationToken);
-            if (batchResponse != null)
+            if (commit)
             {
-                _context.Logger.WriteVerbose($"Updating work item ids...");
-                // Fix back
-                var realIds = new Dictionary<int, int>();
-                index = 0;
-                foreach (var item in _context.Tracker.NewWorkItems)
-                {
-                    int oldId = item.Id.Value;
-                    // the response order matches the request order
-                    string createdWorkitemJson = batchResponse.values[index++].body;
-                    dynamic createdWorkitemResult = JsonConvert.DeserializeObject(createdWorkitemJson);
-                    int newId = createdWorkitemResult.id;
-                    item.ReplaceIdAndResetChanges(item.Id.Value, newId);
-                    realIds.Add(oldId, newId);
-                }
+                var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
 
-                foreach (var item in _context.Tracker.ChangedWorkItems)
+                if (batchResponses.Any())
                 {
-                    item.RemapIdReferences(realIds);
+                    UpdateIdsInRelations(batchResponses);
                 }
             }
+            else
+            {
+                _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
+            }
 
-            var batchRequests = new List<BatchRequest>();
+            batchRequests.Clear();
             var allWorkItems = _context.Tracker.NewWorkItems.Concat(_context.Tracker.ChangedWorkItems);
             foreach (var item in allWorkItems)
             {
                 var changes = item.Changes
-                        .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test);
-                if (changes.Any())
+                                  .Where(c => c.Operation != Microsoft.VisualStudio.Services.WebApi.Patch.Operation.Test);
+                if (!changes.Any())
                 {
-                    _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
-
-                    batchRequests.Add(new BatchRequest
-                    {
-                        method = "PATCH",
-                        uri = FormattableString.Invariant($"/_apis/wit/workitems/{item.Id.Value}?{proxy.ApiVersion}"),
-                        headers = headers,
-                        body = changes.ToArray()
-                    });
+                    continue;
                 }
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
+
+                var request = _context.Client.CreateWorkItemBatchRequest(item.Id.Value,
+                                                                         item.Changes,
+                                                                         bypassRules: false,
+                                                                         suppressNotifications: false);
+                batchRequests.Add(request);
             }
 
-            // return value not used, we are fine if no exception is thrown
-            await proxy.InvokeAsync(batchRequests.ToArray(), cancellationToken);
+            if (commit)
+            {
+                await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
+            }
 
             return (created, updated);
+        }
+
+        private void UpdateIdsInRelations(IEnumerable<WitBatchResponse> batchResponses)
+        {
+            var realIds = _context.Tracker
+                                  .NewWorkItems
+                                  // the response order matches the request order
+                                  .Zip(batchResponses, (item, response) =>
+                                  {
+                                      var oldId = item.Id.Value;
+                                      var newId = response.ParseBody<WorkItem>().Id.Value;
+
+                                      //TODO oldId should be known by item, and not needed to be passed as parameter
+                                      item.ReplaceIdAndResetChanges(oldId, newId);
+                                      return new {oldId, newId};
+                                  })
+                                  .ToDictionary(kvp => kvp.oldId, kvp => kvp.newId);
+
+            foreach (var item in _context.Tracker.ChangedWorkItems)
+            {
+                item.RemapIdReferences(realIds);
+            }
         }
     }
 }
