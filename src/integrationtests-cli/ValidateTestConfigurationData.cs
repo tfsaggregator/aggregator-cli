@@ -10,7 +10,9 @@ namespace integrationtests.cli
         [Fact]
         public void ValidateTestConfigurationData()
         {
-            var data = new TestLogonData("logon-data.json");
+            var data = new TestLogonData(
+                Environment.GetEnvironmentVariable("DOWNLOADSECUREFILE_SECUREFILEPATH")
+                ?? "logon-data.json");
 
             Assert.NotEqual("guid", data.SubscriptionId);
             Assert.NotEqual("guid", data.ClientId);
