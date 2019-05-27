@@ -17,14 +17,13 @@ namespace unittests_ruleng
         private const string CollectionUrl = "https://dev.azure.com/fake-organization";
         private readonly Guid projectId = Guid.NewGuid();
         private const string ProjectName = "test-project";
-        private const string PersonalAccessToken = "***personalAccessToken***";
         private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
 
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
+            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             int workItemId = 42;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
@@ -32,7 +31,7 @@ namespace unittests_ruleng
                 Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -45,7 +44,7 @@ namespace unittests_ruleng
         public void GetWorkItems_ByIds_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
+            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var ids = new [] { 42, 99 };
             client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
                 .ReturnsForAnyArgs(new List<WorkItem>
@@ -62,7 +61,7 @@ namespace unittests_ruleng
                     }
                 });
 
-            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -77,8 +76,9 @@ namespace unittests_ruleng
         public async Task NewWorkItem_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
-            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
+            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
+            client.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -96,8 +96,8 @@ namespace unittests_ruleng
         public void AddChild_Succeeds()
         {
             var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClientBase>(new Uri(CollectionUrl), null);
-            var context = new EngineContext(client, projectId, ProjectName, PersonalAccessToken, logger);
+            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
+            var context = new EngineContext(client, projectId, ProjectName, logger);
             int workItemId = 1;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
