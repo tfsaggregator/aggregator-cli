@@ -42,11 +42,11 @@ steps:
   displayName: 'Get test configuration data'
   inputs:
     secureFile: logon-data.json
-    condition: "and(succeeded(), eq(variables['Build.Reason'], 'PullRequest')"
+    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest')
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test (Integration)'
   inputs:
     command: test
     projects: 'src/**/*integrationtest*.csproj'
-    condition: "and(succeeded(), eq(variables['Build.Reason'], 'PullRequest')"
+    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest')
