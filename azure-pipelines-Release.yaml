@@ -89,7 +89,6 @@ stages:
     steps:
     - task: marcelo-formentao.github-tools.github-release-publish-task.GitHubReleasePublish@1
       displayName: 'Create or Modify GitHub Release'
-      enabled: false
       inputs:
         githubEndpoint: tfsaggregator
         githubRepository: 'tfsaggregator/aggregator-cli'
