@@ -32,12 +32,12 @@ namespace aggregator.cli
             var filteredSubs = instance != null
                     ? subscriptions.Where(s
                         => s.PublisherId == DevOpsEvents.PublisherId
-                        && s.ConsumerInputs["url"].ToString().StartsWith(
+                        && s.ConsumerInputs.GetValue("url","").StartsWith(
                             instance.FunctionAppUrl))
                     : subscriptions.Where(s
                         => s.PublisherId == DevOpsEvents.PublisherId
                         // HACK
-                        && s.ConsumerInputs["url"].ToString().IndexOf("aggregator.azurewebsites.net") > 8);
+                        && s.ConsumerInputs.GetValue("url","").IndexOf("aggregator.azurewebsites.net") > 8);
             var projectClient = devops.GetClient<ProjectHttpClient>();
             var projects = await projectClient.GetProjects();
             var projectsDict = projects.ToDictionary(p => p.Id);
@@ -53,7 +53,7 @@ namespace aggregator.cli
                     continue;
                 }
                 // HACK need to factor the URL<->rule_name
-                string ruleUrl = subscription.ConsumerInputs["url"].ToString();
+                string ruleUrl = subscription.ConsumerInputs.GetValue("url","/");
                 string ruleName = ruleUrl.Substring(ruleUrl.LastIndexOf('/'));
                 string ruleFullName = InstanceName.FromFunctionAppUrl(ruleUrl).PlainName + ruleName;
                 result.Add(
