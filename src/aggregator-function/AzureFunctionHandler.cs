@@ -7,6 +7,9 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
+using Newtonsoft.Json.Linq;
 using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 
 namespace aggregator
@@ -56,12 +59,12 @@ namespace aggregator
                 return resp;
             }
 
-            dynamic data = JsonConvert.DeserializeObject(jsonContent);
-            string eventType = data.eventType;
+            var data = JsonConvert.DeserializeObject<WebHookEvent>(jsonContent);
+            string eventType = data.EventType;
 
             // sanity check
             if (!DevOpsEvents.IsValidEvent(eventType)
-                || data.publisherId != DevOpsEvents.PublisherId)
+                || data.PublisherId != DevOpsEvents.PublisherId)
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
                 {
@@ -69,8 +72,19 @@ namespace aggregator
                 });
             }
 
-            string resourceUrl = data.resource.url;
-            if (resourceUrl.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
+            var resourceObject = data.Resource as JObject;
+            WorkItem workItem;
+            if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventType)
+            {
+                workItem = resourceObject.GetValue("revision").ToObject<WorkItem>();
+            }
+            else
+            {
+                workItem = resourceObject.ToObject<WorkItem>();
+            }
+
+            string collectionUrl = data.ResourceContainers["collection"].BaseUrl;
+            if (collectionUrl.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
             {
                 var resp = req.CreateResponse(HttpStatusCode.OK, new
                 {
@@ -93,7 +107,8 @@ namespace aggregator
             var wrapper = new RuleWrapper(configuration, logger, _context.FunctionName, _context.FunctionDirectory);
             try
             {
-                string execResult = await wrapper.ExecuteAsync(data, cancellationToken);
+                Guid teamProjectId = data.ResourceContainers["project"].Id;
+                string execResult = await wrapper.ExecuteAsync(new Uri(collectionUrl), teamProjectId, workItem, cancellationToken);
 
                 if (string.IsNullOrEmpty(execResult))
                 {

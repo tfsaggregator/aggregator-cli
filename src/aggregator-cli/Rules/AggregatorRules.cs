@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
@@ -336,7 +337,8 @@ namespace aggregator.cli
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
-                    string result = await engine.ExecuteAsync(teamProjectId, teamProjectName, workItemId, witClient, cancellationToken);
+                    var workItem = await witClient.GetWorkItemAsync(teamProjectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
+                    string result = await engine.ExecuteAsync(teamProjectId, teamProjectName, workItem, witClient, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;

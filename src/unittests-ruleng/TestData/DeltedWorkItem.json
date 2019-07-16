@@ -1,0 +1,27 @@
+﻿{
+    "id": 3343278,
+    "rev": 2,
+    "fields": {
+        "System.AreaPath": "ExampleProject\\Area 1",
+        "System.TeamProject": "ExampleProject",
+        "System.IterationPath": "ExampleProject\\Path 1",
+        "System.WorkItemType": "Epic",
+        "System.State": "New",
+        "System.Reason": "New",
+        "System.Title": "A Title",
+        "Microsoft.VSTS.Common.StateChangeDate": "2019-03-22T11:19:55.45Z",
+        "Microsoft.VSTS.Common.Priority": 2
+    },
+    "_links": {
+        "self": {
+            "href": "https://dev.azure.com/fake-organization/_apis/wit/recyclebin/3343278"
+        },
+        "workItemType": {
+            "href": "https://dev.azure.com/fake-organization/14a774bf-8f3b-4780-8e5b-c2490de7db54/_apis/wit/workItemTypes/Epic"
+        },
+        "fields": {
+            "href": "https://dev.azure.com/fake-organization/_apis/wit/fields"
+        }
+    },
+    "url": "https://dev.azure.com/fake-organization/_apis/wit/recyclebin/3343278"
+}

@@ -4,7 +4,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator
@@ -27,18 +29,8 @@ namespace aggregator
             this.functionDirectory = functionDirectory;
         }
 
-        internal async Task<string> ExecuteAsync(dynamic data, CancellationToken cancellationToken)
+        internal async Task<string> ExecuteAsync(Uri collectionUri, Guid teamProjectId, WorkItem workItem, CancellationToken cancellationToken)
         {
-            string collectionUrl = data.resourceContainers.collection.baseUrl;
-            string eventType = data.eventType;
-            int workItemId = (eventType != "workitem.updated")
-                ? data.resource.id
-                : data.resource.workItemId;
-            Guid teamProjectId = data.resourceContainers.project.id;
-            string teamProjectName = (eventType != "workitem.updated")
-                ? data.resource.fields["System.TeamProject"]
-                : data.resource.revision.fields["System.TeamProject"];
-
             logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.DevOpsTokenType}...");
             var clientCredentials = default(VssCredentials);
             if (configuration.DevOpsTokenType == DevOpsTokenType.PAT)
@@ -54,7 +46,7 @@ namespace aggregator
             cancellationToken.ThrowIfCancellationRequested();
 
             // TODO improve from https://github.com/Microsoft/vsts-work-item-migrator
-            using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
+            using (var devops = new VssConnection(collectionUri, clientCredentials))
             {
                 await devops.ConnectAsync(cancellationToken);
                 logger.WriteInfo($"Connected to Azure DevOps");
@@ -77,7 +69,7 @@ namespace aggregator
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
-                    return await engine.ExecuteAsync(teamProjectId, teamProjectName, workItemId, witClient, cancellationToken);
+                    return await engine.ExecuteAsync(teamProjectId, workItem.GetTeamProject(), workItem, witClient, cancellationToken);
                 }
             }
         }

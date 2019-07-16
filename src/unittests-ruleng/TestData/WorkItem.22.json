@@ -1,0 +1,24 @@
+﻿{
+  "id": 22,
+  "rev": 2,
+  "fields": {
+    "System.AreaPath": "ExampleProject\\Area 1",
+    "System.TeamProject": "ExampleProject",
+    "System.IterationPath": "ExampleProject\\Path 1",
+    "System.WorkItemType": "Bug",
+    "System.State": "New",
+    "System.Reason": "New",
+    "System.Title": "Hello",
+    "Microsoft.VSTS.Common.StateChangeDate": "2019-03-22T11:19:55.45Z",
+    "Microsoft.VSTS.Common.Priority": 2
+  },
+  "_links": {
+    "self": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/revisions/2"
+    },
+    "workItemRevisions": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/revisions"
+    }
+  },
+  "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/revisions/2"
+}

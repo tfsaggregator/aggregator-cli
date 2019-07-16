@@ -40,8 +40,7 @@ namespace aggregator.Engine
             {
                 throw new InvalidOperationException($"Work item {workItemWrapper.Id} is already tracked");
             }
-            var t = new TrackedWrapper(workItemWrapper.Id.Value, workItemWrapper);
-            tracked.Add(workItemWrapper.Id, t);
+            TrackNew(workItemWrapper);
         }
 
         internal void TrackNew(WorkItemWrapper workItemWrapper)
@@ -51,9 +50,9 @@ namespace aggregator.Engine
         }
 
         internal void TrackRevision(WorkItemWrapper workItemWrapper)
-        {           
+        {
             if (tracked.TryGetValue(workItemWrapper.Id, out var value))
-            {                
+            {
                 value.Revisions.Add(workItemWrapper.Rev, workItemWrapper);
             }
             else
@@ -83,9 +82,7 @@ namespace aggregator.Engine
             // groups[false] is the set of new IDs
 
             var inMemory = tracked
-                .Where(w => groups.ContainsKey(true)
-                        ? groups[true].Contains(w.Key)
-                        : false)
+                .Where(w => groups.ContainsKey(true) && groups[true].Contains(w.Key))
                 .Select(w => w.Value.Current);
 
             if (groups.ContainsKey(false))
@@ -105,14 +102,18 @@ namespace aggregator.Engine
             return tracked.ContainsKey(workItemWrapper.Id);
         }
 
-        internal IEnumerable<WorkItemWrapper> NewWorkItems
-            => tracked
-            .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsNew)
-            .Select(w=>w.Value.Current);
 
-        internal IEnumerable<WorkItemWrapper> ChangedWorkItems
-            => tracked
-            .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsDirty && !w.Value.Current.IsNew)
-            .Select(w => w.Value.Current);
+        internal (WorkItemWrapper[] Created, WorkItemWrapper[] Updated, WorkItemWrapper[] Deleted, WorkItemWrapper[] Restored) GetChangedWorkItems()
+        {
+            var trackedChanged = tracked
+                .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsDirty && !w.Value.Current.IsNew)
+                .ToList();
+
+            var @new     = tracked.Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsNew).Select(w => w.Value.Current).ToArray();
+            var updated  = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.NoChange ).Select(w => w.Value.Current).ToArray();
+            var deleted  = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.ToDelete ).Select(w => w.Value.Current).ToArray();
+            var restored = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.ToRestore).Select(w => w.Value.Current).ToArray();
+            return (@new, updated, deleted, restored);
+        }
     }
 }

@@ -1,0 +1,13 @@
+﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Common;
+
+
+namespace aggregator {
+    public static class Extensions
+    {
+        public static string GetTeamProject(this WorkItem workItem)
+        {
+            return workItem.Fields.GetCastedValueOrDefault("System.TeamProject", default(string));
+        }
+    }
+}
