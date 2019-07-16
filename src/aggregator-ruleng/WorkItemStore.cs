@@ -23,9 +23,8 @@ namespace aggregator.Engine
             _context = context;
         }
 
-        public WorkItemStore(EngineContext context, WorkItem workItem)
+        public WorkItemStore(EngineContext context, WorkItem workItem) : this(context)
         {
-            _context = context;
             //initialize tracker with initial work item
             _ = new WorkItemWrapper(_context, workItem);
         }
@@ -316,11 +315,14 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
-
-                if (batchResponses.Any())
+                if (batchRequests.Any())
                 {
-                    UpdateIdsInRelations(batchResponses);
+                    var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+
+                    if (batchResponses.Any())
+                    {
+                        UpdateIdsInRelations(batchResponses);
+                    }
                 }
 
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
@@ -351,7 +353,10 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                if (batchRequests.Any())
+                {
+                    var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                }
             }
             else
             {
