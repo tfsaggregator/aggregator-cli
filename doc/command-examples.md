@@ -20,7 +20,7 @@ Create a new instance -- and a new resource group -- in the West Europe region.
 install.instance --verbose --name my1 --location westeurope
 ```
 
-Create a new instance -- and a new resource group named myRG1 -- in the West Europe region.
+Create a new instance -- and a new resource group named myRG1 or re-use existing -- in the West Europe region.
 ```Batchfile
 install.instance --name my3 --resourceGroup myRG1 --location westeurope --requiredVersion latest
 ```
@@ -45,7 +45,7 @@ list.instances --resourceGroup myRG1
 
 
 ### Add Azure Functions (i.e. Aggregator Rules) to an existing Azure Function Application (i.e. an Aggregator Instance)
-Creates two rules
+Creates two rules where the file parameter is a local file relative to the working directory.
 ```Batchfile
 add.rule --verbose --instance my1 --name test1 --file test\test1.rule
 add.rule --verbose --instance my1 --name test2 --file test\test2.rule
