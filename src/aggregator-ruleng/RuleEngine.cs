@@ -107,14 +107,14 @@ namespace aggregator.Engine
         public EngineState State { get; private set; }
         public bool DryRun { get; }
 
-        public async Task<string> ExecuteAsync(Guid projectId, string projectName, WorkItem workItem, WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
+        public async Task<string> ExecuteAsync(Guid projectId, WorkItem workItem, WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
             if (State == EngineState.Error)
             {
                 return string.Empty;
             }
 
-            var context = new EngineContext(witClient, projectId, projectName, logger);
+            var context = new EngineContext(witClient, projectId, workItem.GetTeamProject(), logger);
             var store = new WorkItemStore(context, workItem);
             var self = store.GetWorkItem(workItem.Id.Value);
             logger.WriteInfo($"Initial WorkItem {self.Id} retrieved from {witClient.BaseAddress}");

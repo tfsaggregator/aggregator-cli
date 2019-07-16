@@ -21,12 +21,18 @@ namespace unittests_ruleng
         private readonly Guid projectId = Guid.NewGuid();
         private const string ProjectName = "test-project";
         private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
+        private WorkItemTrackingHttpClient client;
+        private IAggregatorLogger logger;
+
+        public WorkItemStoreTests()
+        {
+            logger = Substitute.For<IAggregatorLogger>();
+            client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
+        }
 
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             int workItemId = 42;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
@@ -46,8 +52,6 @@ namespace unittests_ruleng
         [Fact]
         public void GetWorkItems_ByIds_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var ids = new [] { 42, 99 };
             client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
                 .ReturnsForAnyArgs(new List<WorkItem>
@@ -78,8 +82,6 @@ namespace unittests_ruleng
         [Fact]
         public async Task NewWorkItem_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             client.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
             var context = new EngineContext(client, projectId, ProjectName, logger);
             var sut = new WorkItemStore(context);
@@ -98,8 +100,6 @@ namespace unittests_ruleng
         [Fact]
         public void AddChild_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var context = new EngineContext(client, projectId, ProjectName, logger);
             int workItemId = 1;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
@@ -139,8 +139,6 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteWorkItem_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var context = new EngineContext(client, projectId, ProjectName, logger);
             var workItem = ExampleTestData.Instance.WorkItem;
             int workItemId = workItem.Id.Value;
@@ -165,8 +163,6 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteAlreadyDeletedWorkItem_NoChange()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var context = new EngineContext(client, projectId, ProjectName, logger);
             var workItem = ExampleTestData.Instance.DeltedWorkItem;
             int workItemId = workItem.Id.Value;
@@ -191,8 +187,6 @@ namespace unittests_ruleng
         [Fact]
         public void RestoreNotDeletedWorkItem_NoChange()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var context = new EngineContext(client, projectId, ProjectName, logger);
             var workItem = ExampleTestData.Instance.WorkItem;
             int workItemId = workItem.Id.Value;

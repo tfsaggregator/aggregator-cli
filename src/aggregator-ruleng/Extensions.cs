@@ -2,7 +2,8 @@
 using Microsoft.VisualStudio.Services.Common;
 
 
-namespace aggregator {
+namespace aggregator.Engine
+{
     public static class Extensions
     {
         public static string GetTeamProject(this WorkItem workItem)

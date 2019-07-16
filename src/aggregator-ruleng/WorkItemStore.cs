@@ -175,7 +175,7 @@ namespace aggregator.Engine
             if (commit)
             {
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
-			}
+            }
             else if (workItems.Deleted.Any() || workItems.Restored.Any())
             {
                 string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id.Value));
@@ -273,6 +273,7 @@ namespace aggregator.Engine
 
             return (created, updated);
         }
+
         private static bool IsSuccessStatusCode(int statusCode)
         {
             return (statusCode >= 200) && (statusCode <= 299);

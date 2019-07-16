@@ -102,7 +102,6 @@ namespace aggregator.Engine
             return tracked.ContainsKey(workItemWrapper.Id);
         }
 
-
         internal (WorkItemWrapper[] Created, WorkItemWrapper[] Updated, WorkItemWrapper[] Deleted, WorkItemWrapper[] Restored) GetChangedWorkItems()
         {
             var trackedChanged = tracked

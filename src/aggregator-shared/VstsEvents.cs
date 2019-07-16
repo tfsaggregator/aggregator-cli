@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 
 namespace aggregator
 {
@@ -8,12 +9,12 @@ namespace aggregator
     public static class DevOpsEvents
     {
         // TODO this table should be visible in the help
-        static string[] validValues = new[] {
-            "workitem.created",
-            "workitem.deleted",
-            "workitem.restored",
-            "workitem.updated",
-            "workitem.commented"
+        static readonly string[] validValues = new[] {
+            ServiceHooksEventTypeConstants.WorkItemCreated,
+            ServiceHooksEventTypeConstants.WorkItemDeleted,
+            ServiceHooksEventTypeConstants.WorkItemRestored,
+            ServiceHooksEventTypeConstants.WorkItemUpdated,
+            ServiceHooksEventTypeConstants.WorkItemCommented,
         };
 
         public static bool IsValidEvent(string @event)
@@ -21,6 +22,6 @@ namespace aggregator
             return validValues.Contains(@event);
         }
 
-        public static string PublisherId => "tfs";
+        public static string PublisherId => ServiceHooksWebApiConstants.TfsPublisherId;
     }
 }

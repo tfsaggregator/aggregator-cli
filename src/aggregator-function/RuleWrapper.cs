@@ -69,7 +69,7 @@ namespace aggregator
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
-                    return await engine.ExecuteAsync(teamProjectId, workItem.GetTeamProject(), workItem, witClient, cancellationToken);
+                    return await engine.ExecuteAsync(teamProjectId, workItem, witClient, cancellationToken);
                 }
             }
         }
