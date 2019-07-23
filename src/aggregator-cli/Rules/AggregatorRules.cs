@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
@@ -318,14 +319,12 @@ namespace aggregator.cli
                 _logger.WriteInfo($"Connected to Azure DevOps");
 
                 Guid teamProjectId;
-                string teamProjectName;
                 using (var projectClient = devops.GetClient<ProjectHttpClient>())
                 {
                     _logger.WriteVerbose($"Reading Azure DevOps project data...");
                     var project = await projectClient.GetProject(projectName);
                     _logger.WriteInfo($"Project {projectName} data read.");
                     teamProjectId = project.Id;
-                    teamProjectName = project.Name;
                 }
 
                 using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
@@ -336,7 +335,8 @@ namespace aggregator.cli
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
-                    string result = await engine.ExecuteAsync(teamProjectId, teamProjectName, workItemId, witClient, cancellationToken);
+                    var workItem = await witClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
+                    string result = await engine.ExecuteAsync(teamProjectId, workItem, witClient, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;

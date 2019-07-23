@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace aggregator.Engine
 {
@@ -106,17 +107,17 @@ namespace aggregator.Engine
         public EngineState State { get; private set; }
         public bool DryRun { get; }
 
-        public async Task<string> ExecuteAsync(Guid projectId, string projectName, int workItemId, WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
+        public async Task<string> ExecuteAsync(Guid projectId, WorkItem workItem, WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
             if (State == EngineState.Error)
             {
                 return string.Empty;
             }
 
-            var context = new EngineContext(witClient, projectId, projectName, logger);
-            var store = new WorkItemStore(context);
-            var self = store.GetWorkItem(workItemId);
-            logger.WriteInfo($"Initial WorkItem {workItemId} retrieved from {witClient.BaseAddress}");
+            var context = new EngineContext(witClient, projectId, workItem.GetTeamProject(), logger);
+            var store = new WorkItemStore(context, workItem);
+            var self = store.GetWorkItem(workItem.Id.Value);
+            logger.WriteInfo($"Initial WorkItem {self.Id} retrieved from {witClient.BaseAddress}");
 
             var globals = new Globals
             {

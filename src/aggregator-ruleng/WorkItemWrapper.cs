@@ -29,6 +29,8 @@ namespace aggregator.Engine
                     Path = "/rev",
                     Value = item.Rev
                 });
+                //for simplify testing: item.Url can be null
+                IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id.Value}", StringComparison.OrdinalIgnoreCase) ?? false;
                 _context.Tracker.TrackExisting(this);
             }
             else
@@ -207,12 +209,12 @@ namespace aggregator.Engine
             get
             {
                  if (ParentLink != null && ParentLink != default(WorkItemRelationWrapper))
-                {
-                    var store = new WorkItemStore(_context);
-                    return store.GetWorkItem(ParentLink);
-                }
-                else
-                    return null;
+                 {
+                     var store = new WorkItemStore(_context);
+                     return store.GetWorkItem(ParentLink);
+                 }
+                 else
+                     return null;
             }
         }
 
@@ -382,17 +384,15 @@ namespace aggregator.Engine
             set { SetFieldValue(CoreFieldRefNames.Watermark, value); }
         }
 
-        public bool IsDeleted
-        {
-            get { return GetFieldValue<bool>(CoreFieldRefNames.IsDeleted); }
-            set { SetFieldValue(CoreFieldRefNames.IsDeleted, value); }
-        }
+        public bool IsDeleted { get; }
 
         public bool IsReadOnly { get; } = false;
 
         public bool IsNew => Id is TemporaryWorkItemId;
 
         public bool IsDirty { get; internal set; }
+
+        internal RecycleStatus RecycleStatus { get; set; } = RecycleStatus.NoChange;
 
         internal JsonPatchDocument Changes { get; } = new JsonPatchDocument();
 
@@ -490,5 +490,12 @@ namespace aggregator.Engine
                 }
             }
         }
+    }
+
+    internal enum RecycleStatus
+    {
+        NoChange,
+        ToDelete,
+        ToRestore,
     }
 }

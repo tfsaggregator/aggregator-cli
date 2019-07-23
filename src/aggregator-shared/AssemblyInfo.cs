@@ -15,4 +15,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("Aggregator Shared")]
 [assembly: AssemblyVersion("0.9.0.0")]
 
-[assembly:InternalsVisibleTo("unittests-core")]
+[assembly:InternalsVisibleTo("unittests-ruleng")]

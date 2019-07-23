@@ -159,7 +159,8 @@ Must use reference name, like _System.Title_, instead of language specific, like
 
 
 ## Status properties
-`bool IsDeleted` Read-only.
+`bool IsDeleted` Read-only, returns `true` if the work item is currently located
+in recycle bin.
 
 `bool IsReadOnly` Read-only, returns `true` if work item cannot be modified.
 
@@ -190,10 +191,16 @@ Returns a list of work items.
 `IList<WorkItem> GetWorkItems(IEnumerable<WorkItemRelation> collection)`
 Returns a list of work items following the relation.
 
-`WorkItemWrapper NewWorkItem(string workItemType)`
+`WorkItem NewWorkItem(string workItemType)`
 Returns a new work item with a temporary Id. The work item is created when the rules ends.
 `IsNew` returns `true`.
 
+`bool DeleteWorkItem(WorkItem workItem)`
+Deletes the given work item and returns `true` if work item can be deleted.
+
+`bool RestoreWorkItem(WorkItem workItem)`
+Restores the given work item from recycle bin and returns `true` if work item 
+can be restored.
 
 
 # WorkItemRelationCollection type
@@ -205,10 +212,10 @@ Returns an enumerator on relations to use in `foreach` loops.
 `Add(WorkItemRelation item)`
 Adds the element to the collection.
 
-`AddChild(WorkItemWrapper child)`
+`AddChild(WorkItem child)`
 Adds a child work item.
 
-`AddParent(WorkItemWrapper parent)`
+`AddParent(WorkItem parent)`
 Adds a parent work item.
 
 `AddLink(string type, string url, string comment)`
