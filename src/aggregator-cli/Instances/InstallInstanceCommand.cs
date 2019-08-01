@@ -26,7 +26,7 @@ namespace aggregator.cli
         [Option("sourceUrl", SetName="url", Required = false, HelpText = "URL of Aggregator Runtime.")]
         public string SourceUrl { get; set; }
 
-        /* next two should go toghether, no way to express this via CommandLine library */
+        /* next two should go together, no way to express this via CommandLine library */
 
         [Option('k', "hostingPlanSku", SetName = "plan", Required = false, Default = "Y1", HelpText = "Azure AppPlan SKU hosting the Aggregator instances .")]
         public string HostingPlanSku { get; set; }
