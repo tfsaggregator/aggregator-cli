@@ -9,11 +9,11 @@ namespace aggregator.Engine
     /// </summary>
     internal class DirectivesParser
     {
-        int firstCodeLine = 0;
+        private int firstCodeLine = 0;
         private readonly IAggregatorLogger logger;
-        string[] ruleCode;
-        List<string> references = new List<string>();
-        List<string> imports = new List<string>();
+        private readonly string[] ruleCode;
+        private readonly List<string> references = new List<string>();
+        private readonly List<string> imports = new List<string>();
 
         internal DirectivesParser(IAggregatorLogger logger, string[] ruleCode)
         {
@@ -21,6 +21,7 @@ namespace aggregator.Engine
             this.logger = logger;
 
             //defaults
+            Impersonate = false;
             Language = Languages.Csharp;
             References = references;
             Imports = imports;
@@ -91,6 +92,18 @@ namespace aggregator.Engine
                         }
                         break;
 
+                    case "onbehalfofinitiator":
+                        if (parts.Length < 2)
+                        {
+                            Impersonate = true;
+                        }
+                        else
+                        {
+                            logger.WriteWarning($"Invalid import directive {directive}");
+                            return false;
+                        }
+                        break;
+
                     default:
                         logger.WriteWarning($"Unrecognized directive {directive}");
                         return false;
@@ -117,8 +130,9 @@ namespace aggregator.Engine
             Csharp
         }
 
+        internal bool Impersonate { get; private set; }
         internal Languages Language { get; private set; }
-        internal IReadOnlyList<string> References { get; private set; }
-        internal IReadOnlyList<string> Imports { get; private set; }
+        internal IReadOnlyList<string> References { get; }
+        internal IReadOnlyList<string> Imports { get; }
     }
 }

@@ -25,6 +25,7 @@ namespace aggregator.Engine
         private readonly IAggregatorLogger logger;
         private readonly Script<string> roslynScript;
         private readonly SaveMode saveMode;
+        private readonly bool impersonateChanges;
 
         public RuleEngine(IAggregatorLogger logger, string[] ruleCode, SaveMode mode, bool dryRun)
         {
@@ -43,6 +44,7 @@ namespace aggregator.Engine
 
             if (directives.Language == DirectivesParser.Languages.Csharp)
             {
+                impersonateChanges = directives.Impersonate;
                 var references = LoadReferences(directives);
                 var imports = GetImports(directives);
 
