@@ -15,4 +15,5 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("Aggregator CLI")]
 [assembly: AssemblyVersion("0.9.0.0")]
 
-[assembly:InternalsVisibleTo("unittests-ruleng")]
+[assembly: InternalsVisibleTo("unittests-core")]
+[assembly: InternalsVisibleTo("unittests-ruleng")]
