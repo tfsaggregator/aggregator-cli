@@ -83,8 +83,7 @@ namespace aggregator
                 workItem = resourceObject.ToObject<WorkItem>();
             }
 
-            string collectionUrl = data.ResourceContainers["collection"].BaseUrl;
-            if (collectionUrl.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
+            if (workItem.Url.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
             {
                 var resp = req.CreateResponse(HttpStatusCode.OK, new
                 {
@@ -94,6 +93,7 @@ namespace aggregator
                 resp.Headers.Add("X-Aggregator-Rule", _context.FunctionName);
                 return resp;
             }
+            string collectionUrl = data.ResourceContainers["collection"].BaseUrl;
 
             var config = new ConfigurationBuilder()
                 .SetBasePath(_context.FunctionAppDirectory)
