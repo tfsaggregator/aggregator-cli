@@ -31,6 +31,8 @@ namespace aggregator.Engine
                 });
                 //for simplify testing: item.Url can be null
                 IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id.Value}", StringComparison.OrdinalIgnoreCase) ?? false;
+
+                IsReadOnly = false;
                 _context.Tracker.TrackExisting(this);
             }
             else
@@ -42,58 +44,19 @@ namespace aggregator.Engine
                     Path = "/id",
                     Value = Id.Value
                 });
+
                 _context.Tracker.TrackNew(this);
             }
         }
 
-        //TODO Fields null, and does not work with pseudo Url created in WorkItemStore.NewWorkItem, delete unused constructor
-        public WorkItemWrapper(EngineContext context, string project, string type)
-        {
-            _context = context;
-
-            Id = new TemporaryWorkItemId(_context.Tracker);
-
-            _item = new WorkItem();
-            _item.Fields[CoreFieldRefNames.TeamProject] = project;
-            _item.Fields[CoreFieldRefNames.WorkItemType] = type;
-            _item.Fields[CoreFieldRefNames.Id] = Id.Value;
-            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
-
-            Changes.Add(new JsonPatchOperation()
-            {
-                Operation = Operation.Add,
-                Path = "/id",
-                Value = Id.Value
-            });
-            _context.Tracker.TrackNew(this);
-        }
-
-        public WorkItemWrapper(EngineContext context, WorkItemWrapper template, string type)
-        {
-            _context = context;
-
-            Id = new TemporaryWorkItemId(_context.Tracker);
-
-            _item = new WorkItem();
-            _item.Fields[CoreFieldRefNames.TeamProject] = template.TeamProject;
-            _item.Fields[CoreFieldRefNames.WorkItemType] = type;
-            _item.Fields[CoreFieldRefNames.Id] = Id.Value;
-            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
-
-            Changes.Add(new JsonPatchOperation()
-            {
-                Operation = Operation.Add,
-                Path = "/id",
-                Value = Id.Value
-            });
-            _context.Tracker.TrackNew(this);
-        }
 
         internal WorkItemWrapper(EngineContext context, WorkItem item, bool isReadOnly)
             // we cannot reuse the code, because tracking is different
             //: this(context, item)
         {
             _context = context;
+            _item = item;
+            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             Id = new PermanentWorkItemId(item.Id.Value);
             Changes.Add(new JsonPatchOperation()
@@ -102,9 +65,9 @@ namespace aggregator.Engine
                 Path = "/rev",
                 Value = item.Rev
             });
+            IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id.Value}", StringComparison.OrdinalIgnoreCase) ?? false;
+
             IsReadOnly = isReadOnly;
-            _item = item;
-            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
             _context.Tracker.TrackRevision(this);
         }
 
@@ -114,8 +77,8 @@ namespace aggregator.Engine
             {
                 if (Rev > 0)
                 {
-                    // TODO we shouldn't use the client in this class
-                    // TODO check if already loaded
+                    // TODO we shouldn't use the client in this class, move to WorkItemStore.GetRevisionAsync, workitemstore shoud check tracker if already loaded
+                    // TODO thinkabout passing workitemstore into workitemwrapper constructor, instead of engineContext, workitemstore is used several times, see also Property Children/Parent
                     var previousRevision = _context.Client.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, previousRevision, true);
                 }
@@ -224,15 +187,9 @@ namespace aggregator.Engine
             private set;
         }
 
-        public int Rev
-        {
-            get { return _item.Rev.Value; }
-        }
+        public int Rev => _item.Rev.Value;
 
-        public string Url
-        {
-            get { return _item.Url; }
-        }
+        public string Url => _item.Url;
 
         public string WorkItemType
         {
@@ -438,9 +395,13 @@ namespace aggregator.Engine
             switch (value)
             {
                 case IdentityRef id:
+                {
                     return id.DisplayName;
+                }
                 default:
+                {
                     return value;
+                }
             }
         }
 
