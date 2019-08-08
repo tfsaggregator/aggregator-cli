@@ -36,7 +36,7 @@ namespace aggregator.Engine
         public int Id => _workItemUpdate.Id;
 
         /// <summary>The work item ID.</summary>
-        public int WorkItemId => _workItemUpdate.Id;
+        public int WorkItemId => _workItemUpdate.WorkItemId;
 
         /// <summary>The revision number of work item update.</summary>
         public int Rev => _workItemUpdate.Rev;

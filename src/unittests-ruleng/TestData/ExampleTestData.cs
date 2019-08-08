@@ -17,8 +17,10 @@ namespace unittests_ruleng.TestData
     {
         public static ExampleTestData Instance => new ExampleTestData();
 
-        public WorkItem DeltedWorkItem => GetFromResource("DeltedWorkItem.json");
-        public WorkItem WorkItem => GetFromResource("WorkItem.22.json");
+        public WorkItem DeltedWorkItem => GetFromResource<WorkItem>("DeletedWorkItem.json");
+        public WorkItem WorkItem => GetFromResource<WorkItem>("WorkItem.22.json");
+        public WorkItemUpdate WorkItemUpdateFields => GetFromResource<WorkItemUpdate>("WorkItem.22.UpdateFields.json");
+        public WorkItemUpdate WorkItemUpdateLinks => GetFromResource<WorkItemUpdate>("WorkItem.22.UpdateLinks.json");
 
 
         private static string GetEmbeddedResourceContent(string resourceName)
@@ -39,10 +41,10 @@ namespace unittests_ruleng.TestData
             return fileContent;
         }
 
-        private static WorkItem GetFromResource(string resourceName)
+        private static T GetFromResource<T>(string resourceName)
         {
             var json = GetEmbeddedResourceContent(resourceName);
-            return JsonConvert.DeserializeObject<WorkItem>(json);
+            return JsonConvert.DeserializeObject<T>(json);
         }
     }
 }

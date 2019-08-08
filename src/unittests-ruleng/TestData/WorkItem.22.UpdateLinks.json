@@ -1,0 +1,27 @@
+﻿{
+  "id": 2,
+  "workItemId": 22,
+  "rev": 1,
+  "revisedBy": {
+    "id": "afc5e4ef-7441-45d8-bb56-c2eaa2e88801",
+    "name": "a@b.com",
+    "displayName": "User 1",
+    "url": "https://dev.azure.com/fake-organization/_apis/Identities/afc5e4ef-7441-45d8-bb56-c2eaa2e88801",
+    "uniqueName": "domain\\user1",
+    "imageUrl": "https://dev.azure.com/fake-organization/_apis/_common/identityImage?id=afc5e4ef-7441-45d8-bb56-c2eaa2e88801"
+  },
+  "revisedDate": "2019-07-11T10:54:40.943Z",
+  "relations": {
+    "added": [
+      {
+        "rel": "System.LinkTypes.Related",
+        "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/40",
+        "attributes": {
+          "isLocked": false,
+          "comment": "a comment"
+        }
+      }
+    ]
+  },
+  "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/updates/2"
+}

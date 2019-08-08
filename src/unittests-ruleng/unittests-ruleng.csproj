@@ -10,8 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="TestData\DeltedWorkItem.json" />
+    <None Remove="TestData\DeletedWorkItem.json" />
     <None Remove="TestData\WorkItem.22.json" />
+    <None Remove="TestData\WorkItem.22.UpdateLinks.json" />
+    <None Remove="WorkItem.22.UpdateFields.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,8 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="TestData\WorkItem.22.UpdateLinks.json" />
     <EmbeddedResource Include="TestData\WorkItem.22.json" />
-    <EmbeddedResource Include="TestData\DeltedWorkItem.json" />
+    <EmbeddedResource Include="TestData\DeletedWorkItem.json" />
+    <EmbeddedResource Include="TestData\WorkItem.22.UpdateFields.json" />
   </ItemGroup>
 
   <ItemGroup>

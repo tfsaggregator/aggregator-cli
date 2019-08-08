@@ -8,6 +8,7 @@ using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using NSubstitute;
+using unittests_ruleng.TestData;
 using Xunit;
 
 namespace unittests_ruleng
@@ -365,6 +366,25 @@ return string.Empty;
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
                 () => engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None)
             );
+        }
+
+
+        [Fact]
+        public async Task HelloWorldRuleOnUpdate_Succeeds()
+        {
+            var workItem = ExampleTestData.Instance.WorkItem;
+            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+
+            client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+return $""Hello #{ selfUpdate.WorkItemId } - Update { selfUpdate.Id } changed Title from { selfUpdate.Fields[""System.Title""].OldValue } to { selfUpdate.Fields[""System.Title""].NewValue }!"";
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(projectId, new WorkItemData(workItem, workItemUpdate), client, CancellationToken.None);
+
+            Assert.Equal("Hello #22 - Update 3 changed Title from Initial Title to Hello!", result);
+            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
     }
 }
