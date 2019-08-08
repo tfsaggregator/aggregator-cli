@@ -342,7 +342,7 @@ return string.Empty;
         }
 
         [Fact]
-        public async Task DelteWorkItem()
+        public async Task DeleteWorkItem()
         {
             int workItemId = 42;
             WorkItem workItem = new WorkItem
