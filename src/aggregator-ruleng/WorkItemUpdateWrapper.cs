@@ -10,7 +10,7 @@ namespace aggregator.Engine
 {
     public class WorkItemUpdateWrapper
     {
-        private WorkItemUpdate _workItemUpdate;
+        private readonly WorkItemUpdate _workItemUpdate;
 
         public WorkItemUpdateWrapper(WorkItemUpdate workItemUpdate)
         {
@@ -18,9 +18,9 @@ namespace aggregator.Engine
 
             Relations = new WorkItemRelationUpdatesWrapper()
                         {
-                            Added = workItemUpdate.Relations?.Added?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? Enumerable.Empty<WorkItemRelationWrapper>(),
-                            Removed = workItemUpdate.Relations?.Removed?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? Enumerable.Empty<WorkItemRelationWrapper>(),
-                            Updated = workItemUpdate.Relations?.Updated?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? Enumerable.Empty<WorkItemRelationWrapper>(),
+                            Added   = workItemUpdate.Relations?.Added?.Select(relation => new WorkItemRelationWrapper(relation)).ToList()   ?? new List<WorkItemRelationWrapper>(),
+                            Removed = workItemUpdate.Relations?.Removed?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                            Updated = workItemUpdate.Relations?.Updated?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
                         };
 
             Fields = workItemUpdate.Fields?
@@ -67,10 +67,17 @@ namespace aggregator.Engine
 
     public class WorkItemRelationUpdatesWrapper
     {
-        public IEnumerable<WorkItemRelationWrapper> Added { get; set; }
+        public WorkItemRelationUpdatesWrapper()
+        {
+            Added   = new List<WorkItemRelationWrapper>();
+            Removed = new List<WorkItemRelationWrapper>();
+            Updated = new List<WorkItemRelationWrapper>();
+        }
 
-        public IEnumerable<WorkItemRelationWrapper> Removed { get; set; }
+        public IReadOnlyCollection<WorkItemRelationWrapper> Added { get; set; }
 
-        public IEnumerable<WorkItemRelationWrapper> Updated { get; set; }
+        public IReadOnlyCollection<WorkItemRelationWrapper> Removed { get; set; }
+
+        public IReadOnlyCollection<WorkItemRelationWrapper> Updated { get; set; }
     }
 }
