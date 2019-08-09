@@ -264,6 +264,46 @@ Deletes the given work item and returns `true` if work item can be deleted.
 Restores the given work item from recycle bin and returns `true` if work item 
 can be restored.
 
+`IEnumerable<WorkItemTypeCategory> GetWorkItemCategories()`
+
+`IEnumerable<BacklogWorkItemTypeStates> GetBacklogWorkItemTypesAndStates()`
+
+# WorkItemTypeCategory
+
+`string ReferenceName`
+Category ReferenceName, e.g. "Microsoft.EpicCategory"
+
+`string Name`
+Category Display Name, e.g. "Epic Category"
+
+`IEnumerable<string> WorkItemTypeNames`
+WorkItemType Names in this Category, e.g. "Epic" or "Test Plan"
+
+# BacklogWorkItemTypeStates
+A work item type with its Backlog Level Information and the 
+work item state to Meta-State Mapping
+
+`string Name`
+WorkItem Name, e.g. "Epic"
+
+`BacklogInfo Backlog`
+Backlog Level Information for this WorkItem Type
+
+`IDictionary<string, string[]> StateCategoryStateNames`
+Meta-State to WorkItem state name mapping, e.g.
+ - "Proposed"   = "New"
+ - "InProgress" = "Active"
+ - "Resolved"   = "Resolved"
+ - "Complete"   = "Closed"
+ - "Removed"    = "Removed"
+
+# BacklogInformation
+
+`string ReferenceName`
+The Category Reference Name of this Backlog Level, e.g. "Microsoft.EpicCategory" or "Microsoft.RequirementCategory"
+
+`string Name`
+The Backlog Level Display Name, e.g. "Epics" or "Stories"
 
 # WorkItemRelationCollection type
 Navigate and modify related objects.
