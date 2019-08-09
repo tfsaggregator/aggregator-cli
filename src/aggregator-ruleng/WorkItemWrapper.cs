@@ -10,15 +10,14 @@ namespace aggregator.Engine
 {
     public class WorkItemWrapper
     {
-        private EngineContext _context;
-        private WorkItem _item;
-        private WorkItemRelationWrapperCollection _relationCollection;
+        private readonly EngineContext _context;
+        private readonly WorkItem _item;
 
         internal WorkItemWrapper(EngineContext context, WorkItem item)
         {
             _context = context;
             _item = item;
-            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
+            Relations = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             if (item.Id.HasValue)
             {
@@ -56,7 +55,7 @@ namespace aggregator.Engine
         {
             _context = context;
             _item = item;
-            _relationCollection = new WorkItemRelationWrapperCollection(this, _item.Relations);
+            Relations = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             Id = new PermanentWorkItemId(item.Id.Value);
             Changes.Add(new JsonPatchOperation()
@@ -77,8 +76,8 @@ namespace aggregator.Engine
             {
                 if (Rev > 0)
                 {
-                    // TODO we shouldn't use the client in this class, move to WorkItemStore.GetRevisionAsync, workitemstore shoud check tracker if already loaded
-                    // TODO thinkabout passing workitemstore into workitemwrapper constructor, instead of engineContext, workitemstore is used several times, see also Property Children/Parent
+                    // TODO we shouldn't use the client in this class, move to WorkItemStore.GetRevisionAsync, workitemstore should check tracker if already loaded
+                    // TODO think about passing workitemstore into workitemwrapper constructor, instead of engineContext, workitemstore is used several times, see also Property Children/Parent
                     var previousRevision = _context.Client.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, previousRevision, true);
                 }
@@ -101,27 +100,15 @@ namespace aggregator.Engine
             }
         }
 
-        public IEnumerable<WorkItemRelationWrapper> RelationLinks
-        {
-            get
-            {
-                return _relationCollection;
-            }
-        }
+        public IEnumerable<WorkItemRelationWrapper> RelationLinks => Relations;
 
-        public WorkItemRelationWrapperCollection Relations
-        {
-            get
-            {
-                return _relationCollection;
-            }
-        }
+        public WorkItemRelationWrapperCollection Relations { get; }
 
         public IEnumerable<WorkItemRelationWrapper> ChildrenLinks
         {
             get
             {
-                return _relationCollection
+                return Relations
                     .Where(rel => rel.Rel == CoreRelationRefNames.Children);
             }
         }
@@ -130,7 +117,7 @@ namespace aggregator.Engine
         {
             get
             {
-                if (ChildrenLinks != null && ChildrenLinks.Count() > 0)
+                if (ChildrenLinks != null && ChildrenLinks.Any())
                 {
                     var store = new WorkItemStore(_context);
                     return store.GetWorkItems(ChildrenLinks);
@@ -144,7 +131,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return _relationCollection
+                return Relations
                     .Where(rel => rel.Rel == CoreRelationRefNames.Related);
             }
         }
@@ -153,7 +140,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return _relationCollection
+                return Relations
                     .Where(rel => rel.Rel == CoreRelationRefNames.Hyperlink);
             }
         }
@@ -162,7 +149,7 @@ namespace aggregator.Engine
         {
             get
             {
-                return _relationCollection
+                return Relations
                     .SingleOrDefault(rel => rel.Rel == CoreRelationRefNames.Parent);
             }
         }
@@ -171,7 +158,7 @@ namespace aggregator.Engine
         {
             get
             {
-                 if (ParentLink != null && ParentLink != default(WorkItemRelationWrapper))
+                 if (ParentLink != null)
                  {
                      var store = new WorkItemStore(_context);
                      return store.GetWorkItem(ParentLink);
@@ -193,152 +180,152 @@ namespace aggregator.Engine
 
         public string WorkItemType
         {
-            get { return (string)_item.Fields[CoreFieldRefNames.WorkItemType]; }
-            private set { SetFieldValue(CoreFieldRefNames.WorkItemType, value); }
+            get => (string)_item.Fields[CoreFieldRefNames.WorkItemType];
+            private set => SetFieldValue(CoreFieldRefNames.WorkItemType, value);
         }
 
         public string State
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.State); }
-            set { SetFieldValue(CoreFieldRefNames.State, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.State);
+            set => SetFieldValue(CoreFieldRefNames.State, value);
         }
 
         public int AreaId
         {
-            get { return GetFieldValue<int>(CoreFieldRefNames.AreaId); }
-            set { SetFieldValue(CoreFieldRefNames.AreaId, value); }
+            get => GetFieldValue<int>(CoreFieldRefNames.AreaId);
+            set => SetFieldValue(CoreFieldRefNames.AreaId, value);
         }
 
         public string AreaPath
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.AreaPath); }
-            set { SetFieldValue(CoreFieldRefNames.AreaPath, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.AreaPath);
+            set => SetFieldValue(CoreFieldRefNames.AreaPath, value);
         }
 
         public IdentityRef AssignedTo
         {
-            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.AssignedTo); }
-            set { SetFieldValue(CoreFieldRefNames.AssignedTo, value); }
+            get => GetFieldValue<IdentityRef>(CoreFieldRefNames.AssignedTo);
+            set => SetFieldValue(CoreFieldRefNames.AssignedTo, value);
         }
 
         public int AttachedFileCount
         {
-            get { return GetFieldValue<int>(CoreFieldRefNames.AttachedFileCount); }
-            set { SetFieldValue(CoreFieldRefNames.AttachedFileCount, value); }
+            get => GetFieldValue<int>(CoreFieldRefNames.AttachedFileCount);
+            set => SetFieldValue(CoreFieldRefNames.AttachedFileCount, value);
         }
 
         public IdentityRef AuthorizedAs
         {
-            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.AuthorizedAs); }
-            set { SetFieldValue(CoreFieldRefNames.AuthorizedAs, value); }
+            get => GetFieldValue<IdentityRef>(CoreFieldRefNames.AuthorizedAs);
+            set => SetFieldValue(CoreFieldRefNames.AuthorizedAs, value);
         }
 
         public IdentityRef ChangedBy
         {
-            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.ChangedBy); }
-            set { SetFieldValue(CoreFieldRefNames.ChangedBy, value); }
+            get => GetFieldValue<IdentityRef>(CoreFieldRefNames.ChangedBy);
+            set => SetFieldValue(CoreFieldRefNames.ChangedBy, value);
         }
 
         public DateTime? ChangedDate
         {
-            get { return GetFieldValue<DateTime?>(CoreFieldRefNames.ChangedDate); }
-            set { SetFieldValue(CoreFieldRefNames.ChangedDate, value); }
+            get => GetFieldValue<DateTime?>(CoreFieldRefNames.ChangedDate);
+            set => SetFieldValue(CoreFieldRefNames.ChangedDate, value);
         }
 
         public IdentityRef CreatedBy
         {
-            get { return GetFieldValue<IdentityRef>(CoreFieldRefNames.CreatedBy); }
-            set { SetFieldValue(CoreFieldRefNames.CreatedBy, value); }
+            get => GetFieldValue<IdentityRef>(CoreFieldRefNames.CreatedBy);
+            set => SetFieldValue(CoreFieldRefNames.CreatedBy, value);
         }
 
         public DateTime? CreatedDate
         {
-            get { return GetFieldValue<DateTime?>(CoreFieldRefNames.CreatedDate); }
-            set { SetFieldValue(CoreFieldRefNames.CreatedDate, value); }
+            get => GetFieldValue<DateTime?>(CoreFieldRefNames.CreatedDate);
+            set => SetFieldValue(CoreFieldRefNames.CreatedDate, value);
         }
 
         public string Description
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.Description); }
-            set { SetFieldValue(CoreFieldRefNames.Description, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.Description);
+            set => SetFieldValue(CoreFieldRefNames.Description, value);
         }
 
         public int ExternalLinkCount
         {
-            get { return GetFieldValue<int>(CoreFieldRefNames.ExternalLinkCount); }
-            set { SetFieldValue(CoreFieldRefNames.ExternalLinkCount, value); }
+            get => GetFieldValue<int>(CoreFieldRefNames.ExternalLinkCount);
+            set => SetFieldValue(CoreFieldRefNames.ExternalLinkCount, value);
         }
 
         public string History
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.History); }
-            set { SetFieldValue(CoreFieldRefNames.History, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.History);
+            set => SetFieldValue(CoreFieldRefNames.History, value);
         }
 
         public int HyperLinkCount
         {
-            get { return GetFieldValue<int>(CoreFieldRefNames.HyperLinkCount); }
-            set { SetFieldValue(CoreFieldRefNames.HyperLinkCount, value); }
+            get => GetFieldValue<int>(CoreFieldRefNames.HyperLinkCount);
+            set => SetFieldValue(CoreFieldRefNames.HyperLinkCount, value);
         }
 
         public int IterationId
         {
-            get { return GetFieldValue<int>(CoreFieldRefNames.IterationId); }
-            set { SetFieldValue(CoreFieldRefNames.IterationId, value); }
+            get => GetFieldValue<int>(CoreFieldRefNames.IterationId);
+            set => SetFieldValue(CoreFieldRefNames.IterationId, value);
         }
 
         public string IterationPath
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.IterationPath); }
-            set { SetFieldValue(CoreFieldRefNames.IterationPath, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.IterationPath);
+            set => SetFieldValue(CoreFieldRefNames.IterationPath, value);
         }
 
         public string Reason
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.Reason); }
-            set { SetFieldValue(CoreFieldRefNames.Reason, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.Reason);
+            set => SetFieldValue(CoreFieldRefNames.Reason, value);
         }
 
         public int RelatedLinkCount
         {
-            get { return GetFieldValue<int>(CoreFieldRefNames.RelatedLinkCount); }
-            set { SetFieldValue(CoreFieldRefNames.RelatedLinkCount, value); }
+            get => GetFieldValue<int>(CoreFieldRefNames.RelatedLinkCount);
+            set => SetFieldValue(CoreFieldRefNames.RelatedLinkCount, value);
         }
 
         public DateTime? RevisedDate
         {
-            get { return GetFieldValue<DateTime?>(CoreFieldRefNames.RevisedDate); }
-            set { SetFieldValue(CoreFieldRefNames.RevisedDate, value); }
+            get => GetFieldValue<DateTime?>(CoreFieldRefNames.RevisedDate);
+            set => SetFieldValue(CoreFieldRefNames.RevisedDate, value);
         }
 
         public DateTime? AuthorizedDate
         {
-            get { return GetFieldValue<DateTime?>(CoreFieldRefNames.AuthorizedDate); }
-            set { SetFieldValue(CoreFieldRefNames.AuthorizedDate, value); }
+            get => GetFieldValue<DateTime?>(CoreFieldRefNames.AuthorizedDate);
+            set => SetFieldValue(CoreFieldRefNames.AuthorizedDate, value);
         }
 
         public string TeamProject
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.TeamProject); }
-            set { SetFieldValue(CoreFieldRefNames.TeamProject, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.TeamProject);
+            set => SetFieldValue(CoreFieldRefNames.TeamProject, value);
         }
 
         public string Tags
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.Tags); }
-            set { SetFieldValue(CoreFieldRefNames.Tags, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.Tags);
+            set => SetFieldValue(CoreFieldRefNames.Tags, value);
         }
 
         public string Title
         {
-            get { return GetFieldValue<string>(CoreFieldRefNames.Title); }
-            set { SetFieldValue(CoreFieldRefNames.Title, value); }
+            get => GetFieldValue<string>(CoreFieldRefNames.Title);
+            set => SetFieldValue(CoreFieldRefNames.Title, value);
         }
 
         public double Watermark
         {
-            get { return GetFieldValue<double>(CoreFieldRefNames.Watermark); }
-            set { SetFieldValue(CoreFieldRefNames.Watermark, value); }
+            get => GetFieldValue<double>(CoreFieldRefNames.Watermark);
+            set => SetFieldValue(CoreFieldRefNames.Watermark, value);
         }
 
         public bool IsDeleted { get; }
@@ -355,8 +342,8 @@ namespace aggregator.Engine
 
         public object this[string field]
         {
-            get { return GetFieldValue<object>(field); }
-            set { SetFieldValue(field, value); }
+            get => GetFieldValue<object>(field);
+            set => SetFieldValue(field, value);
         }
 
         private void SetFieldValue(string field, object value)
@@ -390,7 +377,7 @@ namespace aggregator.Engine
             IsDirty = true;
         }
 
-        private object TranslateValue(object value)
+        private static object TranslateValue(object value)
         {
             switch (value)
             {
@@ -409,7 +396,7 @@ namespace aggregator.Engine
         {
             return _item.Fields.TryGetValue(field, out var value)
                 ? (T)value
-                : default(T);
+                : default;
         }
 
         internal void ReplaceIdAndResetChanges(int oldId, int newId)
