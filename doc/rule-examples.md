@@ -11,7 +11,7 @@ $"Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"
 ## Auto-close parent
 
 This is more similar to classic TFS Aggregator.
-It move a parent work item to Closed state, if all children are closed.
+It moves a parent work item to Closed state, if all children are closed.
 The major difference is the navigation: `Parent` and `Children` properties do not returns work items but relation. You have to explicitly query Azure DevOps to retrieve the referenced work items.
 
 ```
@@ -32,6 +32,27 @@ if (parent != null)
     parent.Description = parent.Description + " aggregator was here.";
 }
 return message;
+```
+
+## Work item update
+
+Check if a work item was updated and execute actions based on the changes, e.g. if work item Title was updated.
+
+```
+if (selfUpdate == null)
+{
+    return "No work item update event";
+}
+
+if (selfUpdate.Fields.ContainsKey("System.Title"))
+{
+    var titleUpdate = selfUpdate.Fields["System.Title"];
+    return $"Title was changed from '{titleUpdate.OldValue}' to '{titleUpdate.NewValue}'";
+}
+else
+{
+    return "Title was not updated";
+}
 ```
 
 ## History

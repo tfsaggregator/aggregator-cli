@@ -386,5 +386,31 @@ return $""Hello #{ selfUpdate.WorkItemId } - Update { selfUpdate.Id } changed Ti
             Assert.Equal("Hello #22 - Update 3 changed Title from Initial Title to Hello!", result);
             await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
+
+        [Fact]
+        public async Task DocumentationRuleOnUpdateExample_Succeeds()
+        {
+            var workItem = ExampleTestData.Instance.WorkItem;
+            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+
+            client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+            if (selfUpdate.Fields.ContainsKey(""System.Title""))
+            {
+                var titleUpdate = selfUpdate.Fields[""System.Title""];
+                return $""Title was changed from '{titleUpdate.OldValue}' to '{titleUpdate.NewValue}'"";
+            }
+            else
+            {
+                return ""Title was not updated"";
+            }
+            ";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(projectId, new WorkItemData(workItem, workItemUpdate), client, CancellationToken.None);
+
+            Assert.Equal("Title was changed from 'Initial Title' to 'Hello'", result);
+            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+        }
     }
 }
