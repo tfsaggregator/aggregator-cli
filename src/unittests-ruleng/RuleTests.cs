@@ -392,7 +392,7 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
             var workItem = ExampleTestData.Instance.WorkItem;
             var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
 
-            client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
             if (selfChanges.Fields.ContainsKey(""System.Title""))
             {
@@ -406,10 +406,10 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
             ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, new WorkItemData(workItem, workItemUpdate), client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("Title was changed from 'Initial Title' to 'Hello'", result);
-            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
 
         [Fact]
