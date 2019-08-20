@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using aggregator.Engine;
-
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
-
-namespace aggregator
+namespace aggregator.Engine
 {
 
-    //TODO BobSilent Find better name
-    //TODO BobSilent Move to shared??
-    internal class WorkItemEventContext
+    public class WorkItemEventContext
     {
         public WorkItemEventContext(Guid projectId, Uri collectionUri, WorkItem workItem, WorkItemUpdate workItemUpdate = null)
         {
@@ -21,12 +13,12 @@ namespace aggregator
             WorkItemPayload = new WorkItemData(workItem, workItemUpdate);
         }
 
-        internal WorkItemData WorkItemPayload { get; }
-        internal Guid ProjectId { get; }
-        internal Uri CollectionUri { get; }
+        public WorkItemData WorkItemPayload { get; }
+        public Guid ProjectId { get; }
+        public Uri CollectionUri { get; }
     }
 
-    internal static class WorkItemEventContextExtension
+    public static class WorkItemEventContextExtension
     {
         public static bool IsTestEvent(this WorkItemEventContext eventContext)
         {
