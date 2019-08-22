@@ -39,11 +39,6 @@ return message;
 Check if a work item was updated and execute actions based on the changes, e.g. if work item Title was updated.
 
 ```
-if (selfChanges == null)
-{
-    return "No work item update event";
-}
-
 if (selfChanges.Fields.ContainsKey("System.Title"))
 {
     var titleUpdate = selfChanges.Fields["System.Title"];

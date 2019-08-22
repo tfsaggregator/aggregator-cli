@@ -177,7 +177,6 @@ Returns the number of attached files.
 # WorkItem Changes
 If the rule was triggered by the `workitem.updated` event, the changes 
 which were made to the WorkItem object, are contained in the `selfChanges` variable.
-Otherwise `selfChanges` is `null`.
 
 ## Fields
 Data fields of the work item update. 

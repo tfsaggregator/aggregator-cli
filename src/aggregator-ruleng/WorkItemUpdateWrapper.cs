@@ -10,27 +10,28 @@ namespace aggregator.Engine
 {
     public class WorkItemUpdateWrapper
     {
+        private static readonly WorkItemUpdate _noUpdate = new WorkItemUpdate();
         private readonly WorkItemUpdate _workItemUpdate;
 
         public WorkItemUpdateWrapper(WorkItemUpdate workItemUpdate)
         {
-            _workItemUpdate = workItemUpdate ?? new WorkItemUpdate();
+            _workItemUpdate = workItemUpdate ?? _noUpdate;
 
             Relations = new WorkItemRelationUpdatesWrapper()
                         {
-                            Added   = workItemUpdate.Relations?.Added?.Select(relation => new WorkItemRelationWrapper(relation)).ToList()   ?? new List<WorkItemRelationWrapper>(),
-                            Removed = workItemUpdate.Relations?.Removed?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
-                            Updated = workItemUpdate.Relations?.Updated?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                            Added   = _workItemUpdate.Relations?.Added?.Select(relation => new WorkItemRelationWrapper(relation)).ToList()   ?? new List<WorkItemRelationWrapper>(),
+                            Removed = _workItemUpdate.Relations?.Removed?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                            Updated = _workItemUpdate.Relations?.Updated?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
                         };
 
-            Fields = workItemUpdate.Fields?
-                                   .ToDictionary(kvp => kvp.Key,
-                                                 kvp => new WorkItemFieldUpdateWrapper()
-                                                 {
-                                                     NewValue = kvp.Value.NewValue,
-                                                     OldValue = kvp.Value.OldValue,
-                                                 })
-                                   ?? new Dictionary<string, WorkItemFieldUpdateWrapper>();
+            Fields = _workItemUpdate.Fields?
+                                    .ToDictionary(kvp => kvp.Key,
+                                                  kvp => new WorkItemFieldUpdateWrapper()
+                                                  {
+                                                      NewValue = kvp.Value.NewValue,
+                                                      OldValue = kvp.Value.OldValue,
+                                                  })
+                                    ?? new Dictionary<string, WorkItemFieldUpdateWrapper>();
         }
 
 
@@ -60,8 +61,10 @@ namespace aggregator.Engine
 
     public class WorkItemFieldUpdateWrapper
     {
+        /// <summary> The old value of the field.</summary>
         public object OldValue { get; set; }
 
+        /// <summary> The new value of the field.</summary>
         public object NewValue { get; set; }
     }
 
@@ -74,10 +77,19 @@ namespace aggregator.Engine
             Updated = new List<WorkItemRelationWrapper>();
         }
 
+        /// <summary>
+        /// List of newly added relations.
+        /// </summary>
         public IReadOnlyCollection<WorkItemRelationWrapper> Added { get; set; }
 
+        /// <summary>
+        /// List of removed relations.
+        /// </summary>
         public IReadOnlyCollection<WorkItemRelationWrapper> Removed { get; set; }
 
+        /// <summary>
+        /// List of updated relations.
+        /// </summary>
         public IReadOnlyCollection<WorkItemRelationWrapper> Updated { get; set; }
     }
 }

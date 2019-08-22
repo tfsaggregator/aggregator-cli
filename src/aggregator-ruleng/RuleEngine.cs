@@ -117,7 +117,7 @@ namespace aggregator.Engine
             var context = new EngineContext(witClient, projectId, workItem.GetTeamProject(), logger);
             var store = new WorkItemStore(context, workItem);
             var self = store.GetWorkItem(workItem.Id.Value);
-            var selfChanges = workItemPayload.WorkItemUpdate != null ? new WorkItemUpdateWrapper(workItemPayload.WorkItemUpdate) : null;
+            var selfChanges = new WorkItemUpdateWrapper(workItemPayload.WorkItemUpdate);
             logger.WriteInfo($"Initial WorkItem {self.Id} retrieved from {witClient.BaseAddress}");
 
             var globals = new Globals
