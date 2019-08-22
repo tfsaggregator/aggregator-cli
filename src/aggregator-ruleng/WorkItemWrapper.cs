@@ -451,6 +451,13 @@ namespace aggregator.Engine
                 : default(T);
         }
 
+        public T GetFieldValue<T>(string field, T defaultValue)
+        {
+            return _item.Fields.TryGetValue(field, out var value)
+                ? (T)Convert.ChangeType(value, typeof(T))
+                : defaultValue;
+        }
+
         internal void ReplaceIdAndResetChanges(int oldId, int newId)
         {
             if (oldId >= 0) throw new ArgumentOutOfRangeException(nameof(oldId));

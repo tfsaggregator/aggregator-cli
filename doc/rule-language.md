@@ -156,6 +156,14 @@ The name of the work item type.
 `object this[string field]`
 Read-write access to non-core fields.
 Must use reference name, like _System.Title_, instead of language specific, like _Titolo_, _Titel_ or _Title_.
+> Careful: Reference name is **case-sensitive**.
+
+`public T GetFieldValue<T>(string field, T defaultValue)`
+Typed read-only access to non-core fields. The value is converted to the requested type, if the field nas no value, `defaultValue` is returned. Example:
+```
+var customField1 = self.GetFieldValue<string>("MyOrg.StringCustomField1", "MyDefault");
+var customField2 = self.GetFieldValue<decimal>("MyOrg.NumericCustomField2", 3.0m);
+```
 
 
 ## Status properties

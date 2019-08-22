@@ -366,5 +366,107 @@ return string.Empty;
                 () => engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None)
             );
         }
+
+        [Fact]
+        public async Task CustomStringField_HasValue_Succeeds()
+        {
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                    { "System.TeamProject", ProjectName },
+                    { "MyOrg.CustomStringField", "some value" },
+                }
+            };
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDefault"");
+return customField;
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            Assert.Equal("some value", result);
+        }
+
+        [Fact]
+        public async Task CustomStringField_NoValue_ReturnsDefault()
+        {
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                    { "System.TeamProject", ProjectName },
+                }
+            };
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDefault"");
+return customField;
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            Assert.Equal("MyDefault", result);
+        }
+
+        [Fact]
+        public async Task CustomNumericField_HasValue_Succeeds()
+        {
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                    { "System.TeamProject", ProjectName },
+                    { "MyOrg.CustomNumericField", 42 },
+                }
+            };
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
+return customField.ToString(""N"");
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            Assert.Equal("42.00", result);
+        }
+
+        [Fact]
+        public async Task CustomNumericField_NoValue_ReturnsDefault()
+        {
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                    { "System.TeamProject", ProjectName },
+                }
+            };
+            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
+return customField.ToString(""N"");
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            Assert.Equal("3.00", result);
+        }
     }
 }
