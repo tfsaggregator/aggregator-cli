@@ -120,6 +120,11 @@ For examples see [Rule Examples](doc/rule-examples.md).
 
 
 
+## Maintenance
+
+Aggregator stores the PAT in the Azure Function configuration. Before the PAT expire you should referesh it from Azure DevOps or save a new PAT using the `configure.instance` command.
+
+
 ## Troubleshooting
 
 ### View live Aggregator log messages
