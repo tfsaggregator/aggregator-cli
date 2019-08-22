@@ -7,7 +7,7 @@ namespace aggregator.Engine
     public class Globals
     {
         public WorkItemWrapper self;
-        public WorkItemUpdateWrapper selfUpdate;
+        public WorkItemUpdateWrapper selfChanges;
         public WorkItemStore store;
         public IAggregatorLogger logger;
     }

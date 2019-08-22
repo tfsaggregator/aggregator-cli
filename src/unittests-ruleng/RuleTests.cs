@@ -377,7 +377,7 @@ return string.Empty;
 
             client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
-return $""Hello #{ selfUpdate.WorkItemId } - Update { selfUpdate.Id } changed Title from { selfUpdate.Fields[""System.Title""].OldValue } to { selfUpdate.Fields[""System.Title""].NewValue }!"";
+return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed Title from { selfChanges.Fields[""System.Title""].OldValue } to { selfChanges.Fields[""System.Title""].NewValue }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
@@ -395,9 +395,9 @@ return $""Hello #{ selfUpdate.WorkItemId } - Update { selfUpdate.Id } changed Ti
 
             client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
-            if (selfUpdate.Fields.ContainsKey(""System.Title""))
+            if (selfChanges.Fields.ContainsKey(""System.Title""))
             {
-                var titleUpdate = selfUpdate.Fields[""System.Title""];
+                var titleUpdate = selfChanges.Fields[""System.Title""];
                 return $""Title was changed from '{titleUpdate.OldValue}' to '{titleUpdate.NewValue}'"";
             }
             else
