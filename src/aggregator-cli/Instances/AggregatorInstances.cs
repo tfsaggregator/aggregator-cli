@@ -87,14 +87,14 @@ namespace aggregator.cli
             return Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false).FirstOrDefault() as T;
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             bool ok = await MakeSureResourceGroupExistsAsync(instance.IsCustom, location, rgName, cancellationToken);
             if (!ok)
                 return false;
 
-            ok = await DeployArmTemplateAsync(instance, location, rgName, cancellationToken);
+            ok = await DeployArmTemplateAsync(instance, location, rgName, tuning,cancellationToken);
             if (!ok)
                 return false;
 
@@ -148,7 +148,14 @@ namespace aggregator.cli
             return true;
         }
 
-        private async Task<bool> DeployArmTemplateAsync(InstanceName instance, string location, string rgName, CancellationToken cancellationToken)
+        internal class InstanceFineTuning
+        {
+            public string HostingPlanSku { get; set; }
+            public string HostingPlanTier { get; set; }
+            public string AppInsightLocation { get; set; }
+        }
+
+        private async Task<bool> DeployArmTemplateAsync(InstanceName instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             // IDEA the template should create a Storage account and/or a Key Vault for Rules' use
             // TODO https://github.com/gjlumsden/AzureFunctionsSlots suggest that slots must be created in template
@@ -174,12 +181,13 @@ namespace aggregator.cli
             var infoVersion = GetCustomAttribute<AssemblyInformationalVersionAttribute>();
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
                 // TODO give use more control by setting more parameters
-                {"location", new Dictionary<string, object>{{"value", location } }},
+                {"webLocation", new Dictionary<string, object>{{"value", location } }},
+                {"aiLocation", new Dictionary<string, object>{{"value", tuning.AppInsightLocation } }},
                 {"storageAccountType", new Dictionary<string, object>{{"value", "Standard_LRS" } }},
                 {"appName", new Dictionary<string, object>{{"value", appName } }},
                 {"aggregatorVersion", new Dictionary<string, object>{{"value", infoVersion.InformationalVersion } }},
-                {"hostingPlanSkuName", new Dictionary<string, object>{{"value", "Y1" } }},
-                {"hostingPlanSkuTier", new Dictionary<string, object>{{"value", "Dynamic" } }},
+                {"hostingPlanSkuName", new Dictionary<string, object>{{"value", tuning.HostingPlanSku } }},
+                {"hostingPlanSkuTier", new Dictionary<string, object>{{"value", tuning.HostingPlanTier } }},
             };
 
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);

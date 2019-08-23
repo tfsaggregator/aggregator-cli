@@ -34,6 +34,9 @@ namespace aggregator.cli
         [Option('t', "hostingPlanTier", SetName = "plan", Required = false, Default = "Dynamic", HelpText = "Azure AppPlan Service tier hosting the Aggregator instances .")]
         public string HostingPlanTier { get; set; }
 
+        [Option("appInsightLocation", Required = false, HelpText = "AppInsight location (Azure region).")]
+        public string AppInsightLocation { get; set; }
+
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var validHostingPlanSkus = new string[] { "Y1", "F1", "D1", "B1", "S1", "S2", "S3", "P1", "P2", "P3", "P1V2", "P2V2", "P3V2" };
@@ -48,6 +51,12 @@ namespace aggregator.cli
                 Logger.WriteError($"Invalid value for hostingPlanTier: must be one of {String.Join(",", validHostingPlanTiers)}");
                 return 2;
             }
+            var tuning = new AggregatorInstances.InstanceFineTuning
+            {
+                AppInsightLocation = string.IsNullOrWhiteSpace(AppInsightLocation) ? Location : AppInsightLocation,
+                HostingPlanSku = HostingPlanSku,
+                HostingPlanTier = HostingPlanTier
+            };
 
             var context = await Context
                 .WithAzureLogon()
@@ -55,7 +64,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name, ResourceGroup);
-            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, cancellationToken);
+            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, tuning, cancellationToken);
             return ok ? 0 : 1;
         }
     }
