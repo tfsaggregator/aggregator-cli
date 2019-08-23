@@ -174,6 +174,60 @@ in recycle bin.
 Returns the number of attached files.
 
 
+# WorkItem Changes
+If the rule was triggered by the `workitem.updated` event, the changes 
+which were made to the WorkItem object, are contained in the `selfChanges` variable.
+
+## Fields
+Data fields of the work item update. 
+
+`int Id` Read-only.
+The unique identifier of the _Update_.
+Each change leads to an increased update id, but not necessarily to an updated revision number.
+Changing only relations, without changing any other information does not increase revision number.
+
+`int WorkItemId` Read-only.
+The unique identifier of the _work item_.
+
+`int Rev` Read-only.
+The revision number of work item update.
+
+`IdentityRef RevisedBy` Read-only.
+The Identity of the team member who updated the work item. 
+
+`DateTime RevisedDate` Read-only.
+The date and time when the work item updates revision date.
+
+`WorkItemFieldUpdate Fields[string field]` Read-only. 
+Access to the list of updated fields.
+Must use reference name, like _System.Title_, instead of language specific, like _Titolo_, _Titel_ or _Title_.
+
+`WorkItemRelationUpdates Relations` Read-only. 
+Returns the information about updated relations
+
+## WorkItemFieldUpdate
+Updated Field Information containing old and new value.
+
+`object OldValue` Read-only. 
+Returns the previous value of the field or `null`
+
+`object NewValue` Read-only. 
+Returns the new value of the field
+
+
+## WorkItemRelationUpdates
+Groups the changes of the relations
+
+`ICollection<WorkItemRelation> Added` Read-only. 
+Returns the added relations as `WorkItemRelation`.
+
+`ICollection<WorkItemRelation> Removed` Read-only. 
+Returns the removed relations as `WorkItemRelation`.
+
+`ICollection<WorkItemRelation> Updated` Read-only. 
+Returns the updated relations as `WorkItemRelation`.
+
+
 
 # WorkItemStore Object
 The WorkItemStore object allows retrieval, creation and removal of work items.

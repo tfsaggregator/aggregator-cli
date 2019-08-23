@@ -7,7 +7,9 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Newtonsoft.Json.Linq;
 using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
@@ -60,10 +62,9 @@ namespace aggregator
             }
 
             var data = JsonConvert.DeserializeObject<WebHookEvent>(jsonContent);
-            string eventType = data.EventType;
 
             // sanity check
-            if (!DevOpsEvents.IsValidEvent(eventType)
+            if (!DevOpsEvents.IsValidEvent(data.EventType)
                 || data.PublisherId != DevOpsEvents.PublisherId)
             {
                 return req.CreateResponse(HttpStatusCode.BadRequest, new
@@ -72,28 +73,11 @@ namespace aggregator
                 });
             }
 
-            var resourceObject = data.Resource as JObject;
-            WorkItem workItem;
-            if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventType)
+            var eventContext = CreateContextFromEvent(data);
+            if (eventContext.IsTestEvent())
             {
-                workItem = resourceObject.GetValue("revision").ToObject<WorkItem>();
+                return RespondToTestEventMessage(req, aggregatorVersion);
             }
-            else
-            {
-                workItem = resourceObject.ToObject<WorkItem>();
-            }
-
-            if (workItem.Url.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
-            {
-                var resp = req.CreateResponse(HttpStatusCode.OK, new
-                {
-                    message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{_context.FunctionName}'"
-                });
-                resp.Headers.Add("X-Aggregator-Version", aggregatorVersion);
-                resp.Headers.Add("X-Aggregator-Rule", _context.FunctionName);
-                return resp;
-            }
-            string collectionUrl = data.ResourceContainers["collection"].BaseUrl;
 
             var config = new ConfigurationBuilder()
                 .SetBasePath(_context.FunctionAppDirectory)
@@ -107,8 +91,7 @@ namespace aggregator
             var wrapper = new RuleWrapper(configuration, logger, _context.FunctionName, _context.FunctionDirectory);
             try
             {
-                Guid teamProjectId = data.ResourceContainers["project"].Id;
-                string execResult = await wrapper.ExecuteAsync(new Uri(collectionUrl), teamProjectId, workItem, cancellationToken);
+                string execResult = await wrapper.ExecuteAsync(eventContext, cancellationToken);
 
                 if (string.IsNullOrEmpty(execResult))
                 {
@@ -135,6 +118,36 @@ namespace aggregator
                     Content = new StringContent(ex.Message)
                 };
                 return resp;
+            }
+        }
+
+        private HttpResponseMessage RespondToTestEventMessage(HttpRequestMessage req, string aggregatorVersion)
+        {
+            var resp = req.CreateResponse(HttpStatusCode.OK, new
+                                                             {
+                                                                 message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{_context.FunctionName}'"
+                                                             });
+            resp.Headers.Add("X-Aggregator-Version", aggregatorVersion);
+            resp.Headers.Add("X-Aggregator-Rule", _context.FunctionName);
+            return resp;
+        }
+
+        private static WorkItemEventContext CreateContextFromEvent(WebHookEvent eventData)
+        {
+            var collectionUrl = eventData.ResourceContainers.GetValueOrDefault("collection")?.BaseUrl;
+            var teamProjectId = eventData.ResourceContainers.GetValueOrDefault("project")?.Id ?? Guid.Empty;
+
+            var resourceObject = eventData.Resource as JObject;
+            if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventData.EventType)
+            {
+                var workItem = resourceObject.GetValue("revision").ToObject<WorkItem>();
+                var workItemUpdate = resourceObject.ToObject<WorkItemUpdate>();
+                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem, workItemUpdate);
+            }
+            else
+            {
+                var workItem = resourceObject.ToObject<WorkItem>();
+                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem);
             }
         }
 

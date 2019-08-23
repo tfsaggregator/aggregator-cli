@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator
@@ -29,7 +28,7 @@ namespace aggregator
             this.functionDirectory = functionDirectory;
         }
 
-        internal async Task<string> ExecuteAsync(Uri collectionUri, Guid teamProjectId, WorkItem workItem, CancellationToken cancellationToken)
+        internal async Task<string> ExecuteAsync(WorkItemEventContext eventContext, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.DevOpsTokenType}...");
             var clientCredentials = default(VssCredentials);
@@ -46,7 +45,7 @@ namespace aggregator
             cancellationToken.ThrowIfCancellationRequested();
 
             // TODO improve from https://github.com/Microsoft/vsts-work-item-migrator
-            using (var devops = new VssConnection(collectionUri, clientCredentials))
+            using (var devops = new VssConnection(eventContext.CollectionUri, clientCredentials))
             {
                 await devops.ConnectAsync(cancellationToken);
                 logger.WriteInfo($"Connected to Azure DevOps");
@@ -69,7 +68,7 @@ namespace aggregator
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
-                    return await engine.ExecuteAsync(teamProjectId, workItem, witClient, cancellationToken);
+                    return await engine.ExecuteAsync(eventContext.ProjectId, eventContext.WorkItemPayload, witClient, cancellationToken);
                 }
             }
         }

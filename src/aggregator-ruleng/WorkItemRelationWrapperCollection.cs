@@ -20,8 +20,9 @@ namespace aggregator.Engine
             _pivotWorkItem = workItem;
             _original = relations == null
                 ? new List<WorkItemRelationWrapper>()
-                : new List<WorkItemRelationWrapper>(relations.Select(relation =>
-                    new WorkItemRelationWrapper(_pivotWorkItem, relation)));
+                : relations.Select(relation => new WorkItemRelationWrapper(relation))
+                           .ToList();
+
             // do we need deep cloning?
             _current = new List<WorkItemRelationWrapper>(_original);
         }
@@ -43,7 +44,7 @@ namespace aggregator.Engine
                 {
                     rel = item.Rel,
                     url = item.Url,
-                    attributes = item.Attributes != null && item.Attributes.TryGetValue("comment", out var value)
+                    attributes = item.Attributes != null && item.Attributes.TryGetValue("comment", out object value)
                         ? new { comment = value }
                         : null
                 }
@@ -91,20 +92,19 @@ namespace aggregator.Engine
 
         public void AddChild(WorkItemWrapper child)
         {
-            var r = new WorkItemRelationWrapper(child, CoreRelationRefNames.Children, child.Url, string.Empty);
+            var r = new WorkItemRelationWrapper(CoreRelationRefNames.Children, child.Url, string.Empty);
             AddRelation(r);
         }
 
         public void AddParent(WorkItemWrapper parent)
         {
-            var r = new WorkItemRelationWrapper(parent, CoreRelationRefNames.Parent, parent.Url, string.Empty);
+            var r = new WorkItemRelationWrapper(CoreRelationRefNames.Parent, parent.Url, string.Empty);
             AddRelation(r);
         }
 
         public void AddLink(string type, string url, string comment)
         {
             AddRelation(new WorkItemRelationWrapper(
-                _pivotWorkItem,
                 type,
                 url,
                 comment
