@@ -1,0 +1,55 @@
+﻿{
+  "id": 3,
+  "workItemId": 22,
+  "rev": 2,
+  "revisedBy": {
+    "id": "afc5e4ef-7441-45d8-bb56-c2eaa2e88801",
+    "name": "a@b.com",
+    "displayName": "User 1",
+    "url": "https://dev.azure.com/fake-organization/_apis/Identities/afc5e4ef-7441-45d8-bb56-c2eaa2e88801",
+    "uniqueName": "domain\\user1",
+    "imageUrl": "https://dev.azure.com/fake-organization/_apis/_common/identityImage?id=afc5e4ef-7441-45d8-bb56-c2eaa2e88801"
+  },
+  "revisedDate": "9999-01-01T00:00:00Z",
+  "fields": {
+    "System.Rev": {
+      "oldValue": 1,
+      "newValue": 2
+    },
+    "System.AuthorizedDate": {
+      "oldValue": "2019-06-13T13:37:44.627Z",
+      "newValue": "2019-07-11T11:59:55.78Z"
+    },
+    "System.RevisedDate": {
+      "oldValue": "2019-07-11T11:59:55.78Z",
+      "newValue": "9999-01-01T00:00:00Z"
+    },
+    "System.ChangedDate": {
+      "oldValue": "2019-06-13T13:37:44.627Z",
+      "newValue": "2019-07-11T11:59:55.78Z"
+    },
+    "System.Watermark": {
+      "oldValue": 25486155,
+      "newValue": 25486539
+    },
+    "System.Title": {
+      "oldValue": "Initial Title",
+      "newValue": "Hello"
+    },
+    "System.History": {
+      "newValue": "Added new Comment"
+    }
+  },
+  "_links": {
+    "self": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/updates/3"
+    },
+    "workItemUpdates": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/updates"
+    },
+    "parent": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22"
+    }
+  },
+  "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/22/updates/3"
+}

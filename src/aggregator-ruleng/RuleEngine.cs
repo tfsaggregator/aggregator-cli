@@ -52,8 +52,7 @@ namespace aggregator.Engine
                     .WithEmitDebugInformation(true)
                     .WithReferences(references)
                     // Add namespaces
-                    .WithImports(imports)
-                    ;
+                    .WithImports(imports);
 
                 this.roslynScript = CSharpScript.Create<string>(
                     code: directives.GetRuleCode(),
@@ -107,21 +106,24 @@ namespace aggregator.Engine
         public EngineState State { get; private set; }
         public bool DryRun { get; }
 
-        public async Task<string> ExecuteAsync(Guid projectId, WorkItem workItem, WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
+        public async Task<string> ExecuteAsync(Guid projectId, WorkItemData workItemPayload, WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
             if (State == EngineState.Error)
             {
                 return string.Empty;
             }
 
+            var workItem = workItemPayload.WorkItem;
             var context = new EngineContext(witClient, projectId, workItem.GetTeamProject(), logger);
             var store = new WorkItemStore(context, workItem);
             var self = store.GetWorkItem(workItem.Id.Value);
+            var selfChanges = new WorkItemUpdateWrapper(workItemPayload.WorkItemUpdate);
             logger.WriteInfo($"Initial WorkItem {self.Id} retrieved from {witClient.BaseAddress}");
 
             var globals = new Globals
             {
                 self = self,
+                selfChanges = selfChanges,
                 store = store,
                 logger = logger
             };
