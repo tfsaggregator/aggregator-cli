@@ -63,7 +63,15 @@ namespace aggregator.cli
             return result;
         }
 
-        internal async Task<Guid> AddAsync(string projectName, string @event, InstanceName instance, string ruleName, CancellationToken cancellationToken)
+        internal class EventFilters
+        {
+            public string AreaPath { get; set; }
+            public string Type { get; set; }
+            public string Tag { get; set; }
+            public IEnumerable<string> Fields { get; set; }
+        }
+
+        internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
             var projectClient = devops.GetClient<ProjectHttpClient>();
@@ -139,17 +147,31 @@ namespace aggregator.cli
                     /* TODO consider offering additional filters using the following
                     { "tfsSubscriptionId", devops.ServerId },
                     { "teamId", null },
-                    // Filter events to include only work items under the specified area path.
-                    { "areaPath", null },
-                    // Filter events to include only work items of the specified type.
-                    { "workItemType", null },
-                    // Filter events to include only work items with the specified field(s) changed
-                    { "changedFields", null },
                     // The string that must be found in the comment.
                     { "commentPattern", null },
                     */
                 },
             };
+            if (!string.IsNullOrWhiteSpace(filters.AreaPath))
+            {
+                // Filter events to include only work items under the specified area path.
+                subscriptionParameters.PublisherInputs.Add("areaPath", filters.AreaPath);
+            }
+            if (!string.IsNullOrWhiteSpace(filters.Type))
+            {
+                // Filter events to include only work items of the specified type.
+                subscriptionParameters.PublisherInputs.Add("workItemType", filters.Type);
+            }
+            if (!string.IsNullOrWhiteSpace(filters.Tag))
+            {
+                // Filter events to include only work items containing the specified tag.
+                subscriptionParameters.PublisherInputs.Add("tag", filters.Tag);
+            }
+            if (filters.Fields.Any())
+            {
+                // Filter events to include only work items with the specified field(s) changed
+                subscriptionParameters.PublisherInputs.Add("changedFields", string.Join(',', filters.Fields));
+            }
 
             logger.WriteVerbose($"Adding mapping for {@event}...");
             var newSubscription = await serviceHooksClient.CreateSubscriptionAsync(subscriptionParameters);
