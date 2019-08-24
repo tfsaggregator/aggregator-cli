@@ -24,7 +24,7 @@ The main scenario for Aggregator (3.x) is supporting Azure DevOps and cloud scen
 
 
 
-## Planned features
+## Planned features (post v1.0)
 
 - Support for Deployment Slots for blue/green-style deployments
 - OAuth support to avoid maintain access tokens
@@ -71,12 +71,12 @@ These documents will guide you in creating the credentials
 * [Use portal to create an Azure Active Directory application and service principal that can access resources](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal)        
 * [Create personal access tokens to authenticate access](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate).
 
-Logon credentials are stored locally and expire after 2 hours.
+Aggregator stores the logon credentials locally and expires them after 2 hours.
 
 The PAT is also stored in the Azure Function settings: **whoever has access to the Resource Group can read it!**
 
 The Service Principal must have Contributor permission to the Azure Subscription or, in alternative, pre-create the Resource Group in Azure and give the service account Contributor permission to the Resource Group.
-![Permission on existing Resource Group](doc/contributor-on-rg.png)
+![Permission on existing Resource Group](doc/images/contributor-on-rg.png)
 If you go this route, remember add the `--resourceGroup` to all commands requiring an instance, otherwise the `instance` parameter adds an `aggregator-` prefix to find the Resource Group.
 
 
@@ -109,7 +109,7 @@ uninstall.instance  | Destroy an Aggregator instance in Azure, removing any mapp
 help                | Display more information on a specific command.
 version             | Display version information.
 
-You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-examples.md), see also [Manual Tests](doc/test-matrix.md).
+You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-examples.md).
 
 
 
@@ -122,15 +122,11 @@ For examples see [Rule Examples](doc/rule-examples.md).
 
 ## Maintenance
 
-Aggregator stores the PAT in the Azure Function configuration. Before the PAT expire you should referesh it from Azure DevOps or save a new PAT using the `configure.instance` command.
+Aggregator stores the PAT in the Azure Function configuration. Before the PAT expire you should refresh it from Azure DevOps or save a new PAT using the `configure.instance` command.
+
+Read [Production Configuration and Administration](doc/production.md) for recommendations on running Aggregator in production.
 
 
 ## Troubleshooting
 
-### View live Aggregator log messages
-
-In Azure Portal, open the Resource Group hosting the Instance (`aggregator-` followed by name of instance).
-Open the App Service hosting the Instance (instance name followed by `aggregator`).
-Switch to the **Platform features** tab and click on _Log streaming_ like in the picture.
-![Log streaming](doc/log-streaming-from-azure-portal.png)
-
+Use the Application Insight instance that was created aside the Azure Function.

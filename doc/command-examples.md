@@ -67,12 +67,12 @@ map.rule --verbose --project SampleProject --event workitem.created --instance m
 map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2
 map.rule --verbose --project SampleProject --event workitem.created --instance my3 --resourceGroup myRG1 --rule test3
 ```
-The same rule can be triggered by multiple events from different Azure DevOps projects. Currently only these events are supported:<br/>
-`workitem.created`<br/>
-`workitem.updated`<br/>
-`workitem.deleted`<br/>
-`workitem.restored`<br/>
-`workitem.commented`<br/>
+The same rule can be triggered by multiple events from different Azure DevOps projects. Currently only these events are supported:  
+`workitem.created`  
+`workitem.updated`  
+`workitem.deleted`  
+`workitem.restored`  
+`workitem.commented`  
 
 List the mappings with various filter options.
 ```Batchfile

@@ -1,5 +1,6 @@
 # Rule examples
 
+
 ## Hello World
 
 A trivial rule that returns some core fields of the work item which triggered the rule.
@@ -7,6 +8,7 @@ A trivial rule that returns some core fields of the work item which triggered th
 ```
 $"Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"
 ```
+
 
 ## Auto-close parent
 
@@ -34,6 +36,7 @@ if (parent != null)
 return message;
 ```
 
+
 ## Work item update
 
 Check if a work item was updated and execute actions based on the changes, e.g. if work item Title was updated.
@@ -50,6 +53,7 @@ else
 }
 ```
 
+
 ## History
 
 `PreviousRevision` is different because retrieves a read-only version of the work item.
@@ -57,6 +61,7 @@ else
 ```
 return self.PreviousRevision.PreviousRevision.Description;
 ```
+
 
 # Create new Work Item
 ```
