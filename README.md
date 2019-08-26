@@ -116,7 +116,7 @@ You can see a few Command examples in [Sample Aggregator CLI usage](doc/command-
 ## Rule language
 
 See [Rule Language](doc/rule-language.md) for a list of objects and properties to use.
-For examples see [Rule Examples](doc/rule-examples.md).
+For examples see [Rule Examples](doc/rule-examples-basic.md).
 
 
 

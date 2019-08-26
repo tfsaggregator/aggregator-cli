@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
+using Microsoft.TeamFoundation.Work.WebApi;
+using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using NSubstitute;
@@ -24,6 +27,7 @@ namespace unittests_ruleng
     public class RuleTests
     {
         private readonly IAggregatorLogger logger;
+        private readonly WorkHttpClient workClient;
         private readonly WorkItemTrackingHttpClient witClient;
         private readonly TestClientsContext clientsContext;
 
@@ -33,6 +37,7 @@ namespace unittests_ruleng
 
             clientsContext = new TestClientsContext();
 
+            workClient = clientsContext.WorkClient;
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
         }
@@ -374,7 +379,6 @@ return string.Empty;
             var workItem = ExampleTestData.Instance.WorkItem;
             var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
 
-            witClient.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed Title from { selfChanges.Fields[""System.Title""].OldValue } to { selfChanges.Fields[""System.Title""].NewValue }!"";
 ";
@@ -423,18 +427,18 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                     { "MyOrg.CustomStringField", "some value" },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDefault"");
 return customField;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("some value", result);
         }
 
@@ -449,17 +453,17 @@ return customField;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDefault"");
 return customField;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("MyDefault", result);
         }
 
@@ -474,18 +478,18 @@ return customField;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                     { "MyOrg.CustomNumericField", 42 },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
 return customField.ToString(""N"");
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("42.00", result);
         }
 
@@ -500,19 +504,72 @@ return customField.ToString(""N"");
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
 return customField.ToString(""N"");
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("3.00", result);
         }
 
+        [Fact]
+        public async Task DocumentationRule_BacklogWorkItemsActivateParent_Succeeds()
+        {
+            var workItemUS = ExampleTestData.Instance.BacklogUserStoryActive;
+            var workItemFeature = ExampleTestData.Instance.BacklogFeature;
+
+            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.Instance.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.Instance.ProcessConfigDefaultAgile);
+            witClient.GetWorkItemAsync(workItemUS.Id.Value, expand: WorkItemExpand.All).Returns(workItemUS);
+            witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
+            string ruleCode = @"
+            bool IsInProgress(WorkItemWrapper workItem, BacklogWorkItemTypeStates workItemType)
+            {
+                var concreteStateNames = workItemType?.StateCategoryStateNames
+                                                     .Where(category => string.Equals(""InProgress"", category.Key, StringComparison.OrdinalIgnoreCase))
+                                                     .SelectMany(category => category.Value);
+
+                return concreteStateNames?.Contains(workItem.State) ?? false;;
+            }
+
+            var parentWorkItem = self.Parent;
+            if (parentWorkItem == null)
+            {
+                return ""No Parent"";
+            }
+
+            var backlogWorkItems = await store.GetBacklogWorkItemTypesAndStates();
+            var backlogWorkItemsLookup = backlogWorkItems.ToDictionary(itemType => itemType.Name, itemType => itemType);
+
+            var workItemType = backlogWorkItemsLookup.GetValueOrDefault(self.WorkItemType);
+            if (!IsInProgress(self, workItemType))
+            {
+                return workItemType == null ? ""No Backlog work item type"" : $""work item not <InProgress> (State={self.State})"";
+            }
+
+            var parentWorkItemType = backlogWorkItemsLookup.GetValueOrDefault(parentWorkItem.WorkItemType);
+            if (IsInProgress(parentWorkItem, parentWorkItemType))
+            {
+                return parentWorkItemType == null ? ""No Backlog work item type"" : $""work item already <InProgress> (State={parentWorkItem.State})"";
+            }
+
+            parentWorkItem.State = parentWorkItemType.StateCategoryStateNames[""InProgress""].First();
+            return $""updated Parent {parentWorkItem.WorkItemType} #{parentWorkItem.Id} to State='{parentWorkItem.State}'"";
+            ";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+
+            Assert.Equal("updated Parent Feature #1 to State='Active'", result);
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+        }
     }
 }

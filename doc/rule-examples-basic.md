@@ -1,4 +1,7 @@
-# Rule examples
+# Basic Rule examples
+
+To start with simple rules you can see here some examples,
+for more usage please see [Advanced Examples](rule-examples-basic.md)
 
 
 ## Hello World
