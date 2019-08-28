@@ -68,7 +68,7 @@
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('storageAccountName')]",
       "apiVersion": "2016-12-01",
-      "location": "[parameters('location')]",
+      "location": "[parameters('webLocation')]",
       "kind": "Storage",
       "sku": {
         "name": "[parameters('storageAccountType')]"
@@ -96,7 +96,7 @@
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2016-09-01",
       "name": "[variables('hostingPlanName')]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('webLocation')]",
       "properties": {
       },
       "sku": {
