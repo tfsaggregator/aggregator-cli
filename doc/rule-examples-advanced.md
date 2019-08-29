@@ -47,11 +47,11 @@ parentWorkItem.State = parentWorkItemType.StateCategoryStateNames["InProgress"].
 return $"updated Parent {parentWorkItem.WorkItemType} #{parentWorkItem.Id} to State='{parentWorkItem.State}'";
 ```
 
+
 ## Backlog work items: Auto-Resolve parent
 
 This is more similar to classic TFS Aggregator.
-It moves a parent work item to Closed state, if all children are closed.
-The major difference is the navigation: `Parent` and `Children` properties do not returns work items but relation. You have to explicitly query Azure DevOps to retrieve the referenced work items.
+It moves a parent backlog work item to Resolved state, if all children are closed or terminated.
 
 ```csharp
 //base method to check state
@@ -82,19 +82,8 @@ bool IsRemovedOrCompleted(WorkItemWrapper workItem, BacklogWorkItemTypeStates wo
     return IsBacklogWorkItemInState(workItem, workItemType, expectedStateCategories);
 }
 
-//Method to check if a 'workItem' is in a 'Resolved' state
-bool IsResolved(WorkItemWrapper workItem, BacklogWorkItemTypeStates workItemType)
-{
-    var expectedStateCategories = new string[]
-                            {
-                                "Resolved",
-                            };
 
-    return IsBacklogWorkItemInState(workItem, workItemType, expectedStateCategories);
-}
-
-
-var parentWorkItem = workItem.Parent;
+var parentWorkItem = self.Parent;
 if (parentWorkItem == null)
 {
     return "No Parent";
@@ -103,25 +92,25 @@ if (parentWorkItem == null)
 var backlogWorkItems = await store.GetBacklogWorkItemTypesAndStates();
 var backlogWorkItemsLookup = backlogWorkItems.ToDictionary(itemType => itemType.Name, itemType => itemType);
 
-var workItemType = backlogWorkItemsLookup.GetValueOrDefault(workItem.WorkItemType);
-if (!IsRemovedOrCompleted(workItem, workItemType))
+var workItemType = backlogWorkItemsLookup.GetValueOrDefault(self.WorkItemType);
+if (!IsRemovedOrCompleted(self, workItemType))
 {
-    return workItemType == null ? "No Backlog work item type" : $"work item not <Removed> or <Completed> (State={workItem.State})";
+    return workItemType == null ? "No Backlog work item type" : $"work item not <Removed> or <Completed> (State={self.State})";
 }
 
 var parentWorkItemType = backlogWorkItemsLookup.GetValueOrDefault(parentWorkItem.WorkItemType);
-if (parentWorkItem.IsResolved(parentWorkItemType))
+if (IsRemovedOrCompleted(parentWorkItem, parentWorkItemType))
 {
-    return parentWorkItem == null ? "No Backlog work item type" : $"work item already <Resolved> (State={parentWorkItem.State})";
+    return parentWorkItem == null ? "No Backlog work item type" : $"work item already <Removed> or <Completed> (State={parentWorkItem.State})";
 }
 
 if (!parentWorkItem.Children.All(item => IsRemovedOrCompleted(item, backlogWorkItemsLookup.GetValueOrDefault(item.WorkItemType))))
 {
-    return $"No all child work items <Removed> or <Completed>: {string.Join(",", parentWorkItem.Children.Select(item => $"#{item.Id}={item.State}"))}";
+    return $"Not all child work items <Removed> or <Completed>: {string.Join(",", parentWorkItem.Children.Select(item => $"#{item.Id}={item.State}"))}";
 }
 
-var resolvedStates = parentWorkItemType.StateCategoryStateNames[BacklogWorkItemStateCategory.Resolved];
-parentWorkItem.State = resolvedStates.First();
+var progressStates = parentWorkItemType.StateCategoryStateNames["InProgress"];
+parentWorkItem.State = progressStates.Last();
 return $"updated Parent #{parentWorkItem.Id} to State='{parentWorkItem.State}'";
 ```
 

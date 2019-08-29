@@ -11,6 +11,8 @@ using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using NSubstitute;
+using NSubstitute.Core.Arguments;
+
 using unittests_ruleng.TestData;
 using Xunit;
 
@@ -376,8 +378,8 @@ return string.Empty;
         [Fact]
         public async Task HelloWorldRuleOnUpdate_Succeeds()
         {
-            var workItem = ExampleTestData.Instance.WorkItem;
-            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+            var workItem = ExampleTestData.WorkItem;
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
             string ruleCode = @"
 return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed Title from { selfChanges.Fields[""System.Title""].OldValue } to { selfChanges.Fields[""System.Title""].NewValue }!"";
@@ -391,10 +393,10 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
         }
 
         [Fact]
-        public async Task DocumentationRuleOnUpdateExample_Succeeds()
+        public async Task DocumentationRule_OnUpdateExample_Succeeds()
         {
-            var workItem = ExampleTestData.Instance.WorkItem;
-            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+            var workItem = ExampleTestData.WorkItem;
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
             witClient.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
@@ -521,55 +523,58 @@ return customField.ToString(""N"");
         [Fact]
         public async Task DocumentationRule_BacklogWorkItemsActivateParent_Succeeds()
         {
-            var workItemUS = ExampleTestData.Instance.BacklogUserStoryActive;
-            var workItemFeature = ExampleTestData.Instance.BacklogFeature;
+            var workItemUS = ExampleTestData.BacklogUserStoryActive;
+            var workItemFeature = ExampleTestData.BacklogFeatureOneChild;
 
-            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
-            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.Instance.WorkItemStateColorDefault.ToList());
-            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.Instance.ProcessConfigDefaultAgile);
-            witClient.GetWorkItemAsync(workItemUS.Id.Value, expand: WorkItemExpand.All).Returns(workItemUS);
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
             witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
-            string ruleCode = @"
-            bool IsInProgress(WorkItemWrapper workItem, BacklogWorkItemTypeStates workItemType)
-            {
-                var concreteStateNames = workItemType?.StateCategoryStateNames
-                                                     .Where(category => string.Equals(""InProgress"", category.Key, StringComparison.OrdinalIgnoreCase))
-                                                     .SelectMany(category => category.Value);
 
-                return concreteStateNames?.Contains(workItem.State) ?? false;;
-            }
-
-            var parentWorkItem = self.Parent;
-            if (parentWorkItem == null)
-            {
-                return ""No Parent"";
-            }
-
-            var backlogWorkItems = await store.GetBacklogWorkItemTypesAndStates();
-            var backlogWorkItemsLookup = backlogWorkItems.ToDictionary(itemType => itemType.Name, itemType => itemType);
-
-            var workItemType = backlogWorkItemsLookup.GetValueOrDefault(self.WorkItemType);
-            if (!IsInProgress(self, workItemType))
-            {
-                return workItemType == null ? ""No Backlog work item type"" : $""work item not <InProgress> (State={self.State})"";
-            }
-
-            var parentWorkItemType = backlogWorkItemsLookup.GetValueOrDefault(parentWorkItem.WorkItemType);
-            if (IsInProgress(parentWorkItem, parentWorkItemType))
-            {
-                return parentWorkItemType == null ? ""No Backlog work item type"" : $""work item already <InProgress> (State={parentWorkItem.State})"";
-            }
-
-            parentWorkItem.State = parentWorkItemType.StateCategoryStateNames[""InProgress""].First();
-            return $""updated Parent {parentWorkItem.WorkItemType} #{parentWorkItem.Id} to State='{parentWorkItem.State}'"";
-            ";
-
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            var engine = new RuleEngine(logger, ExampleRuleCode.ActivateParent, SaveMode.Default, dryRun: true);
             string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("updated Parent Feature #1 to State='Active'", result);
-            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+        }
+
+        [Fact]
+        public async Task DocumentationRule_BacklogWorkItemsResolveParent_Succeeds()
+        {
+            var workItemFeature = ExampleTestData.BacklogFeatureOneChild;
+            var workItemUS = ExampleTestData.BacklogUserStoryClosed;
+
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
+
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
+            witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
+
+            var engine = new RuleEngine(logger, ExampleRuleCode.ResolveParent, SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+
+            Assert.Equal("updated Parent #1 to State='Resolved'", result);
+        }
+
+        [Fact]
+        public async Task DocumentationRule_BacklogWorkItemsResolveParent_FailsDueToChildren()
+        {
+            var workItemFeature = ExampleTestData.BacklogFeatureTwoChildren;
+            var workItemUS2 = ExampleTestData.BacklogUserStoryClosed;
+            var workItemUS3= ExampleTestData.BacklogUserStoryActive;
+            workItemUS3.Id = 3;
+
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
+
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
+            witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
+            witClient.GetWorkItemsAsync(Arg.Is<IEnumerable<int>>(ints => ints.Single() == workItemUS3.Id.Value), expand: WorkItemExpand.All).Returns(new List<WorkItem>() { workItemUS3 });
+
+            var engine = new RuleEngine(logger, ExampleRuleCode.ResolveParent, SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS2, workItemUpdate), clientsContext, CancellationToken.None);
+
+            Assert.Equal("Not all child work items <Removed> or <Completed>: #2=Closed,#3=Active", result);
         }
     }
 }

@@ -142,7 +142,7 @@ namespace unittests_ruleng
         public void DeleteWorkItem_Succeeds()
         {
             var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
-            var workItem = ExampleTestData.Instance.WorkItem;
+            var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
             var sut = new WorkItemStore(context, workItem);
@@ -166,7 +166,7 @@ namespace unittests_ruleng
         public void DeleteAlreadyDeletedWorkItem_NoChange()
         {
             var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
-            var workItem = ExampleTestData.Instance.DeltedWorkItem;
+            var workItem = ExampleTestData.DeltedWorkItem;
             int workItemId = workItem.Id.Value;
 
             var sut = new WorkItemStore(context, workItem);
@@ -190,7 +190,7 @@ namespace unittests_ruleng
         public void RestoreNotDeletedWorkItem_NoChange()
         {
             var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
-            var workItem = ExampleTestData.Instance.WorkItem;
+            var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
             var sut = new WorkItemStore(context, workItem);

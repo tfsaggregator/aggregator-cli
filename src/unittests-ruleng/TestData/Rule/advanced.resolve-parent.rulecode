@@ -1,0 +1,58 @@
+﻿//base method to check state
+bool IsBacklogWorkItemInState(WorkItemWrapper workItem, BacklogWorkItemTypeStates workItemType, IEnumerable<string> expectedStateCategories)
+{
+    bool IsInExpectedStateCategory(KeyValuePair<string, string[]> category)
+    {
+        return expectedStateCategories.Any(expectedStateCategroy => string.Equals(expectedStateCategroy, category.Key, StringComparison.OrdinalIgnoreCase));
+    }
+
+    var concreteStateNames = workItemType?.StateCategoryStateNames
+                                            .Where(IsInExpectedStateCategory)
+                                            .SelectMany(category => category.Value);
+
+
+    return concreteStateNames?.Contains(workItem.State) ?? false;
+}
+
+//Method to check if a 'workItem' is in a 'Removed' or 'Completed' state
+bool IsRemovedOrCompleted(WorkItemWrapper workItem, BacklogWorkItemTypeStates workItemType)
+{
+    var expectedStateCategories = new string[]
+                                {
+                                    "Completed",
+                                    "Removed",
+                                };
+
+    return IsBacklogWorkItemInState(workItem, workItemType, expectedStateCategories);
+}
+
+
+var parentWorkItem = self.Parent;
+if (parentWorkItem == null)
+{
+    return "No Parent";
+}
+
+var backlogWorkItems = await store.GetBacklogWorkItemTypesAndStates();
+var backlogWorkItemsLookup = backlogWorkItems.ToDictionary(itemType => itemType.Name, itemType => itemType);
+
+var workItemType = backlogWorkItemsLookup.GetValueOrDefault(self.WorkItemType);
+if (!IsRemovedOrCompleted(self, workItemType))
+{
+    return workItemType == null ? "No Backlog work item type" : $"work item not <Removed> or <Completed> (State={self.State})";
+}
+
+var parentWorkItemType = backlogWorkItemsLookup.GetValueOrDefault(parentWorkItem.WorkItemType);
+if (IsRemovedOrCompleted(parentWorkItem, parentWorkItemType))
+{
+    return parentWorkItem == null ? "No Backlog work item type" : $"work item already <Removed> or <Completed> (State={parentWorkItem.State})";
+}
+
+if (!parentWorkItem.Children.All(item => IsRemovedOrCompleted(item, backlogWorkItemsLookup.GetValueOrDefault(item.WorkItemType))))
+{
+    return $"Not all child work items <Removed> or <Completed>: {string.Join(",", parentWorkItem.Children.Select(item => $"#{item.Id}={item.State}"))}";
+}
+
+var progressStates = parentWorkItemType.StateCategoryStateNames["InProgress"];
+parentWorkItem.State = progressStates.Last();
+return $"updated Parent #{parentWorkItem.Id} to State='{parentWorkItem.State}'";
