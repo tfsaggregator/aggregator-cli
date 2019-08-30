@@ -281,23 +281,36 @@ WorkItemType Names in this Category, e.g. "Epic" or "Test Plan"
 
 # BacklogWorkItemTypeStates
 A work item type with its Backlog Level Information and the 
-work item state to Meta-State Mapping
+work item State to State Category mapping.
+The mappings can be seen per work item template in the states configuration, e.g. "Epic":
+
+![Epic: State Category to State Name Mapping](images/state-to-state-category-default-agile-epic.png)
+
 
 `string Name`
 WorkItem Name, e.g. "Epic"
 
 `BacklogInfo Backlog`
-Backlog Level Information for this WorkItem Type
+[Backlog Level Information](#backloginfo) for this WorkItem Type.
 
 `IDictionary<string, string[]> StateCategoryStateNames`
-Meta-State to WorkItem state name mapping, e.g.
+State Category (Meta-State) to WorkItem state name mapping.
+
+Example: mapping for the WorkItem Type Epic of default Agile Process:
  - "Proposed"   = "New"
- - "InProgress" = "Active"
- - "Resolved"   = "Resolved"
+ - "InProgress" = "Active", "Resolved"
+ - "Resolved"   = \<empty>
  - "Complete"   = "Closed"
  - "Removed"    = "Removed"
 
-# BacklogInformation
+
+
+# BacklogInfo
+Available Backlog Levels can be seen in the used process configuration. 
+Example: The default Agile Backlog level names are: Epics, Features, Stories, Tasks
+
+![Default Agile Backlog Levels](images/backlog-levels-default-agile.png)
+
 
 `string ReferenceName`
 The Category Reference Name of this Backlog Level, e.g. "Microsoft.EpicCategory" or "Microsoft.RequirementCategory"
