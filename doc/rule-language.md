@@ -265,10 +265,21 @@ Restores the given work item from recycle bin and returns `true` if work item
 can be restored.
 
 `IEnumerable<WorkItemTypeCategory> GetWorkItemCategories()`
+Returns a list of work item category names with the mapped work item types, see 
+[WorkItemTypeCategory](#workitemtypecategory)
+
 
 `IEnumerable<BacklogWorkItemTypeStates> GetBacklogWorkItemTypesAndStates()`
+Returns a list of backlog work item types with their backlog level information and the state to state 
+category mappings, see [BacklogWorkItemTypeStates](#backlogworkitemtypestates)
+
+
 
 # WorkItemTypeCategory
+Work item categories group work items types together, you can see a list of
+available categories in query editor:
+
+![Work Item Category Names](images/work-item-categories.png)
 
 `string ReferenceName`
 Category ReferenceName, e.g. "Microsoft.EpicCategory"
