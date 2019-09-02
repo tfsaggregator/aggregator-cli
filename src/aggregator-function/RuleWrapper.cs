@@ -50,20 +50,12 @@ namespace aggregator
                 logger.WriteInfo($"Connected to Azure DevOps");
                 using (var clientsContext = new AzureDevOpsClientsContext(devops))
                 {
-                    string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
-                    if (!File.Exists(ruleFilePath))
+                    string ruleFilePath = GetRuleFilePath();
+                    if (string.IsNullOrWhiteSpace(ruleFilePath))
                     {
-                        logger.WriteError($"Rule code not found at {ruleFilePath}");
                         return "Rule file not found!";
                     }
-
-                    logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-                    string[] ruleCode;
-                    using (var fileStream = File.OpenRead(ruleFilePath))
-                    {
-                        var reader = new StreamReader(fileStream);
-                        ruleCode = await ReadAllLinesAsync(reader);
-                    }
+                    string[] ruleCode = await ReadAllLinesAsync(ruleFilePath);
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
@@ -72,16 +64,35 @@ namespace aggregator
             }
         }
 
-        private static async Task<string[]> ReadAllLinesAsync(TextReader streamReader)
+        private static async Task<string[]> ReadAllLinesAsync(string ruleFilePath)
         {
-            var lines = new List<string>();
-            string line;
-            while ((line = await streamReader.ReadLineAsync()) != null)
+            using (var fileStream = File.OpenRead(ruleFilePath))
             {
-                lines.Add(line);
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    var lines = new List<string>();
+                    string line;
+                    while ((line = await streamReader.ReadLineAsync()) != null)
+                    {
+                        lines.Add(line);
+                    }
+
+                    return lines.ToArray();
+                }
+            }
+        }
+
+        private string GetRuleFilePath()
+        {
+            string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
+            if (!File.Exists(ruleFilePath))
+            {
+                logger.WriteError($"Rule code not found at {ruleFilePath}");
+                return string.Empty;
             }
 
-            return lines.ToArray();
+            logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+            return ruleFilePath;
         }
     }
 }

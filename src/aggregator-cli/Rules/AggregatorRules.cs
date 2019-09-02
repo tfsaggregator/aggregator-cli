@@ -96,7 +96,7 @@ namespace aggregator.cli
         {
             _logger.WriteInfo($"Validate rule file {filePath}");
 
-            var ruleContent = await File.ReadAllLinesAsync(filePath);
+            var ruleContent = await File.ReadAllLinesAsync(filePath, cancellationToken);
 
             var engineLogger = new EngineWrapperLogger(_logger);
             try
