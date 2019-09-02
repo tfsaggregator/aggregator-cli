@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.TeamFoundation.Work.WebApi.Contracts;
+using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 
 
@@ -20,6 +21,9 @@ namespace aggregator.Engine
         private readonly Lazy<Task<IEnumerable<WorkItemTypeCategory>>> _lazyGetWorkItemCategories;
         private readonly Lazy<Task<IEnumerable<BacklogWorkItemTypeStates>>> _lazyGetBacklogWorkItemTypesAndStates;
 
+        private readonly IdentityRef _polluterIdentity;
+
+
         public WorkItemStore(EngineContext context)
         {
             _context = context;
@@ -31,7 +35,9 @@ namespace aggregator.Engine
         public WorkItemStore(EngineContext context, WorkItem workItem) : this(context)
         {
             //initialize tracker with initial work item
-            _ = new WorkItemWrapper(_context, workItem);
+            var wrapper = new WorkItemWrapper(_context, workItem);
+            //store initiator identity
+            _polluterIdentity = wrapper.RevisedBy;
         }
 
         public WorkItemWrapper GetWorkItem(int id)
@@ -130,28 +136,47 @@ namespace aggregator.Engine
             return await _lazyGetBacklogWorkItemTypesAndStates.Value;
         }
 
-        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, CancellationToken cancellationToken)
+
+        private void ImpersonateChanges()
         {
+            var workItems = _context.Tracker.GetChangedWorkItems();
+
+            var changedWorkItems = workItems.Created
+                                            .Concat(workItems.Updated);
+
+            foreach (var workItem in changedWorkItems)
+            {
+                workItem.ChangedBy = _polluterIdentity;
+            }
+        }
+
+        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, CancellationToken cancellationToken)
+        {
+            if (impersonate)
+            {
+                ImpersonateChanges();
+            }
+
             switch (mode)
             {
                 case SaveMode.Default:
                     _context.Logger.WriteVerbose($"No save mode specified, assuming {SaveMode.TwoPhases}.");
                     goto case SaveMode.TwoPhases;
                 case SaveMode.Item:
-                    var resultItem = await SaveChanges_ByItem(commit, cancellationToken);
+                    var resultItem = await SaveChanges_ByItem(commit, impersonate, cancellationToken);
                     return resultItem;
                 case SaveMode.Batch:
-                    var resultBatch = await SaveChanges_Batch(commit, cancellationToken);
+                    var resultBatch = await SaveChanges_Batch(commit, impersonate, cancellationToken);
                     return resultBatch;
                 case SaveMode.TwoPhases:
-                    var resultTwoPhases = await SaveChanges_TwoPhases(commit, cancellationToken);
+                    var resultTwoPhases = await SaveChanges_TwoPhases(commit, impersonate, cancellationToken);
                     return resultTwoPhases;
                 default:
                     throw new InvalidOperationException($"Unsupported save mode: {mode}.");
             }
         }
 
-        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, CancellationToken cancellationToken)
+        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, bool impersonate, CancellationToken cancellationToken)
         {
             int created = 0;
             int updated = 0;
@@ -166,6 +191,7 @@ namespace aggregator.Engine
                         item.Changes,
                         _context.ProjectName,
                         item.WorkItemType,
+                        bypassRules: impersonate,
                         cancellationToken: cancellationToken
                     );
                 }
@@ -198,6 +224,7 @@ namespace aggregator.Engine
                     _ = await _clients.WitClient.UpdateWorkItemAsync(
                         item.Changes,
                         item.Id,
+                        bypassRules: impersonate,
                         cancellationToken: cancellationToken
                     );
                 }
@@ -212,7 +239,7 @@ namespace aggregator.Engine
             return (created, updated);
         }
 
-        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit, CancellationToken cancellationToken)
+        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit, bool impersonate, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
@@ -230,7 +257,7 @@ namespace aggregator.Engine
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(_context.ProjectName,
                                                                             item.WorkItemType,
                                                                             item.Changes,
-                                                                            bypassRules: false,
+                                                                            bypassRules: impersonate,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }
@@ -241,7 +268,7 @@ namespace aggregator.Engine
 
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
-                                                                            bypassRules: false,
+                                                                            bypassRules: impersonate,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }
@@ -270,7 +297,7 @@ namespace aggregator.Engine
 
         //TODO no error handling here? SaveChanges_Batch has at least the DryRun support and error handling
         //TODO Improve complex handling with ReplaceIdAndResetChanges and RemapIdReferences
-        private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit, CancellationToken cancellationToken)
+        private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit, bool impersonate, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
@@ -298,7 +325,7 @@ namespace aggregator.Engine
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(_context.ProjectName,
                                                                             item.WorkItemType,
                                                                             document,
-                                                                            bypassRules: false,
+                                                                            bypassRules: impersonate,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }
@@ -330,7 +357,7 @@ namespace aggregator.Engine
 
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
-                                                                            bypassRules: false,
+                                                                            bypassRules: impersonate,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }

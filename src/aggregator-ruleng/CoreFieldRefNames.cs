@@ -1,5 +1,5 @@
 ﻿/*
- *  TODO replace this class with references to 
+ *  TODO replace this class with references to
 using Microsoft.TeamFoundation.WorkItemTracking.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.Common.Constants;
 */
@@ -31,6 +31,7 @@ namespace aggregator.Engine
         public const string IterationPath = "System.IterationPath";
         public const string Reason = "System.Reason";
         public const string RelatedLinkCount = "System.RelatedLinkCount";
+        public const string RevisedBy = "System.RevisedBy";
         public const string RevisedDate = "System.RevisedDate";
         public const string AuthorizedDate = "System.AuthorizedDate";
         public const string Tags = "System.Tags";
