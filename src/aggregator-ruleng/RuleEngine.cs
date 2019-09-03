@@ -5,6 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+
+using aggregator.Engine.Language;
+
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
@@ -35,27 +38,29 @@ namespace aggregator.Engine
             this.saveMode = mode;
             this.DryRun = dryRun;
 
-            var directives = new DirectivesParser(logger, ruleCode);
-            if (!directives.Parse())
+            (IRuleDirectives ruleDirectives, bool success, string[] messages) = RuleFileParser.Read(ruleCode);
+            if (!success || !ruleDirectives.IsValid())
             {
+                logger.WriteWarning(messages.Any() ? $"RuleFileParser issues: {string.Join(",",messages)}" : "No RuleFileParser issues found!");
                 State = EngineState.Error;
                 return;
             }
 
-            if (directives.Language == DirectivesParser.Languages.Csharp)
+            impersonateChanges = ruleDirectives.Impersonate;
+
+            var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(ruleDirectives.LoadAssemblyReferences()));
+            var imports = new HashSet<string>(DefaultImports().Concat(ruleDirectives.Imports));
+
+            var scriptOptions = ScriptOptions.Default
+                                             .WithEmitDebugInformation(true)
+                                             .WithReferences(references)
+                                             // Add namespaces
+                                             .WithImports(imports);
+
+            if (ruleDirectives.IsCSharp())
             {
-                impersonateChanges = directives.Impersonate;
-                var references = LoadReferences(directives);
-                var imports = GetImports(directives);
-
-                var scriptOptions = ScriptOptions.Default
-                    .WithEmitDebugInformation(true)
-                    .WithReferences(references)
-                    // Add namespaces
-                    .WithImports(imports);
-
                 this.roslynScript = CSharpScript.Create<string>(
-                    code: directives.GetRuleCode(),
+                    code: ruleDirectives.GetRuleCode(),
                     options: scriptOptions,
                     globalsType: typeof(Globals));
             }
@@ -66,38 +71,32 @@ namespace aggregator.Engine
             }
         }
 
-        private static IEnumerable<Assembly> LoadReferences(DirectivesParser directives)
+        private static IEnumerable<Assembly> DefaultAssemblyReferences()
         {
-            var types = new List<Type>() {
-                        typeof(object),
-                        typeof(System.Linq.Enumerable),
-                        typeof(System.Collections.Generic.CollectionExtensions),
-                        typeof(Microsoft.VisualStudio.Services.WebApi.IdentityRef),
-                        typeof(WorkItemWrapper)
-                    };
-            var references = types.ConvertAll(t => t.Assembly);
-            // user references
-            foreach (var reference in directives.References)
-            {
-                var name = new AssemblyName(reference);
-                references.Add(Assembly.Load(name));
-            }
+            var types = new List<Type>()
+                        {
+                            typeof(object),
+                            typeof(System.Linq.Enumerable),
+                            typeof(System.Collections.Generic.CollectionExtensions),
+                            typeof(Microsoft.VisualStudio.Services.WebApi.IdentityRef),
+                            typeof(WorkItemWrapper)
+                        };
 
-            return references.Distinct();
+            return types.Select(t => t.Assembly);
         }
 
-        private static IEnumerable<string> GetImports(DirectivesParser directives)
+        private static IEnumerable<string> DefaultImports()
         {
             var imports = new List<string>
-                    {
-                        "System",
-                        "System.Linq",
-                        "System.Collections.Generic",
-                        "Microsoft.VisualStudio.Services.WebApi",
-                        "aggregator.Engine"
-                    };
-            imports.AddRange(directives.Imports);
-            return imports.Distinct();
+                          {
+                              "System",
+                              "System.Linq",
+                              "System.Collections.Generic",
+                              "Microsoft.VisualStudio.Services.WebApi",
+                              "aggregator.Engine"
+                          };
+
+            return imports;
         }
 
         /// <summary>
