@@ -30,7 +30,7 @@ namespace aggregator.Engine
         private readonly SaveMode saveMode;
         private readonly bool impersonateChanges;
 
-        public RuleEngine(IAggregatorLogger logger, string[] ruleCode, SaveMode mode, bool dryRun)
+        public RuleEngine(IAggregatorLogger logger, string[] ruleCode, SaveMode mode, bool dryRun, bool executeImpersonated = false)
         {
             State = EngineState.Unknown;
 
@@ -46,7 +46,7 @@ namespace aggregator.Engine
                 return;
             }
 
-            impersonateChanges = ruleDirectives.Impersonate;
+            impersonateChanges = ruleDirectives.Impersonate || executeImpersonated;
 
             var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(ruleDirectives.LoadAssemblyReferences()));
             var imports = new HashSet<string>(DefaultImports().Concat(ruleDirectives.Imports));

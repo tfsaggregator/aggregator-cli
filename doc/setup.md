@@ -64,8 +64,12 @@ In Azure Portal you can check the permissons in the IAM menu for the selected Re
 
 ## Azure DevOps Personal Access Token (PAT)
 
-A PAT has the same or less permissions than the person that creates it.
-We recommend that the PAT is issued by an Azure DevOps Organization Administrator.
+A PAT has the same or less permissions than the person/identity that creates it.
+We recommend that the PAT is issued by an Azure DevOps Organization Administrator Identity.
+
+When using the [impersonate directive](rule-language.md#impersonate-directive) 
+the used identity for creating the PAT must have the permission: 
+"Bypass rules on work item updates"
 
 Aggregator needs the following Scopes:
 

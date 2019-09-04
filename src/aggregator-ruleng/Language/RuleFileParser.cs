@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -91,14 +92,14 @@ namespace aggregator.Engine.Language
                         }
                         break;
 
-                    case "onbehalfofinitiator":
+                    case "impersonate":
                         if (parts.Length < 2)
                         {
-                            ruleDirectives.Impersonate = true;
+                            messages.Add($"Invalid impersonate directive {directive}");
                         }
                         else
                         {
-                            messages.Add($"Invalid onbehalfofinitiator directive {directive}");
+                            ruleDirectives.Impersonate = string.Equals("onBehalfOfInitiator", parts[1].TrimEnd(), StringComparison.OrdinalIgnoreCase);
                         }
                         break;
 
@@ -127,8 +128,13 @@ namespace aggregator.Engine.Language
         {
             var content = new List<string>
                           {
-                              ruleDirectives.LanguageAsString()
+                              $".language={ruleDirectives.LanguageAsString()}"
                           };
+
+            if (ruleDirectives.Impersonate)
+            {
+                content.Add($".impersonate=onBehalfOfInitiator");
+            }
 
             content.AddRange(ruleDirectives.References.Select(reference => $".reference={reference}"));
             content.AddRange(ruleDirectives.Imports.Select(import => $".import={import}"));

@@ -31,6 +31,9 @@ namespace aggregator.cli
         [Option('m', "saveMode", Required = false, HelpText = "Save behaviour.")]
         public SaveMode SaveMode { get; set; }
 
+        [Option("impersonate", Required = false, HelpText = "Do rule changes on behalf of the person triggered the rule execution. See wiki for details, requires special account privileges.")]
+        public bool ImpersonateExecution { get; set; }
+
         [Option('a', "account", SetName = "Remote", Required = true, HelpText = "Azure DevOps account name.")]
         public string Account { get; set; }
 
@@ -53,14 +56,14 @@ namespace aggregator.cli
             var rules = new AggregatorRules(context.Azure, context.Logger);
             if (Local)
             {
-                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode, cancellationToken);
+                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
                 return ok ? 0 : 1;
             }
             else
             {
                 var instance = new InstanceName(Instance, ResourceGroup);
                 context.Logger.WriteWarning("Untested feature!");
-                bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode, cancellationToken);
+                bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
                 return ok ? 0 : 1;
             }
         }

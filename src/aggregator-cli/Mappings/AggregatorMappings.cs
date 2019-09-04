@@ -71,7 +71,7 @@ namespace aggregator.cli
             public IEnumerable<string> Fields { get; set; }
         }
 
-        internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, CancellationToken cancellationToken)
+        internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
             var projectClient = devops.GetClient<ProjectHttpClient>();
@@ -80,7 +80,7 @@ namespace aggregator.cli
 
             var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
+            (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, impersonateExecution, cancellationToken);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
@@ -217,8 +217,9 @@ namespace aggregator.cli
             if (rule != "*")
             {
                 ruleSubs = ruleSubs
-                .Where(s => s.ConsumerInputs.GetValue("url", "").StartsWith(
-                    AggregatorRules.GetInvocationUrl(instance, rule)));
+                .Where(s => s.ConsumerInputs
+                             .GetValue("url", "")
+                             .StartsWith(AggregatorRules.GetInvocationUrl(instance, rule)));
             }
 
             foreach (var ruleSub in ruleSubs)

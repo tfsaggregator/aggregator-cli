@@ -64,7 +64,7 @@ This is the last step: gluing Azure DevOps to the Rule hosted in Azure Functions
 
 ```Batchfile
 map.rule --verbose --project SampleProject --event workitem.created --instance my1 --rule test1
-map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2
+map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2 --impersonate
 map.rule --verbose --project SampleProject --event workitem.created --instance my3 --resourceGroup myRG1 --rule test3
 ```
 The same rule can be triggered by multiple events from different Azure DevOps projects. Currently only these events are supported:  

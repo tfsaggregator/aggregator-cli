@@ -48,5 +48,6 @@ namespace aggregator
         public string DevOpsToken { get; set; }
         public SaveMode SaveMode { get; set; }
         public bool DryRun { get; internal set; }
+        public bool Impersonate { get; internal set; }
     }
 }

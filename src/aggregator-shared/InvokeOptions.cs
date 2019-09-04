@@ -21,6 +21,11 @@ namespace aggregator
                 configuration.SaveMode = saveMode;
             }
 
+            if (string.Equals(parameters["execute"], "impersonated", StringComparison.OrdinalIgnoreCase))
+            {
+                configuration.Impersonate = true;
+            }
+
             return configuration;
         }
     }

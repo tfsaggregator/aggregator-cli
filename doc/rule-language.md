@@ -7,7 +7,9 @@ They are parsed by Aggregator and removed before compiling the code.
 `.lang=C#`
 `.language=Csharp`
 
-Currently the only supported language is C#. You can use the `.lang` directive to specify the programming language used by the rule.
+Currently the only supported language is C#. 
+You can use the `.lang` directive to specify the programming language used by the rule.
+If no language is specified: C# is default.
 
 ## reference directive
 Loads the specified assembly in the Rule execution context
@@ -19,8 +21,16 @@ Example
 Equivalent to C# namespace
 `.import=System.Collections.Generic`
 
+## impersonate directive
+Aggregator uses credentials for accessing Azure DevOps. By default the changes which 
+were saved back to Azure DevOps are done with the credentials provided for accessing 
+Azure DevOps.
+In order to do the changes on behalf of the account who initiated an event, which Aggregator will handle, 
+specify
+`.impersonate=onBehalfOfInitiator`
 
-
+**Attention:** To use this the identify accessing Azure DevOps needs special permissions, 
+see [Rule Examples](setup.md#azure-devops-personal-access-token--PAT-).
 
 
 # WorkItem Object

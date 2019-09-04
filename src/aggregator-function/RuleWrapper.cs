@@ -50,7 +50,7 @@ namespace aggregator
                 {
                     string[] ruleCode = await ReadAllLinesAsync(ruleFilePath);
 
-                    var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
+                    var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun, configuration.Impersonate);
 
                     return await engine.ExecuteAsync(eventContext.ProjectId, eventContext.WorkItemPayload, clientsContext, cancellationToken);
                 }

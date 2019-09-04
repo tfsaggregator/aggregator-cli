@@ -55,12 +55,12 @@ namespace aggregator.cli
             }
         }
 
-        internal static string GetInvocationUrl(InstanceName instance, string rule)
+        internal static string GetInvocationUrl(InstanceName instance, string rule, bool impersonateExecution = false)
         {
-            return $"{instance.FunctionAppUrl}/api/{rule}";
+            return $"{instance.FunctionAppUrl}/api/{rule}{(impersonateExecution? "?execute=impersonated" : "" )}";
         }
 
-        internal async Task<(string url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule, CancellationToken cancellationToken)
+        internal async Task<(string url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule, bool impersonateExecution = false, CancellationToken cancellationToken = default)
         {
             var instances = new AggregatorInstances(_azure, _logger);
             var kudu = new KuduApi(instance, _azure, _logger);
@@ -80,7 +80,7 @@ namespace aggregator.cli
                             var js = new JsonSerializer();
                             var secret = js.Deserialize<KuduSecret>(jtr);
 
-                            (string url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
+                            (string url, string key) invocation = (GetInvocationUrl(instance, rule, impersonateExecution), secret.Key);
                             return invocation;
                         }
                     }
@@ -289,7 +289,7 @@ namespace aggregator.cli
             return ok;
         }
 
-        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, CancellationToken cancellationToken)
+        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, bool impersonateExecution, CancellationToken cancellationToken)
         {
             if (!File.Exists(ruleFilePath))
             {
@@ -332,7 +332,7 @@ namespace aggregator.cli
                     var ruleCode = await File.ReadAllLinesAsync(ruleFilePath, cancellationToken);
 
                     var engineLogger = new EngineWrapperLogger(_logger);
-                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
+                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun, impersonateExecution);
 
                     var workItem = await clientsContext.WitClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
                     string result = await engine.ExecuteAsync(teamProjectId, workItem, clientsContext, cancellationToken);
@@ -343,11 +343,11 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode, CancellationToken cancellationToken)
+        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode, bool impersonateExecution, CancellationToken cancellationToken)
         {
             // build the request ...
             _logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            var (ruleUrl, ruleKey) = await GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
+            var (ruleUrl, ruleKey) = await GetInvocationUrlAndKey(instance, ruleName, impersonateExecution, cancellationToken);
             _logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             ruleUrl = InvokeOptions.AppendToUrl(ruleUrl, dryRun, saveMode);
