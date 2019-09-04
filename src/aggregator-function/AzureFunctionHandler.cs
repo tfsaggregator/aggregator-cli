@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -88,9 +89,11 @@ namespace aggregator
             configuration = InvokeOptions.ExtendFromUrl(configuration, req.RequestUri);
 
             var logger = new ForwarderLogger(_log);
-            var wrapper = new RuleWrapper(configuration, logger, _context.FunctionName, _context.FunctionDirectory);
             try
             {
+                var ruleFilePath = GetRuleFilePath(_context.FunctionName, _context.FunctionDirectory);
+                var wrapper = new RuleWrapper(configuration, logger, ruleFilePath);
+
                 string execResult = await wrapper.ExecuteAsync(eventContext, cancellationToken);
 
                 if (string.IsNullOrEmpty(execResult))
@@ -149,6 +152,19 @@ namespace aggregator
                 var workItem = resourceObject.ToObject<WorkItem>();
                 return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem);
             }
+        }
+
+        private string GetRuleFilePath(string functionDirectory, string ruleName)
+        {
+            string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
+            if (!File.Exists(ruleFilePath))
+            {
+                _log.LogError($"Rule code not found at {ruleFilePath}");
+                throw new FileNotFoundException($"Rule code not found at expected path: '{ruleFilePath}'");
+            }
+
+            _log.LogDebug($"Rule code found at {ruleFilePath}");
+            return ruleFilePath;
         }
 
         private static T GetCustomAttribute<T>()

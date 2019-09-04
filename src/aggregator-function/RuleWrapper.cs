@@ -16,15 +16,13 @@ namespace aggregator
     {
         private readonly AggregatorConfiguration configuration;
         private readonly IAggregatorLogger logger;
-        private readonly string ruleName;
-        private readonly string functionDirectory;
+        private readonly string ruleFilePath;
 
-        public RuleWrapper(AggregatorConfiguration configuration, IAggregatorLogger logger, string ruleName, string functionDirectory)
+        public RuleWrapper(AggregatorConfiguration configuration, IAggregatorLogger logger, string ruleFilePath)
         {
             this.configuration = configuration;
             this.logger = logger;
-            this.ruleName = ruleName;
-            this.functionDirectory = functionDirectory;
+            this.ruleFilePath = ruleFilePath;
         }
 
         internal async Task<string> ExecuteAsync(WorkItemEventContext eventContext, CancellationToken cancellationToken)
@@ -50,11 +48,6 @@ namespace aggregator
                 logger.WriteInfo($"Connected to Azure DevOps");
                 using (var clientsContext = new AzureDevOpsClientsContext(devops))
                 {
-                    string ruleFilePath = GetRuleFilePath();
-                    if (string.IsNullOrWhiteSpace(ruleFilePath))
-                    {
-                        return "Rule file not found!";
-                    }
                     string[] ruleCode = await ReadAllLinesAsync(ruleFilePath);
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
@@ -80,19 +73,6 @@ namespace aggregator
                     return lines.ToArray();
                 }
             }
-        }
-
-        private string GetRuleFilePath()
-        {
-            string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
-            if (!File.Exists(ruleFilePath))
-            {
-                logger.WriteError($"Rule code not found at {ruleFilePath}");
-                return string.Empty;
-            }
-
-            logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-            return ruleFilePath;
         }
     }
 }
