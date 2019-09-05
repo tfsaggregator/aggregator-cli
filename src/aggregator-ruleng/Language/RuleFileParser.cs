@@ -45,7 +45,6 @@ namespace aggregator.Engine.Language
                         if (parts.Length < 2)
                         {
                             messages.Add($"Invalid language directive {directive}");
-                            ruleDirectives.Language = RuleLanguage.Unknown;
                         }
                         else
                         {
