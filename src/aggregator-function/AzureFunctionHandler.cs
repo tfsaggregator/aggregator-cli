@@ -85,8 +85,8 @@ namespace aggregator
                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
-            var configuration = AggregatorConfiguration.Read(config);
-            configuration = InvokeOptions.ExtendFromUrl(configuration, req.RequestUri);
+            var configuration = AggregatorConfiguration.Read(config)
+                                                       .UpdateFromUrl(req.RequestUri);
 
             var logger = new ForwarderLogger(_log);
             try
