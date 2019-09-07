@@ -55,15 +55,14 @@ namespace aggregator.cli
             }
         }
 
-        internal static Uri GetInvocationUrl(InstanceName instance, string rule, bool impersonateExecution = false)
+        internal static Uri GetInvocationUrl(InstanceName instance, string rule)
         {
             var url = $"{instance.FunctionAppUrl}/api/{rule}";
-            return new Uri(url).AddToUrl(impersonate: impersonateExecution);
+            return new Uri(url);
         }
 
-        internal async Task<(Uri url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule, bool impersonateExecution = false, CancellationToken cancellationToken = default)
+        internal async Task<(Uri url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule, CancellationToken cancellationToken = default)
         {
-            var instances = new AggregatorInstances(_azure, _logger);
             var kudu = new KuduApi(instance, _azure, _logger);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
@@ -81,7 +80,7 @@ namespace aggregator.cli
                             var js = new JsonSerializer();
                             var secret = js.Deserialize<KuduSecret>(jtr);
 
-                            (Uri url, string key) invocation = (GetInvocationUrl(instance, rule, impersonateExecution), secret.Key);
+                            (Uri url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
                             return invocation;
                         }
                     }
@@ -149,19 +148,23 @@ namespace aggregator.cli
 
             var assembly = Assembly.GetExecutingAssembly();
 
-            using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
             // TODO we can deserialize a KuduFunctionConfig instead of using a fixed file...
+            using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
             {
-                var reader = new StreamReader(stream);
-                var content = await reader.ReadToEndAsync();
-                inMemoryFiles.Add("function.json", content);
+                using (var reader = new StreamReader(stream))
+                {
+                    var content = await reader.ReadToEndAsync();
+                    inMemoryFiles.Add("function.json", content);
+                }
             }
 
             using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
             {
-                var reader = new StreamReader(stream);
-                var content = await reader.ReadToEndAsync();
-                inMemoryFiles.Add("run.csx", content);
+                using (var reader = new StreamReader(stream))
+                {
+                    var content = await reader.ReadToEndAsync();
+                    inMemoryFiles.Add("run.csx", content);
+                }
             }
 
             return inMemoryFiles;
@@ -348,10 +351,10 @@ namespace aggregator.cli
         {
             // build the request ...
             _logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            var (ruleUrl, ruleKey) = await GetInvocationUrlAndKey(instance, ruleName, impersonateExecution, cancellationToken);
+            var (ruleUrl, ruleKey) = await GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             _logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            ruleUrl = ruleUrl.AddToUrl(dryRun, saveMode);
+            ruleUrl = ruleUrl.AddToUrl(dryRun, saveMode, impersonateExecution);
 
             string baseUrl = $"https://dev.azure.com/{account}";
             Guid teamProjectId = Guid.Empty;

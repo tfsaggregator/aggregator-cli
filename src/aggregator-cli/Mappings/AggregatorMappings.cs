@@ -14,7 +14,7 @@ namespace aggregator.cli
 {
     internal class AggregatorMappings
     {
-        private VssConnection devops;
+        private readonly VssConnection devops;
         private readonly IAzure azure;
         private readonly ILogger logger;
 
@@ -81,10 +81,10 @@ namespace aggregator.cli
 
             var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (Uri ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, impersonateExecution, cancellationToken);
+            (Uri ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
+            ruleUrl = ruleUrl.AddToUrl(impersonate: impersonateExecution);
 
             // check if the subscription already exists and bail out
             var query = new SubscriptionsQuery {
@@ -119,6 +119,7 @@ namespace aggregator.cli
             };
 
             cancellationToken.ThrowIfCancellationRequested();
+            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
             var queryResult = await serviceHooksClient.QuerySubscriptionsAsync(query);
             if (queryResult.Results.Any())
             {
@@ -202,7 +203,7 @@ namespace aggregator.cli
                     instance.FunctionAppUrl));
             if (@event != "*")
             {
-                ruleSubs = ruleSubs.Where(s => s.EventType == @event);
+                ruleSubs = ruleSubs.Where(s => string.Equals(s.EventType, @event, StringComparison.OrdinalIgnoreCase));
             }
 
             if (projectName != "*")
@@ -212,15 +213,15 @@ namespace aggregator.cli
                 var project = await projectClient.GetProject(projectName);
                 logger.WriteInfo($"Project {projectName} data read.");
 
-                ruleSubs = ruleSubs.Where(s => s.PublisherInputs["projectId"] == project.Id.ToString());
+                ruleSubs = ruleSubs.Where(s => string.Equals(s.PublisherInputs["projectId"], project.Id.ToString(), StringComparison.OrdinalIgnoreCase));
             }
 
             if (rule != "*")
             {
-                ruleSubs = ruleSubs
-                .Where(s => s.ConsumerInputs
-                             .GetValue("url", "")
-                             .StartsWith(AggregatorRules.GetInvocationUrl(instance, rule).ToString()));
+                var invocationUrl = AggregatorRules.GetInvocationUrl(instance, rule).ToString();
+                ruleSubs = ruleSubs.Where(s => s.ConsumerInputs
+                                                .GetValue("url", "")
+                                                .StartsWith(invocationUrl, StringComparison.OrdinalIgnoreCase));
             }
 
             foreach (var ruleSub in ruleSubs)
