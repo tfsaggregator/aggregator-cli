@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using aggregator.Engine.Language;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -95,13 +96,12 @@ namespace aggregator.cli
         {
             _logger.WriteInfo($"Validate rule file {filePath}");
 
-            var ruleContent = await File.ReadAllLinesAsync(filePath, cancellationToken);
-
             var engineLogger = new EngineWrapperLogger(_logger);
+            var (ruleDirectives, _) = await RuleFileParser.ReadFile(filePath, engineLogger, cancellationToken);
             try
             {
-                var ruleEngine = new Engine.RuleEngine(engineLogger, ruleContent, SaveMode.Batch, true);
-                (var success, var diagnostics) = ruleEngine.VerifyRule();
+                var rule = new Engine.ScriptedRuleWrapper(name, ruleDirectives, engineLogger);
+                (var success, var diagnostics) = rule.Verify();
                 if (success)
                 {
                     _logger.WriteInfo($"Rule file is valid");
@@ -125,8 +125,8 @@ namespace aggregator.cli
             }
 
             _logger.WriteVerbose($"Layout rule files");
-            var inMemoryFiles = await PackagingFilesAsync(name, filePath);
-            _logger.WriteInfo($"Packaging {filePath} into rule {name} complete.");
+            var inMemoryFiles = await PackagingFilesAsync(name, ruleDirectives);
+            _logger.WriteInfo($"Packaging rule {name} complete.");
 
             _logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
             bool ok = await UploadRuleFilesAsync(instance, name, inMemoryFiles, cancellationToken);
@@ -138,12 +138,12 @@ namespace aggregator.cli
             return ok;
         }
 
-        private static async Task<IDictionary<string, string>> PackagingFilesAsync(string name, string filePath)
+        private static async Task<IDictionary<string, string>> PackagingFilesAsync(string name, IRuleDirectives ruleDirectives)
         {
-            var inMemoryFiles = new Dictionary<string, string>();
-
-            var ruleContent = await File.ReadAllTextAsync(filePath);
-            inMemoryFiles.Add($"{name}.rule", ruleContent);
+            var inMemoryFiles = new Dictionary<string, string>
+            {
+                { $"{name}.rule", string.Join(Environment.NewLine, RuleFileParser.Write(ruleDirectives)) }
+            };
 
             var assembly = Assembly.GetExecutingAssembly();
 
@@ -332,13 +332,17 @@ namespace aggregator.cli
                 using (var clientsContext = new AzureDevOpsClientsContext(devops))
                 {
                     _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-                    var ruleCode = await File.ReadAllLinesAsync(ruleFilePath, cancellationToken);
+                    var (ruleDirectives, _) = await RuleFileParser.ReadFile(ruleFilePath, cancellationToken);
+                    var rule = new Engine.ScriptedRuleWrapper(Path.GetFileNameWithoutExtension(ruleFilePath), ruleDirectives)
+                               {
+                                   ImpersonateExecution = impersonateExecution
+                               };
 
                     var engineLogger = new EngineWrapperLogger(_logger);
-                    var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun, impersonateExecution);
+                    var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);
 
                     var workItem = await clientsContext.WitClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
-                    string result = await engine.ExecuteAsync(teamProjectId, workItem, clientsContext, cancellationToken);
+                    string result = await engine.RunAsync(rule, teamProjectId, workItem, clientsContext, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;

@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -65,14 +64,14 @@ namespace aggregator
                                                        .UpdateFromUrl(req.RequestUri);
 
             var logger = new ForwarderLogger(_log);
+            var ruleProvider = new AzureFunctionRuleProvider(logger, _context.FunctionDirectory);
+            var ruleExecutor = new RuleExecutor(logger, configuration);
             using (_log.BeginScope($"WorkItem #{eventContext.WorkItemPayload.WorkItem.Id}"))
             {
                 try
                 {
-                    var ruleFilePath = GetRuleFilePath(_context.FunctionName, _context.FunctionDirectory);
-                    var wrapper = new RuleWrapper(configuration, logger, ruleFilePath);
-
-                    string execResult = await wrapper.ExecuteAsync(eventContext, cancellationToken);
+                    var rule = await ruleProvider.GetRule(ruleName);
+                    var execResult = await ruleExecutor.ExecuteAsync(rule, eventContext, cancellationToken);
 
                     if (string.IsNullOrEmpty(execResult))
                     {
@@ -80,7 +79,7 @@ namespace aggregator
                     }
                     else
                     {
-                        _log.LogInformation($"Returning '{execResult}' from '{ruleName}'");
+                        _log.LogInformation($"Returning '{execResult}' from '{rule.Name}'");
                         return req.CreateResponse(HttpStatusCode.OK, execResult);
                     }
                 }
@@ -134,19 +133,6 @@ namespace aggregator
                 var workItem = resourceObject.ToObject<WorkItem>();
                 return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem);
             }
-        }
-
-        private string GetRuleFilePath(string functionDirectory, string ruleName)
-        {
-            string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
-            if (!File.Exists(ruleFilePath))
-            {
-                _log.LogError($"Rule code not found at {ruleFilePath}");
-                throw new FileNotFoundException($"Rule code not found at expected path: '{ruleFilePath}'");
-            }
-
-            _log.LogDebug($"Rule code found at {ruleFilePath}");
-            return ruleFilePath;
         }
 
         private static T GetCustomAttribute<T>()

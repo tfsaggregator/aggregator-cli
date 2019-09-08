@@ -15,6 +15,35 @@ namespace aggregator
         void WriteError(string message);
     }
 
+    /// <summary>
+    /// an emtpy logger implementation
+    /// </summary>
+    public class NullLogger : IAggregatorLogger
+    {
+        /// <inheritdoc />
+        public void WriteVerbose(string message)
+        {
+        }
+
+
+        /// <inheritdoc />
+        public void WriteInfo(string message)
+        {
+        }
+
+
+        /// <inheritdoc />
+        public void WriteWarning(string message)
+        {
+        }
+
+
+        /// <inheritdoc />
+        public void WriteError(string message)
+        {
+        }
+    }
+
     public static class AggregatorLoggerExtensions
     {
         public static void WriteVerbose(this IAggregatorLogger logger, string[] messages)

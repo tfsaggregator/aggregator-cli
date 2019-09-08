@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.Services.Common;
 
@@ -13,18 +15,29 @@ namespace aggregator.Engine.Language
     /// </summary>
     public static class RuleFileParser
     {
-        public static (IRuleDirectives ruleDirectives, bool result, string[] messages) ReadFile(string ruleFilePath)
+        public static async Task<(IRuleDirectives ruleDirectives, bool result)> ReadFile(string ruleFilePath, CancellationToken cancellationToken = default)
         {
-            var content = File.ReadAllLines(ruleFilePath);
-            return Read(content);
+            return await ReadFile(ruleFilePath, new NullLogger(), cancellationToken);
+        }
+
+        public static async Task<(IRuleDirectives ruleDirectives, bool result)> ReadFile(string ruleFilePath, IAggregatorLogger logger, CancellationToken cancellationToken = default)
+        {
+            var content = await ReadAllLinesAsync(ruleFilePath, cancellationToken);
+            return Read(content, logger);
         }
 
         /// <summary>
         /// Grab directives
         /// </summary>
-        internal static (IRuleDirectives ruleDirectives, bool parseSuccess, string[] messages) Read(string[] ruleCode)
+        public static (IRuleDirectives ruleDirectives, bool parseSuccess) Read(string[] ruleCode, IAggregatorLogger logger = default)
         {
-            var messages = new List<string>();
+            var parsingIssues = false;
+            void FailParsingWithMessage(string message)
+            {
+                logger?.WriteWarning(message);
+                parsingIssues = true;
+            }
+
             var directiveLineIndex = 0;
             var ruleDirectives = new RuleDirectives()
                                  {
@@ -44,7 +57,7 @@ namespace aggregator.Engine.Language
                     case "language":
                         if (parts.Length < 2)
                         {
-                            messages.Add($"Invalid language directive {directive}");
+                            FailParsingWithMessage($"Invalid language directive {directive}");
                         }
                         else
                         {
@@ -57,7 +70,7 @@ namespace aggregator.Engine.Language
                                     break;
                                 default:
                                 {
-                                    messages.Add($"Unrecognized language {parts[1]}");
+                                    FailParsingWithMessage($"Unrecognized language {parts[1]}");
                                     ruleDirectives.Language = RuleLanguage.Unknown;
                                     break;
                                 }
@@ -70,7 +83,7 @@ namespace aggregator.Engine.Language
                     case "reference":
                         if (parts.Length < 2)
                         {
-                            messages.Add($"Invalid reference directive {directive}");
+                            FailParsingWithMessage($"Invalid reference directive {directive}");
                         }
                         else
                         {
@@ -83,7 +96,7 @@ namespace aggregator.Engine.Language
                     case "namespace":
                         if (parts.Length < 2)
                         {
-                            messages.Add($"Invalid import directive {directive}");
+                            FailParsingWithMessage($"Invalid import directive {directive}");
                         }
                         else
                         {
@@ -94,7 +107,7 @@ namespace aggregator.Engine.Language
                     case "impersonate":
                         if (parts.Length < 2)
                         {
-                            messages.Add($"Invalid impersonate directive {directive}");
+                            FailParsingWithMessage($"Invalid impersonate directive {directive}");
                         }
                         else
                         {
@@ -104,7 +117,7 @@ namespace aggregator.Engine.Language
 
                     default:
                     {
-                        messages.Add($"Unrecognized directive {directive}");
+                        FailParsingWithMessage($"Unrecognized directive {directive}");
                         break;
                     }
                 }//switch
@@ -113,14 +126,15 @@ namespace aggregator.Engine.Language
             }//while
 
             ruleDirectives.RuleCode.AddRange(ruleCode.Skip(directiveLineIndex));
-            return (ruleDirectives, messages.Count == 0, messages.ToArray());
+            var parseSuccessful = !parsingIssues;
+            return (ruleDirectives, parseSuccessful);
         }
 
-        public static void WriteFile(string ruleFilePath, IRuleDirectives ruleDirectives)
+        public static async Task WriteFile(string ruleFilePath, IRuleDirectives ruleDirectives, CancellationToken cancellationToken = default)
         {
             var content = Write(ruleDirectives);
 
-            File.WriteAllLines(ruleFilePath, content);
+            await WriteAllLinesAsync(ruleFilePath, content, cancellationToken);
         }
 
         public static string[] Write(IRuleDirectives ruleDirectives)
@@ -140,6 +154,40 @@ namespace aggregator.Engine.Language
             content.AddRange(ruleDirectives.RuleCode);
 
             return content.ToArray();
+        }
+
+        private static async Task<string[]> ReadAllLinesAsync(string ruleFilePath, CancellationToken cancellationToken)
+        {
+            using (var fileStream = File.OpenRead(ruleFilePath))
+            {
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    var lines = new List<string>();
+                    string line;
+                    while ((line = await streamReader.ReadLineAsync().ConfigureAwait(false)) != null)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        lines.Add(line);
+                    }
+
+                    return lines.ToArray();
+                }
+            }
+        }
+
+        private static async Task WriteAllLinesAsync(string ruleFilePath, IEnumerable<string> ruleContent, CancellationToken cancellationToken)
+        {
+            using (var fileStream = File.OpenWrite(ruleFilePath))
+            {
+                using (var streamWriter = new StreamWriter(fileStream))
+                {
+                    foreach (var line in ruleContent)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await streamWriter.WriteLineAsync(line).ConfigureAwait(false);
+                    }
+                }
+            }
         }
     }
 }
