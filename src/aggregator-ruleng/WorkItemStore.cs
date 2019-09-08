@@ -139,10 +139,9 @@ namespace aggregator.Engine
 
         private void ImpersonateChanges()
         {
-            var workItems = _context.Tracker.GetChangedWorkItems();
+            var (created, updated, _, _) = _context.Tracker.GetChangedWorkItems();
 
-            var changedWorkItems = workItems.Created
-                                            .Concat(workItems.Updated);
+            var changedWorkItems = created.Concat(updated);
 
             foreach (var workItem in changedWorkItems)
             {

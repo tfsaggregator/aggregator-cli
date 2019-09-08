@@ -14,7 +14,7 @@ namespace unittests_ruleng
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
-            (IRuleDirectives directives, bool parsingSuccess, string[] __) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, bool parsingSuccess, _) = RuleFileParser.Read(ruleCode.Mince());
 
             Assert.Empty(directives.References);
             Assert.Empty(directives.Imports);
@@ -30,7 +30,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         [InlineData(".language=CS")]
         public void RuleLanguageDirectiveParse_Succeeds(string ruleCode, RuleLanguage expectedLanguage = RuleLanguage.Csharp)
         {
-            (IRuleDirectives directives, bool parsingSuccess, string[] __) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, bool parsingSuccess, _) = RuleFileParser.Read(ruleCode.Mince());
 
             Assert.True(parsingSuccess);
             Assert.Equal(expectedLanguage, directives.Language);
@@ -42,7 +42,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         [InlineData(".lang=C#\r\n.unrecognized=directive\r\nreturn string.Empty;\r\n", RuleLanguage.Csharp)]
         public void RuleLanguageDirectiveParse_Fails(string ruleCode, RuleLanguage expectedLanguage = RuleLanguage.Unknown)
         {
-            (IRuleDirectives directives, bool parsingSuccess, string[] __) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, bool parsingSuccess, _) = RuleFileParser.Read(ruleCode.Mince());
 
             Assert.False(parsingSuccess);
             Assert.Equal(expectedLanguage, directives.Language);
@@ -55,7 +55,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         [InlineData(".reference=System.Xml.XDocument", 1)]
         public void RuleReferenceDirectiveParse_Succeeds(string ruleCode, int expectedReferenceCount)
         {
-            (IRuleDirectives directives, bool parsingSuccess, string[] __) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, bool parsingSuccess, _) = RuleFileParser.Read(ruleCode.Mince());
 
             Assert.True(parsingSuccess);
             Assert.Equal(expectedReferenceCount, directives.References.Count);
@@ -67,7 +67,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         [InlineData(".namespace=System.Diagnostics", 1)]
         public void RuleImportDirectiveParse_Succeeds(string ruleCode, int expectedImportCount)
         {
-            (IRuleDirectives directives, bool parsingSuccess, string[] __) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, bool parsingSuccess, _) = RuleFileParser.Read(ruleCode.Mince());
 
             Assert.True(parsingSuccess);
             Assert.Equal(expectedImportCount, directives.Imports.Count);
@@ -79,7 +79,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
             string ruleCode = @".impersonate=onBehalfOfInitiator 
 ";
 
-            (IRuleDirectives directives, bool parsingSuccess, string[] __) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, bool parsingSuccess, _) = RuleFileParser.Read(ruleCode.Mince());
 
             Assert.True(parsingSuccess);
             Assert.True(directives.Impersonate);

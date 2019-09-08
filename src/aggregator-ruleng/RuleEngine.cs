@@ -141,10 +141,10 @@ namespace aggregator.Engine
             }
 
             logger.WriteVerbose($"Post-execution, save any change (mode {saveMode})...");
-            var saveRes = await store.SaveChanges(saveMode, !DryRun, impersonateChanges, cancellationToken);
-            if (saveRes.created + saveRes.updated > 0)
+            var (created, updated) = await store.SaveChanges(saveMode, !DryRun, impersonateChanges, cancellationToken);
+            if (created + updated > 0)
             {
-                logger.WriteInfo($"Changes saved to Azure DevOps (mode {saveMode}): {saveRes.created} created, {saveRes.updated} updated.");
+                logger.WriteInfo($"Changes saved to Azure DevOps (mode {saveMode}): {created} created, {updated} updated.");
             }
             else
             {

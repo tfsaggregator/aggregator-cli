@@ -19,7 +19,6 @@ namespace aggregator.cli
 {
     internal class AggregatorRules
     {
-        private static readonly Random Randomizer = new Random((int)DateTime.UtcNow.Ticks);
         private readonly IAzure _azure;
         private readonly ILogger _logger;
 
