@@ -6,18 +6,22 @@ namespace aggregator.cli
 {
     internal class RuleOutputData : ILogDataObject
     {
-        string instanceName;
-        KuduFunction function;
+        private readonly string instanceName;
+        private readonly string ruleName;
+        private readonly bool isDisabled;
+        private readonly bool isImpersonated;
 
-        internal RuleOutputData(InstanceName instance, KuduFunction function)
+        internal RuleOutputData(InstanceName instance, KuduFunction function, bool isImpersonated)
         {
             this.instanceName = instance.PlainName;
-            this.function = function;
+            this.ruleName = function.Name;
+            this.isDisabled = function.Config.Disabled;
+            this.isImpersonated = isImpersonated;
         }
 
         public string AsHumanReadable()
         {
-            return $"Rule {instanceName}/{function.Name} {(function.Config.Disabled ? "(disabled)" : string.Empty)}";
+            return $"Rule {instanceName}/{ruleName} {(isImpersonated ? "*execute impersonated*" : string.Empty)} {(isDisabled ? "(disabled)" : string.Empty)}";
         }
     }
 }

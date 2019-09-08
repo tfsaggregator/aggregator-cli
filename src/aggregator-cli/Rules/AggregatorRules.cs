@@ -29,29 +29,67 @@ namespace aggregator.cli
             _logger = logger;
         }
 
-        internal async Task<IEnumerable<KuduFunction>> ListAsync(InstanceName instance, CancellationToken cancellationToken)
+        internal async Task<IEnumerable<RuleOutputData>> ListAsync(InstanceName instance, CancellationToken cancellationToken)
         {
             var kudu = new KuduApi(instance, _azure, _logger);
             _logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions", cancellationToken))
-            using (var response = await client.SendAsync(request, cancellationToken))
             {
-                var stream = await response.Content.ReadAsStreamAsync();
-
-                if (response.IsSuccessStatusCode)
+                KuduFunction[] kuduFunctions;
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions", cancellationToken))
+                using (var response = await client.SendAsync(request, cancellationToken))
                 {
+                    var stream = await response.Content.ReadAsStreamAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
+                        return Enumerable.Empty<RuleOutputData>();
+                    }
+
                     using (var sr = new StreamReader(stream))
                     using (var jtr = new JsonTextReader(sr))
                     {
                         var js = new JsonSerializer();
-                        var functionList = js.Deserialize<KuduFunction[]>(jtr);
-                        return functionList;
+                        kuduFunctions = js.Deserialize<KuduFunction[]>(jtr);
                     }
                 }
 
-                _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
-                return new KuduFunction[0];
+                List<RuleOutputData> ruleData = new List<RuleOutputData>();
+                foreach (var kuduFunction in kuduFunctions)
+                {
+                    var ruleName = kuduFunction.Name;
+                    var ruleFileUrl = $"api/vfs/site/wwwroot/{ruleName}/{ruleName}.rule";
+                    _logger.WriteInfo($"Retrieving Function Rule Details {ruleName}...");
+
+                    using (var request = await kudu.GetRequestAsync(HttpMethod.Get, ruleFileUrl, cancellationToken))
+                    using (var response = await client.SendAsync(request, cancellationToken))
+                    {
+                        var stream = await response.Content.ReadAsStreamAsync();
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
+                            continue;
+                        }
+
+
+                        var ruleCode = new List<string>();
+                        using (var sr = new StreamReader(stream))
+                        {
+                            string line;
+                            while ((line = sr.ReadLine()) != null)
+                            {
+                                ruleCode.Add(line);
+                            }
+                        }
+
+                        var (ruleDirectives, _) = RuleFileParser.Read(ruleCode.ToArray());
+                        ruleData.Add(new RuleOutputData(instance, kuduFunction, ruleDirectives.Impersonate));
+                    }
+                }
+
+                return ruleData;
             }
         }
 

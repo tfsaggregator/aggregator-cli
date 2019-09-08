@@ -24,10 +24,10 @@ namespace aggregator.cli
             var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;
-            foreach (var item in await rules.ListAsync(instance, cancellationToken))
+            foreach (var ruleInformation in await rules.ListAsync(instance, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                context.Logger.WriteOutput(new RuleOutputData(instance, item));
+                context.Logger.WriteOutput(ruleInformation);
                 any = true;
             }
 
