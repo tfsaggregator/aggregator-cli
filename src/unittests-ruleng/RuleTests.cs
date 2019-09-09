@@ -520,6 +520,50 @@ return customField.ToString(""N"");
             Assert.Equal("3.00", result);
         }
 
+
+        [Fact]
+        public async Task SuccesorLink_Test()
+        {
+            int predecessorId = 42;
+            WorkItem predecessor = new WorkItem
+            {
+                Id = predecessorId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Predecessor" },
+                    { "System.TeamProject", clientsContext.ProjectName },
+                },
+                Relations = new List<WorkItemRelation>()
+                {
+                    new WorkItemRelation()
+                    {
+                        Rel = "System.LinkTypes.Dependency-Forward",
+                        Url = "https://dev.azure.com/fake-organization/_apis/wit/workItems/22"
+                    }
+                }
+            };
+            witClient.GetWorkItemAsync(predecessorId, expand: WorkItemExpand.All).Returns(predecessor);
+
+            var successor = ExampleTestData.WorkItem;
+            successor.Fields["System.Title"] = "Successor";
+            witClient.GetWorkItemAsync(22, expand: WorkItemExpand.All).Returns(successor);
+            string ruleCode = @"
+var allWorkItemLinks = self.RelationLinks;
+foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""System.LinkTypes.Dependency-Forward"", link.Rel)))
+{
+    var id = int.Parse(successorLink.Url.Split('/').Last());
+    var successor = store.GetWorkItem(id);
+
+    return successor.Title;
+}
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, predecessor, clientsContext, CancellationToken.None);
+            Assert.Equal("Successor", result);
+        }
+
         [Fact]
         public async Task DocumentationRule_BacklogWorkItemsActivateParent_Succeeds()
         {

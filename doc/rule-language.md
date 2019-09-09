@@ -38,7 +38,8 @@ Returns a read-only copy of all revisions of this work item.
 
 
 ## Relations
-Navigate to related work items.
+Navigate to related work items. See also Type [WorkItemRelation](#workitemrelation-type)
+or [WorkItemRelationCollection](#workitemrelationcollection-type)
 
 `IEnumerable<WorkItemRelation> RelationLinks`
 Returns all relations as `WorkItemRelation`.
