@@ -96,10 +96,8 @@ return parent.Title;
 var allWorkItemLinks = self.RelationLinks;
 foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals("System.LinkTypes.Dependency-Forward", link.Rel)))
 {
-    // get successor work item Id
-    var id = int.Parse(successorLink.Url.Split('/').Last());
     // load successor from store
-    var successor = store.GetWorkItem(id);
+    var successor = store.GetWorkItem(successorLink);
 
     //do update of successor with e.g. title of self
     successor.Title = "new Title: (predecessor " + self.Title + ")";
