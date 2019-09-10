@@ -21,7 +21,7 @@ namespace aggregator.Engine
         private readonly Lazy<Task<IEnumerable<WorkItemTypeCategory>>> _lazyGetWorkItemCategories;
         private readonly Lazy<Task<IEnumerable<BacklogWorkItemTypeStates>>> _lazyGetBacklogWorkItemTypesAndStates;
 
-        private readonly IdentityRef _polluterIdentity;
+        private readonly IdentityRef _triggerIdentity;
 
 
         public WorkItemStore(EngineContext context)
@@ -36,8 +36,8 @@ namespace aggregator.Engine
         {
             //initialize tracker with initial work item
             var wrapper = new WorkItemWrapper(_context, workItem);
-            //store initiator identity
-            _polluterIdentity = wrapper.RevisedBy;
+            //store event initiator identity
+            _triggerIdentity = wrapper.ChangedBy;
         }
 
         public WorkItemWrapper GetWorkItem(int id)
@@ -146,7 +146,7 @@ namespace aggregator.Engine
 
             foreach (var workItem in changedWorkItems)
             {
-                workItem.ChangedBy = _polluterIdentity;
+                workItem.ChangedBy = _triggerIdentity;
             }
         }
 
