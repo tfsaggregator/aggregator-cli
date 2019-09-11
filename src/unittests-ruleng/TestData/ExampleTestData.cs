@@ -4,15 +4,16 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 
 using Newtonsoft.Json;
 
 
 namespace unittests_ruleng.TestData
 {
-    class Helper
+    internal static class Helper
     {
-        private static string GetEmbeddedResourceContent(string resourceName)
+        internal static string GetEmbeddedResourceContent(string resourceName)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
             var fullName = assembly.GetManifestResourceNames()
@@ -43,13 +44,13 @@ namespace unittests_ruleng.TestData
         }
     }
 
-    static class ExampleRuleCode
+    internal static class ExampleRuleCode
     {
         public static string[] ActivateParent => Helper.GetFromResource("advanced.activate-parent.rulecode");
         public static string[] ResolveParent => Helper.GetFromResource("advanced.resolve-parent.rulecode");
     }
 
-    static class ExampleTestData
+    public static class ExampleTestData
     {
         public static WorkItem DeltedWorkItem => Helper.GetFromResource<WorkItem>("DeletedWorkItem.json");
         public static WorkItem WorkItem => Helper.GetFromResource<WorkItem>("WorkItem.22.json");
@@ -67,5 +68,9 @@ namespace unittests_ruleng.TestData
         public static ProcessConfiguration ProcessConfigDefaultAgile => Helper.GetFromResource<ProcessConfiguration>("WorkClient.ProcessConfiguration.Agile.json");
         public static ProcessConfiguration ProcessConfigDefaultScrum => Helper.GetFromResource<ProcessConfiguration>("WorkClient.ProcessConfiguration.Scrum.json");
         public static WorkItemStateColor[] WorkItemStateColorDefault => Helper.GetFromResource<WorkItemStateColor[]>("WitClient.WorkItemStateColor.EpicFeatureUserStory.json");
+
+
+        public static WebHookEvent TestEvent => Helper.GetFromResource<WebHookEvent>("TestEvent.json");
+        public static string TestEventAsString => Helper.GetEmbeddedResourceContent("TestEvent.json");
     }
 }

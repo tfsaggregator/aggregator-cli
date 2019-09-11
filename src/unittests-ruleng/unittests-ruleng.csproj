@@ -21,6 +21,7 @@
     <None Remove="TestData\DeletedWorkItem.json" />
     <None Remove="TestData\Rule\advanced.activate-parent.rulecode" />
     <None Remove="TestData\Rule\advanced.resolve-parent.rulecode" />
+    <None Remove="TestData\TestEvent.json" />
     <None Remove="TestData\WorkItem.22.json" />
     <None Remove="TestData\WorkItem.22.UpdateLinks.json" />
     <None Remove="WorkItem.22.UpdateFields.json" />
@@ -40,12 +41,16 @@
 
   <ItemGroup>
     <EmbeddedResource Include="TestData\Backlog.Feature1.TwoChildren.json" />
-    <EmbeddedResource Include="TestData\Backlog.UserStory2_Closed.json" />
     <EmbeddedResource Include="TestData\Backlog.UserStory2_Active.json" />
+    <EmbeddedResource Include="TestData\Backlog.UserStory2_Closed.json" />
     <EmbeddedResource Include="TestData\Backlog.Feature1.OneChild.json" />
     <EmbeddedResource Include="TestData\Backlog.UserStory2_New.json" />
+    <EmbeddedResource Include="TestData\Config\WitClient.WorkItemStateColor.EpicFeatureUserStory.json" />
+    <EmbeddedResource Include="TestData\Config\WorkClient.ProcessConfiguration.Agile.json" />
+    <EmbeddedResource Include="TestData\Config\WorkClient.ProcessConfiguration.Scrum.json" />
     <EmbeddedResource Include="TestData\Rule\advanced.resolve-parent.rulecode" />
     <EmbeddedResource Include="TestData\Rule\advanced.activate-parent.rulecode" />
+    <EmbeddedResource Include="TestData\TestEvent.json" />
     <EmbeddedResource Include="TestData\WorkItem.22.UpdateLinks.json" />
     <EmbeddedResource Include="TestData\WorkItem.22.json" />
     <EmbeddedResource Include="TestData\DeletedWorkItem.json" />
@@ -54,12 +59,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="TestData\Config\WitClient.WorkItemStateColor.EpicFeatureUserStory.json" />
-    <EmbeddedResource Include="TestData\Config\WorkClient.ProcessConfiguration.Agile.json" />
-    <EmbeddedResource Include="TestData\Config\WorkClient.ProcessConfiguration.Scrum.json" />
   </ItemGroup>
 
 </Project>
