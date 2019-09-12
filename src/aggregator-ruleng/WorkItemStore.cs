@@ -373,6 +373,7 @@ namespace aggregator.Engine
             return (created, updated);
         }
 
+
         private async Task<IEnumerable<WitBatchResponse>> ExecuteBatchRequest(IList<WitBatchRequest> batchRequests, CancellationToken cancellationToken)
         {
             if (!batchRequests.Any()) return Enumerable.Empty<WitBatchResponse>();
