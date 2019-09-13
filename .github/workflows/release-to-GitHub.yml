@@ -1,0 +1,74 @@
+name: release-to-GitHub
+
+on:
+  push:
+    paths:
+    - 'src/*'
+
+jobs:
+  build:
+
+    # crossing fingers
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    # HACK required for GitVersion
+    - run: |
+        git fetch --tags
+        git branch --create-reflog master origin/master
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '2.2.401' # SDK Version to use.
+
+    # dump to a file
+    #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -nocache -output buildserver -exec /bin/sh -execargs "-c \"echo \$GitVersion_FullSemVer > /repo/gitversion.txt\""
+    # Update AssemblyInfo files
+    #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -updateassemblyinfo -output buildserver -nocache
+    # patch file
+    #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -l /repo/gitversion.log -nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /repo/src/aggregator-function/aggregator-manifest.ini\""
+    - name: Update AssemblyInfo files
+      uses: docker://gittools/gitversion:5.0.2-linux
+      with:
+        args: '-nocache -updateassemblyinfo -output buildserver -exec /bin/sh -execargs "-c \"echo \$GitVersion_FullSemVer > /repo/GitVersion_FullSemVer.txt\""'
+    - name: 'Set version in aggregator-manifest.ini'
+      uses: docker://gittools/gitversion:5.0.2-linux
+      with:
+        args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /repo/src/aggregator-function/aggregator-manifest.ini\""'
+
+    # compile and test
+    - name: 'Delete Directory.Build.targets from src/aggregator-function'
+      run: rm src/aggregator-function/Directory.Build.targets
+    - run: 'dotnet restore src/aggregator-cli.sln'
+    - run: 'dotnet build --configuration Release src/aggregator-cli.sln'
+    # TODO all tests, but need a logon-data.json with secrets in it
+    - run: 'dotnet test --configuration Release src/**/*unittest*.csproj'
+
+    # Create Release in GitHub as Draft
+    - name: 'Dump commit messages since last tag as draft release notes'
+      run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > release.log
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        bodyFile: release.log
+        token: ${{ secrets.GITHUB_TOKEN }}
+        draft: true
+    # Upload Artifacts to Release
+    - run: 'dotnet publish --configuration Release src/aggregator-function/aggregator-function.csproj'
+    - name: Upload FunctionRuntime to release
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: 'src/aggregator-function/bin/Release/netstandard2.0/publish.zip'
+        asset_name: FunctionRuntime.zip
+        tag: ${{ github.ref }}
+        overwrite: true
+    - run: 'dotnet publish --configuration Release src/aggregator-cli/aggregator-cli.csproj'
+    - name: Upload CLI to release
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: 'src/aggregator-cli/bin/Release/netcoreapp2.1/publish.zip'
+        asset_name: CLI.zip
+        tag: ${{ github.ref }}
+        overwrite: true
