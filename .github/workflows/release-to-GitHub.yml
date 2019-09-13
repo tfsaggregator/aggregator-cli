@@ -30,7 +30,7 @@ jobs:
     - name: Update AssemblyInfo files
       uses: docker://gittools/gitversion:5.0.2-linux
       with:
-        args: '-nocache -updateassemblyinfo -output buildserver -exec /bin/sh -execargs "-c \"echo \$GitVersion_FullSemVer > /repo/GitVersion_FullSemVer.txt\""'
+        args: '-nocache -updateassemblyinfo -output buildserver'
     - name: 'Set version in aggregator-manifest.ini'
       uses: docker://gittools/gitversion:5.0.2-linux
       with:
