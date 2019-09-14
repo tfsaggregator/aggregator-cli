@@ -41,8 +41,14 @@ jobs:
       run: rm src/aggregator-function/Directory.Build.targets
     - run: 'dotnet restore src/aggregator-cli.sln'
     - run: 'dotnet build --configuration Release src/aggregator-cli.sln'
-    # TODO all tests, but need a logon-data.json with secrets in it
-    - run: 'dotnet test --configuration Release src/**/*unittest*.csproj'
+    - run: 'dotnet test --configuration Release src/unittests-core/unittests-core.csproj'
+    - run: 'dotnet test --configuration Release src/unittests-ruleng/unittests-ruleng.csproj'
+    # TODO this need a logon-data.json with secrets in it
+    - run: echo "$LOGONDATA_JSON" > src/integrationtests-cli/logon-data.json
+        env: # Or as an environment variable
+          LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
+    - run: 'dotnet test --configuration Release src/integrationtests-cli/integrationtests-cli.csproj'
+    - run: rm src/integrationtests-cli/logon-data.json
 
     # Create Release in GitHub as Draft
     - name: 'Dump commit messages since last tag as draft release notes'

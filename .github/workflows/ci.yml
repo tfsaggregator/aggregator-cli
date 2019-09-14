@@ -20,4 +20,5 @@ jobs:
       run: rm src/aggregator-function/Directory.Build.targets
     - run: 'dotnet restore src/aggregator-cli.sln'
     - run: 'dotnet build src/aggregator-cli.sln'
-    - run: 'dotnet test src/**/*unittest*.csproj'
+    - run: 'dotnet test src/unittests-core/unittests-core.csproj'
+    - run: 'dotnet test src/unittests-ruleng/unittests-ruleng.csproj'
