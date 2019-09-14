@@ -22,6 +22,9 @@ namespace aggregator.cli
         [Option('f', "file", Required = true, HelpText = "Aggregator rule code.")]
         public string File { get; set; }
 
+        [Option("impersonate", Required = false, HelpText = "Do rule changes on behalf of the person triggered the rule execution. See wiki for details, requires special account privileges.")]
+        public bool ImpersonateExecution { get; set; }
+
         [Option("requiredVersion", SetName = "nourl", Required = false, HelpText = "Version of Aggregator Runtime required.")]
         public string RequiredVersion { get; set; }
 
@@ -35,7 +38,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
-            bool ok = await rules.UpdateAsync(instance, Name, File, RequiredVersion, SourceUrl, cancellationToken);
+            bool ok = await rules.UpdateAsync(instance, Name, File, ImpersonateExecution, RequiredVersion, SourceUrl, cancellationToken);
             return ok ? 0 : 1;
         }
     }

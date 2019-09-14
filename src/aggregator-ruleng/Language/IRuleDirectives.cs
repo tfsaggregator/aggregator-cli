@@ -4,7 +4,7 @@
 namespace aggregator.Engine.Language {
     public interface IRuleDirectives
     {
-        bool Impersonate { get; }
+        bool Impersonate { get; set; }
         RuleLanguage Language { get; }
         IReadOnlyList<string> References { get; }
         IReadOnlyList<string> Imports { get; }

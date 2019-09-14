@@ -14,7 +14,7 @@ namespace aggregator.Engine.Language {
             RuleCode = new List<string>();
         }
 
-        public bool Impersonate { get; internal set; }
+        public bool Impersonate { get; set; }
 
         public RuleLanguage Language { get; internal set; }
 

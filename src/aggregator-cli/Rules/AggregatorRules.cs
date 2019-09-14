@@ -130,12 +130,16 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath, bool impersonate, CancellationToken cancellationToken)
         {
             _logger.WriteInfo($"Validate rule file {filePath}");
 
             var engineLogger = new EngineWrapperLogger(_logger);
             var (ruleDirectives, _) = await RuleFileParser.ReadFile(filePath, engineLogger, cancellationToken);
+            if (impersonate)
+            {
+                ruleDirectives.Impersonate = true;
+            }
             try
             {
                 var rule = new Engine.ScriptedRuleWrapper(name, ruleDirectives, engineLogger);
@@ -317,14 +321,14 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, bool impersonate, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             // check runtime package
             var package = new FunctionRuntimePackage(_logger);
             bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
             if (ok)
             {
-                ok = await AddAsync(instance, name, filePath, cancellationToken);
+                ok = await AddAsync(instance, name, filePath, impersonate, cancellationToken);
             }
 
             return ok;
