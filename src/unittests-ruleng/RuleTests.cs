@@ -17,7 +17,7 @@ namespace unittests_ruleng
     {
         internal static string[] Mince(this string ruleCode)
         {
-            return ruleCode.Split(Environment.NewLine);
+            return ruleCode.Split(new string[] {"\r\n","\r","\n" }, StringSplitOptions.None);
         }
     }
 
