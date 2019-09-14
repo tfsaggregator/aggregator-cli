@@ -481,7 +481,7 @@ return customField;
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
-return customField.ToString(""N"");
+return customField.ToString(""N2"");
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
@@ -506,7 +506,7 @@ return customField.ToString(""N"");
             client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
-return customField.ToString(""N"");
+return customField.ToString(""N2"");
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
