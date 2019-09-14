@@ -46,12 +46,18 @@ jobs:
     - run: 'dotnet build --configuration Release src/aggregator-cli.sln'
     - run: 'dotnet test --configuration Release src/unittests-core/unittests-core.csproj'
     - run: 'dotnet test --configuration Release src/unittests-ruleng/unittests-ruleng.csproj'
-    # TODO this need a logon-data.json with secrets in it
-    - run: echo "$LOGONDATA_JSON" > src/integrationtests-cli/logon-data.json
+    # logon-data.json is stored in project Secrets
+    - run: echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
       env:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
+    - run: |
+        export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+        INTEGRATIONTEST_SUBSCRIPTIONID=$(jq -r '.subscription?' $LOGONDATA_FNAME)
+        echo "Azure subscription for testing: $INTEGRATIONTEST_SUBSCRIPTIONID"
+    
+    # heavy weight integration tests
     - run: 'dotnet test --configuration Release src/integrationtests-cli/integrationtests-cli.csproj'
-    - run: rm src/integrationtests-cli/logon-data.json
+    - run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
 
     # Create Release in GitHub as Draft
     - name: 'Dump commit messages since last tag as draft release notes'
