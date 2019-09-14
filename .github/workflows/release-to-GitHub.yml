@@ -37,7 +37,7 @@ jobs:
     - name: 'Set version in aggregator-manifest.ini'
       uses: docker://gittools/gitversion:5.0.2-linux
       with:
-        args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /repo/src/aggregator-function/aggregator-manifest.ini\""'
+        args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\""'
 
     # compile and test
     - name: 'Delete Directory.Build.targets from src/aggregator-function'
@@ -48,7 +48,7 @@ jobs:
     - run: 'dotnet test --configuration Release src/unittests-ruleng/unittests-ruleng.csproj'
     # TODO this need a logon-data.json with secrets in it
     - run: echo "$LOGONDATA_JSON" > src/integrationtests-cli/logon-data.json
-      env: # Or as an environment variable
+      env:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
     - run: 'dotnet test --configuration Release src/integrationtests-cli/integrationtests-cli.csproj'
     - run: rm src/integrationtests-cli/logon-data.json
