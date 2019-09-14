@@ -32,8 +32,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="2.2.0" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.25.0" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.25.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.143.2" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.143.2" />
     <PackageReference Include="Microsoft.VisualStudio.Services.InteractiveClient" Version="16.143.2" />

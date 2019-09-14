@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,10 +20,23 @@ namespace aggregator.cli
         // TODO is this the right number?
         public static int MaxHoursForCachedCredential = 2;
 
-        public LogonDataStore(string tag) => this.Tag = tag;
+        public LogonDataStore(string tag)
+        {
+            this.Tag = tag;
+
+            // add data protection services
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddDataProtection();
+            var services = serviceCollection.BuildServiceProvider();
+
+            // create an instance of MyClass using the service provider
+            protector = ActivatorUtilities.CreateInstance<MyProtector>(services);
+        }
+
+        private MyProtector protector;
 
         public string Tag { get; private set; }
-        public byte[] Magic => Encoding.ASCII.GetBytes(Tag);
+        public char[] Magic => Tag.ToCharArray();
         protected string LogonDataPath
         {
             get
@@ -40,21 +54,17 @@ namespace aggregator.cli
             data.Timestamp = DateTime.UtcNow;
 
             string logonDataString = JsonConvert.SerializeObject(data);
-            var logonData = UnicodeEncoding.UTF8.GetBytes(logonDataString);
 
-            var entropy = new byte[16];
-            new RNGCryptoServiceProvider().GetBytes(entropy);
-            var encryptedData = ProtectedData.Protect(logonData, entropy, DataProtectionScope.CurrentUser);
+            var encryptedData = protector.Encrypt(logonDataString);
 
             string logonADataPath = LogonDataPath;
             // make sure exists
             Directory.CreateDirectory(Path.GetDirectoryName(logonADataPath));
 
-            using (var stream = new FileStream(logonADataPath, FileMode.OpenOrCreate))
+            using (var stream = File.CreateText(logonADataPath))
             {
-                stream.Write(Magic, 0, Magic.Length);
-                stream.Write(entropy, 0, entropy.Length);
-                stream.Write(encryptedData, 0, encryptedData.Length);
+                stream.Write(Magic);
+                stream.Write(encryptedData);
             }
 
             return logonADataPath;
@@ -66,20 +76,17 @@ namespace aggregator.cli
             if (!File.Exists(LogonDataPath))
                 return (null, LogonResult.NoLogonData);
 
-            var entropy = new byte[16];
-            byte[] outBuffer;
-            using (var stream = new FileStream(LogonDataPath, FileMode.Open))
+            string logonAzureDataString;
+            using (var stream = File.OpenText(LogonDataPath))
             {
-                var magicBuffer = new byte[Magic.Length];
+                var magicBuffer = new char[Magic.Length];
                 stream.Read(magicBuffer, 0, magicBuffer.Length);
                 if (magicBuffer == Magic)
                     throw new InvalidDataException("Invalid credential file");
-                var inBuffer = new byte[stream.Length - entropy.Length];
-                stream.Read(entropy, 0, entropy.Length);
-                stream.Read(inBuffer, 0, inBuffer.Length);
-                outBuffer = ProtectedData.Unprotect(inBuffer, entropy, DataProtectionScope.CurrentUser);
+                var encryptedData = stream.ReadToEnd();
+                logonAzureDataString = protector.Decrypt(encryptedData);
             }
-            var logonAzureDataString = UnicodeEncoding.UTF8.GetString(outBuffer);
+
             var result = JsonConvert.DeserializeObject<T>(logonAzureDataString);
             var elapsed = DateTime.UtcNow - result.Timestamp;
             if (elapsed.TotalHours > MaxHoursForCachedCredential)
