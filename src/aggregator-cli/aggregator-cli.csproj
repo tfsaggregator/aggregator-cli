@@ -50,6 +50,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="aggregator-cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="aggregator-cli.cmd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
