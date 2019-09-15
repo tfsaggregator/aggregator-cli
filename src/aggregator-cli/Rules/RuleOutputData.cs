@@ -11,11 +11,11 @@ namespace aggregator.cli
         private readonly bool isDisabled;
         private readonly bool isImpersonated;
 
-        internal RuleOutputData(InstanceName instance, KuduFunction function, bool isImpersonated)
+        internal RuleOutputData(InstanceName instance, string ruleName, bool isDisabled, bool isImpersonated)
         {
             this.instanceName = instance.PlainName;
-            this.ruleName = function.Name;
-            this.isDisabled = function.Config.Disabled;
+            this.ruleName = ruleName;
+            this.isDisabled = isDisabled;
             this.isImpersonated = isImpersonated;
         }
 

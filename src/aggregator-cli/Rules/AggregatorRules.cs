@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator.Engine.Language;
+using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -33,6 +34,10 @@ namespace aggregator.cli
         {
             var kudu = new KuduApi(instance, _azure, _logger);
             _logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
+
+            var webFunctionApp = await GetWebApp(instance, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
             using (var client = new HttpClient())
             {
                 KuduFunction[] kuduFunctions;
@@ -84,13 +89,20 @@ namespace aggregator.cli
                             }
                         }
 
+                        var isDisabled = IsDisabled(webFunctionApp, ruleName);
                         var (ruleDirectives, _) = RuleFileParser.Read(ruleCode.ToArray());
-                        ruleData.Add(new RuleOutputData(instance, kuduFunction, ruleDirectives.Impersonate));
+                        ruleData.Add(new RuleOutputData(instance, ruleName, isDisabled, ruleDirectives.Impersonate));
                     }
                 }
 
                 return ruleData;
             }
+        }
+
+        private static bool IsDisabled(IWebApp webFunctionApp, string ruleName)
+        {
+            var value = webFunctionApp.GetAppSettings().GetValueOrDefault($"AzureWebJobs.{ruleName}.Disabled")?.Value ?? "false";
+            return Boolean.TryParse(value, out bool result) && result;
         }
 
         internal static Uri GetInvocationUrl(InstanceName instance, string rule)
@@ -306,6 +318,17 @@ namespace aggregator.cli
 
         internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable, CancellationToken cancellationToken)
         {
+            var webFunctionApp = await GetWebApp(instance, cancellationToken);
+            webFunctionApp
+                .Update()
+                .WithAppSetting($"AzureWebJobs.{name}.Disabled", disable.ToString().ToLower())
+                .Apply();
+
+            return true;
+        }
+
+        private async Task<IWebApp> GetWebApp(InstanceName instance, CancellationToken cancellationToken)
+        {
             var webFunctionApp = await _azure
                 .AppServices
                 .WebApps
@@ -313,12 +336,7 @@ namespace aggregator.cli
                     instance.ResourceGroupName,
                     instance.FunctionAppName, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            webFunctionApp
-                .Update()
-                .WithAppSetting($"AzureWebJobs.{name}.Disabled", disable.ToString().ToLower())
-                .Apply();
-
-            return true;
+            return webFunctionApp;
         }
 
         internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, bool impersonate, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
