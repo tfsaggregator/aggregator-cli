@@ -73,6 +73,7 @@ jobs:
     # Upload Artifacts to Release
     - name: 'Publish FunctionRuntime'
       run: |
+        mkdir -p outputs/function
         dotnet publish --configuration Release src/aggregator-function/aggregator-function.csproj --output outputs/function/
         pushd outputs/function && \
         7z a -bd -r publish.zip && \
@@ -88,8 +89,9 @@ jobs:
         overwrite: true
     
     # Upload Artifacts to Release
-    - name: 'Publish aggregator-cli'
+    - name: 'Publish aggregator-cli Windows'
       run: |
+        mkdir -p outputs/$RUNTIME
         dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/
         pushd outputs/$RUNTIME && \
         7z a -bd -r publish.zip && \
@@ -106,8 +108,9 @@ jobs:
         tag: ${{ github.ref }}
         overwrite: true
 
-    - name: 'Publish aggregator-cli'
+    - name: 'Publish aggregator-cli Linux'
       run: |
+        mkdir -p outputs/$RUNTIME
         dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/
         pushd outputs/$RUNTIME && \
         7z a -bd -r publish.zip && \
@@ -124,8 +127,9 @@ jobs:
         tag: ${{ github.ref }}
         overwrite: true
 
-    - name: 'Publish aggregator-cli'
+    - name: 'Publish aggregator-cli OS/X'
       run: |
+        mkdir -p outputs/$RUNTIME
         dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/
         pushd outputs/$RUNTIME && \
         7z a -bd -r publish.zip && \
