@@ -113,5 +113,4 @@ jobs:
         bodyFile: release.log
         artifacts: "outputs/function/FunctionRuntime.zip,outputs/win-x64/aggregator-cli-win-x64.zip,outputs/linux-x64/aggregator-cli-linux-x64.zip,outputs/osx-x64/aggregator-cli-osx-x64.zip"
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ github.ref }}
         draft: true
