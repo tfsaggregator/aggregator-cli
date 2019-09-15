@@ -74,7 +74,7 @@ jobs:
     - name: 'Publish FunctionRuntime'
       run: |
         mkdir -p outputs/function
-        dotnet publish --configuration Release src/aggregator-function/aggregator-function.csproj --output outputs/function/
+        dotnet publish --configuration Release --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
         pushd outputs/function && \
         7z a -bd -r publish.zip && \
         popd
@@ -92,7 +92,7 @@ jobs:
     - name: 'Publish aggregator-cli Windows'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         7z a -bd -r publish.zip && \
         popd
@@ -111,7 +111,7 @@ jobs:
     - name: 'Publish aggregator-cli Linux'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         7z a -bd -r publish.zip && \
         popd
@@ -130,7 +130,7 @@ jobs:
     - name: 'Publish aggregator-cli OS/X'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         7z a -bd -r publish.zip && \
         popd
