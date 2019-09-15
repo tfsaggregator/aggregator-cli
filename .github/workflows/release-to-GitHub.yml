@@ -2,9 +2,9 @@ name: release-to-GitHub
 
 on:
   push:
-    paths:
-    - 'src/*'
-  pull_request:
+    tags:
+    - '*' # just for testing
+    - 'v[0-9].[0-9]*'
     paths:
     - 'src/*'
 
@@ -14,6 +14,10 @@ jobs:
     # crossing fingers
     runs-on: ubuntu-latest
     
+    strategy:
+      matrix:
+        runtime: [win-x64, linux-x64, osx-x64]
+
     steps:
     - uses: actions/checkout@v1
     # HACK required for GitVersion
@@ -69,21 +73,40 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         draft: true
     # Upload Artifacts to Release
-    - run: 'dotnet publish --configuration Release src/aggregator-function/aggregator-function.csproj'
-    - name: Upload FunctionRuntime to release
+    - run: 'dotnet publish --configuration Release src/aggregator-function/aggregator-function.csproj --output outputs/function/'
+    - name: 'Zip FunctionRuntime'
+      run: |
+        pushd outputs/function && \
+        7z a -bd -r publish.zip && \
+        popd
+
+    - name: Upload FunctionRuntime to GitHub release
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 'src/aggregator-function/bin/Release/netstandard2.0/publish.zip'
+        file: 'outputs/function/publish.zip'
         asset_name: FunctionRuntime.zip
         tag: ${{ github.ref }}
         overwrite: true
-    - run: 'dotnet publish --configuration Release src/aggregator-cli/aggregator-cli.csproj'
-    - name: Upload CLI to release
+    
+    # Upload Artifacts to Release
+    - run: 'dotnet publish --configuration Release --runtime $RUNTIME --self-contained true src/aggregator-cli/aggregator-cli.csproj --output outputs/$RUNTIME/'
+      env:
+        RUNTIME: ${{ matrix.runtime }}
+    - name: 'Zip ${{ matrix.runtime }} CLI'
+      run: |
+        pushd outputs/$RUNTIME && \
+        7z a -bd -r publish.zip && \
+        popd
+
+      env:
+        RUNTIME: ${{ matrix.runtime }}
+
+    - name: Upload aggregator-cli-${{ matrix.runtime }} to GitHub release
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 'src/aggregator-cli/bin/Release/netcoreapp2.1/publish.zip'
-        asset_name: CLI.zip
+        file: 'outputs/${{ matrix.runtime }}/publish.zip'
+        asset_name: aggregator-cli-${{ matrix.runtime }}.zip
         tag: ${{ github.ref }}
         overwrite: true
