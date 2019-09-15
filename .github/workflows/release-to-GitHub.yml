@@ -87,7 +87,7 @@ jobs:
         dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         rm *.cmd && \
-        7z a -bd -r aggregator-cli-linux-x64.tgz && \
+        7z a -bd -r aggregator-cli-linux-x64.zip && \
         popd
 
       env:
@@ -98,7 +98,7 @@ jobs:
         dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         rm *.cmd && \
-        7z a -bd -r aggregator-cli-osx-x64.tgz && \
+        7z a -bd -r aggregator-cli-osx-x64.zip && \
         popd
 
       env:
