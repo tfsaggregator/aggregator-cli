@@ -37,7 +37,7 @@ jobs:
     - name: 'Set version in aggregator-manifest.ini'
       uses: docker://gittools/gitversion:5.0.2-linux
       with:
-        args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\""'
+        args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=$GitVersion_FullSemVer/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\""'
 
     # compile and test
     - name: 'Delete Directory.Build.targets from src/aggregator-function'
@@ -61,6 +61,49 @@ jobs:
     - name: 'Scrap secrets'
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
 
+    # Prepare Artifacts
+    - name: 'Publish FunctionRuntime'
+      run: |
+        mkdir -p outputs/function
+        dotnet publish --configuration Release --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
+        pushd outputs/function && \
+        7z a -bd -r FunctionRuntime.zip && \
+        popd    
+    - name: 'Publish aggregator-cli Windows'
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        pushd outputs/$RUNTIME && \
+        rm aggregator-cli && \
+        rm aggregator-cli.cmd && \
+        7z a -bd -r aggregator-cli-win-x64.zip && \
+        popd
+
+      env:
+        RUNTIME: win-x64
+    - name: 'Publish aggregator-cli Linux'
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        pushd outputs/$RUNTIME && \
+        rm *.cmd && \
+        7z a -bd -r aggregator-cli-linux-x64.tgz && \
+        popd
+
+      env:
+        RUNTIME: linux-x64
+    - name: 'Publish aggregator-cli OS/X'
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        pushd outputs/$RUNTIME && \
+        rm *.cmd && \
+        7z a -bd -r aggregator-cli-osx-x64.tgz && \
+        popd
+
+      env:
+        RUNTIME: osx-x64
+
     # Create Release in GitHub as Draft
     - name: 'Dump commit messages since last tag as draft release notes'
       run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > release.log
@@ -68,80 +111,7 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         bodyFile: release.log
+        artifacts: "outputs/function/FunctionRuntime.zip,outputs/win-x64/aggregator-cli-win-x64.zip,outputs/linux-x64/aggregator-cli-linux-x64.zip,outputs/osx-x64/aggregator-cli-osx-x64.zip"
         token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
         draft: true
-    # Upload Artifacts to Release
-    - name: 'Publish FunctionRuntime'
-      run: |
-        mkdir -p outputs/function
-        dotnet publish --configuration Release --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
-        pushd outputs/function && \
-        7z a -bd -r publish.zip && \
-        popd
-
-    - name: Upload FunctionRuntime to GitHub release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 'outputs/function/publish.zip'
-        asset_name: FunctionRuntime.zip
-        tag: ${{ github.ref }}
-        overwrite: true
-    
-    # Upload Artifacts to Release
-    - name: 'Publish aggregator-cli Windows'
-      run: |
-        mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
-        pushd outputs/$RUNTIME && \
-        7z a -bd -r publish.zip && \
-        popd
-
-      env:
-        RUNTIME: win-x64
-    - name: Upload aggregator-cli-win-x64 to GitHub release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 'outputs/win-x64/publish.zip'
-        asset_name: aggregator-cli-win-x64.zip
-        tag: ${{ github.ref }}
-        overwrite: true
-
-    - name: 'Publish aggregator-cli Linux'
-      run: |
-        mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
-        pushd outputs/$RUNTIME && \
-        7z a -bd -r publish.zip && \
-        popd
-
-      env:
-        RUNTIME: linux-x64
-    - name: Upload aggregator-cli-linux-x64 to GitHub release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 'outputs/linux-x64/publish.zip'
-        asset_name: aggregator-cli-linux-x64.zip
-        tag: ${{ github.ref }}
-        overwrite: true
-
-    - name: 'Publish aggregator-cli OS/X'
-      run: |
-        mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
-        pushd outputs/$RUNTIME && \
-        7z a -bd -r publish.zip && \
-        popd
-
-      env:
-        RUNTIME: osx-x64
-    - name: Upload aggregator-cli-osx-x64 to GitHub release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 'outputs/osx-x64/publish.zip'
-        asset_name: aggregator-cli-osx-x64.zip
-        tag: ${{ github.ref }}
-        overwrite: true
