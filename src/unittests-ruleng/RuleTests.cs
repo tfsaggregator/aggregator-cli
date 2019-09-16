@@ -182,7 +182,7 @@ parent.Relations.AddChild(newChild);
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
             string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
-			
+
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
@@ -304,8 +304,8 @@ Debug.WriteLine(""test"");
 return string.Empty
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            var (success, diagnostics) = engine.VerifyRule();
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            var (success, diagnostics) = rule.Verify();
             Assert.False(success);
             Assert.Single(diagnostics);
             Assert.Equal(2, diagnostics[0].Location.GetLineSpan().StartLinePosition.Line);
@@ -520,8 +520,8 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
 }
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, predecessor, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, predecessor, clientsContext, CancellationToken.None);
             Assert.Equal("Successor", result);
         }
 
@@ -566,7 +566,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
         {
             var workItemFeature = ExampleTestData.BacklogFeatureTwoChildren;
             var workItemUS2 = ExampleTestData.BacklogUserStoryClosed;
-            var workItemUS3= ExampleTestData.BacklogUserStoryActive;
+            var workItemUS3 = ExampleTestData.BacklogUserStoryActive;
             workItemUS3.Id = 3;
 
             var workItemUpdate = ExampleTestData.WorkItemUpdateFields;

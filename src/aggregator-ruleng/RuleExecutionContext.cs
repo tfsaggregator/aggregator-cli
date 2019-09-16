@@ -4,7 +4,7 @@ using System.Text;
 
 namespace aggregator.Engine
 {
-    public class Globals
+    public class RuleExecutionContext
     {
         public WorkItemWrapper self;
         public WorkItemUpdateWrapper selfChanges;

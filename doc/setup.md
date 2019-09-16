@@ -67,7 +67,10 @@ In Azure Portal you can check the permissons in the IAM menu for the selected Re
 A PAT has the same or less permissions than the person/identity that creates it.
 We recommend that the PAT is issued by an Azure DevOps Organization Administrator Identity.
 
-When using the [impersonate directive](rule-language.md#impersonate-directive) 
+When using the [impersonate directive](rule-language.md#impersonate-directive), 
+[mapping a rule](command-examples.md#adds-two-service-hooks-to-azure-devops--each-invoking-a-different-rule)
+to execute impersonated or 
+[configuring a rule impersonated](command-examples.md#),
 the used identity for creating the PAT must have the permission: 
 "Bypass rules on work item updates"
 

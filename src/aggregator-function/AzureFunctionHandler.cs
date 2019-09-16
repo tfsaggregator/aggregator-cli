@@ -60,8 +60,8 @@ namespace aggregator
             }
 
             var configContext = GetConfigurationContext();
-            var configuration = AggregatorConfiguration.Read(configContext)
-                                                       .UpdateFromUrl(req.RequestUri);
+            var configuration = AggregatorConfiguration.ReadConfiguration(configContext)
+                                                       .UpdateFromUrl(ruleName, req.RequestUri);
 
             var logger = new ForwarderLogger(_log);
             var ruleProvider = new AzureFunctionRuleProvider(logger, _context.FunctionDirectory);

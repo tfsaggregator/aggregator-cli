@@ -8,11 +8,11 @@ namespace aggregator.Engine
 {
     public class RuleExecutor
     {
-        protected readonly AggregatorConfiguration configuration;
+        protected readonly IAggregatorConfiguration configuration;
 
         protected readonly IAggregatorLogger logger;
 
-        public RuleExecutor(IAggregatorLogger logger, AggregatorConfiguration configuration)
+        public RuleExecutor(IAggregatorLogger logger, IAggregatorConfiguration configuration)
         {
             this.configuration = configuration;
             this.logger = logger;

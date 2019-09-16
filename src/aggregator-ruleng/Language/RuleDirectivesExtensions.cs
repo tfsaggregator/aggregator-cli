@@ -28,7 +28,7 @@ namespace aggregator.Engine.Language {
         }
 
 
-        internal static string LanguageAsString(this IRuleDirectives ruleDirectives)
+        public static string LanguageAsString(this IRuleDirectives ruleDirectives)
         {
             switch (ruleDirectives.Language)
             {

@@ -1,4 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+using aggregator.Model;
+
+using Microsoft.VisualStudio.Services.Common;
+
 
 namespace aggregator
 {
@@ -16,14 +24,67 @@ namespace aggregator
         TwoPhases = 3
     }
 
-    /// <summary>
-    /// This class tracks the configuration data that CLI writes and Function runtime reads
-    /// </summary>
-    public class AggregatorConfiguration
+    public interface IAggregatorConfiguration
     {
-        public static AggregatorConfiguration Read(Microsoft.Extensions.Configuration.IConfiguration config)
+        DevOpsTokenType DevOpsTokenType { get; set; }
+        string DevOpsToken { get; set; }
+        SaveMode SaveMode { get; set; }
+        bool DryRun { get; set; }
+
+        IDictionary<string, IRuleConfiguration> RulesConfiguration { get; }
+    }
+
+    public interface IRuleConfiguration
+    {
+        string RuleName { get; }
+        bool IsDisabled { get; set; }
+        bool Impersonate { get; set; }
+    }
+
+
+    public static class AggregatorConfiguration
+    {
+        const string RULE_SETTINGS_PREFIX = "AzureWebJobs.";
+
+        public static async Task<IAggregatorConfiguration> ReadConfiguration(Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp)
         {
-            var ac = new AggregatorConfiguration();
+            (string ruleName, string key) SplitRuleNameKey(string input)
+            {
+                int idx = input.LastIndexOf('.');
+                return (input.Substring(0, idx), input.Substring(idx + 1));
+            }
+
+            var settings = await webApp.GetAppSettingsAsync();
+            var ac = new Model.AggregatorConfiguration();
+            foreach (var ruleSetting in settings.Where(kvp => kvp.Key.StartsWith(RULE_SETTINGS_PREFIX)).Select(kvp => new { ruleNameKey = kvp.Key.Substring(RULE_SETTINGS_PREFIX.Length), value = kvp.Value.Value }))
+            {
+                var (ruleName, key) = SplitRuleNameKey(ruleSetting.ruleNameKey);
+
+                var ruleConfig = ac.GetRuleConfiguration(ruleName);
+                if (string.Equals("Disabled", key, StringComparison.OrdinalIgnoreCase))
+                {
+                    ruleConfig.IsDisabled = Boolean.TryParse(ruleSetting.value, out bool result) && result;
+                }
+
+                if (string.Equals("Impersonate", key, StringComparison.OrdinalIgnoreCase))
+                {
+                    ruleConfig.Impersonate = string.Equals("onBehalfOfInitiator", ruleSetting.value, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            Enum.TryParse(settings.GetValueOrDefault("Aggregator_VstsTokenType")?.Value, out DevOpsTokenType vtt);
+            ac.DevOpsTokenType = vtt;
+            ac.DevOpsToken = settings.GetValueOrDefault("Aggregator_VstsToken")?.Value;
+            ac.SaveMode = Enum.TryParse(settings.GetValueOrDefault("Aggregator_SaveMode")?.Value, out SaveMode sm)
+                ? sm
+                : SaveMode.Default;
+            ac.DryRun = false;
+            return ac;
+        }
+
+        public static IAggregatorConfiguration ReadConfiguration(Microsoft.Extensions.Configuration.IConfiguration config)
+        {
+            var ac = new Model.AggregatorConfiguration();
             Enum.TryParse(config["Aggregator_VstsTokenType"], out DevOpsTokenType vtt);
             ac.DevOpsTokenType = vtt;
             ac.DevOpsToken = config["Aggregator_VstsToken"];
@@ -34,20 +95,67 @@ namespace aggregator
             return ac;
         }
 
-        public void Write(Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp)
+        public static void WriteConfiguration(this IAggregatorConfiguration config, Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp)
+        {
+            var settings = new Dictionary<string, string>()
+            {
+                {"Aggregator_VstsTokenType", config.DevOpsTokenType.ToString()},
+                {"Aggregator_VstsToken", config.DevOpsToken},
+                {"Aggregator_SaveMode", config.SaveMode.ToString()},
+            };
+
+            foreach (var ruleSetting in config.RulesConfiguration.Select(kvp => kvp.Value))
+            {
+                settings.AddRuleSettings(ruleSetting);
+            }
+
+            webApp.ApplyWithAppSettings(settings);
+        }
+
+        public static void WriteConfiguration(this IRuleConfiguration config, Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp)
+        {
+            var settings = new Dictionary<string, string>();
+
+            settings.AddRuleSettings(config);
+
+            webApp.ApplyWithAppSettings(settings);
+        }
+
+        public static void Delete(this IRuleConfiguration config, Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp)
+        {
+            var settings = new Dictionary<string, string>();
+
+            settings.AddRuleSettings(config);
+
+            var update = webApp.Update();
+
+            foreach (var key in settings.Keys)
+            {
+                update.WithoutAppSetting(key);
+            }
+
+            update.Apply();
+        }
+
+        public static IRuleConfiguration GetRuleConfiguration(this IAggregatorConfiguration config, string ruleName)
+        {
+            var ruleConfig = config.RulesConfiguration.GetValueOrDefault(ruleName) ?? (config.RulesConfiguration[ruleName] = new RuleConfiguration(ruleName));
+
+            return ruleConfig;
+        }
+
+        private static void AddRuleSettings(this Dictionary<string, string> settings, IRuleConfiguration ruleSetting)
+        {
+            settings[$"{RULE_SETTINGS_PREFIX}{ruleSetting.RuleName}.Disabled"] = ruleSetting.IsDisabled.ToString();
+            settings[$"{RULE_SETTINGS_PREFIX}{ruleSetting.RuleName}.Impersonate"] = ruleSetting.Impersonate ? "onBehalfOfInitiator" : "false";
+        }
+
+        private static void ApplyWithAppSettings(this Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp, Dictionary<string, string> settings)
         {
             webApp
                 .Update()
-                .WithAppSetting("Aggregator_VstsTokenType", DevOpsTokenType.ToString())
-                .WithAppSetting("Aggregator_VstsToken", DevOpsToken)
-                .WithAppSetting("Aggregator_SaveMode", SaveMode.ToString())
+                .WithAppSettings(settings)
                 .Apply();
         }
-
-        public DevOpsTokenType DevOpsTokenType { get; set; }
-        public string DevOpsToken { get; set; }
-        public SaveMode SaveMode { get; set; }
-        public bool DryRun { get; internal set; }
-        public bool Impersonate { get; internal set; }
     }
 }

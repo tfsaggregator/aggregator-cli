@@ -2,21 +2,24 @@
 using System.Collections.Generic;
 using System.Text;
 
+
 namespace aggregator.cli
 {
     internal class RuleOutputData : ILogDataObject
     {
         private readonly string instanceName;
         private readonly string ruleName;
+        private readonly string ruleLanguage;
         private readonly bool isDisabled;
         private readonly bool isImpersonated;
 
-        internal RuleOutputData(InstanceName instance, string ruleName, bool isDisabled, bool isImpersonated)
+        internal RuleOutputData(InstanceName instance, IRuleConfiguration ruleConfiguration, string ruleLanguage)
         {
             this.instanceName = instance.PlainName;
-            this.ruleName = ruleName;
-            this.isDisabled = isDisabled;
-            this.isImpersonated = isImpersonated;
+            this.ruleName = ruleConfiguration.RuleName;
+            this.isDisabled = ruleConfiguration.IsDisabled;
+            this.isImpersonated = ruleConfiguration.Impersonate;
+            this.ruleLanguage = ruleLanguage;
         }
 
         public string AsHumanReadable()

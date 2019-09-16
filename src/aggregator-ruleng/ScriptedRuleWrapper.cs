@@ -13,53 +13,6 @@ using Microsoft.CodeAnalysis.Scripting;
 
 namespace aggregator.Engine
 {
-    public enum RuleExecutionOutcome
-    {
-        Unknown,
-        Success,
-        Error
-    }
-
-    public interface IRuleResult
-    {
-        /// <summary>
-        /// Result Value Message
-        /// </summary>
-        string Value { get; }
-
-        /// <summary>
-        /// Execution Outcome
-        /// </summary>
-        RuleExecutionOutcome Outcome { get; }
-    }
-
-
-    public class RuleResult : IRuleResult
-    {
-        /// <inheritdoc />
-        public string Value { get; set; }
-
-        /// <inheritdoc />
-        public RuleExecutionOutcome Outcome { get; set; }
-    }
-
-    public interface IRule
-    {
-        /// <summary>
-        /// RuleName
-        /// </summary>
-        string Name { get; }
-
-        /// <summary>
-        /// The history will show the changes made by person who triggered the event
-        /// Assumes PAT or Account Permission is high enough
-        /// </summary>
-        bool ImpersonateExecution { get; set; }
-
-
-        Task<IRuleResult> ApplyAsync(Globals executionContext, CancellationToken cancellationToken);
-    }
-
     /// <summary>
     /// CSharp Scripted Rule Facade
     /// </summary>
@@ -85,10 +38,10 @@ namespace aggregator.Engine
 
         internal ScriptedRuleWrapper(string ruleName, string[] ruleCode) : this(ruleName, new NullLogger())
         {
-            var parseResult = RuleFileParser.Read(ruleCode);
-            _ruleFileParseSuccess = parseResult.parseSuccess;
+            (IRuleDirectives ruleDirectives, bool parseSuccess) = RuleFileParser.Read(ruleCode);
+            _ruleFileParseSuccess = parseSuccess;
 
-            Initialize(parseResult.ruleDirectives);
+            Initialize(ruleDirectives);
         }
 
         public ScriptedRuleWrapper(string ruleName, IRuleDirectives ruleDirectives) : this(ruleName, ruleDirectives, new NullLogger())
@@ -119,7 +72,7 @@ namespace aggregator.Engine
                 _roslynScript = CSharpScript.Create<string>(
                     code: RuleDirectives.GetRuleCode(),
                     options: scriptOptions,
-                    globalsType: typeof(Globals));
+                    globalsType: typeof(RuleExecutionContext));
             }
             else
             {
@@ -156,7 +109,7 @@ namespace aggregator.Engine
         }
 
         /// <inheritdoc />
-        public async Task<IRuleResult> ApplyAsync(Globals executionContext, CancellationToken cancellationToken)
+        public async Task<IRuleResult> ApplyAsync(RuleExecutionContext executionContext, CancellationToken cancellationToken)
         {
             var result = await _roslynScript.RunAsync(executionContext, cancellationToken);
 
@@ -178,7 +131,12 @@ namespace aggregator.Engine
             };
         }
 
-        public (bool success, ImmutableArray<Diagnostic> diagnostics) Verify()
+        /// <summary>
+        /// Verify the script rule code by trying to compile and return compile errors
+        /// if parsing rule code already fails, success will also be false
+        /// </summary>
+        /// <returns></returns>
+        public (bool success, IReadOnlyList<Diagnostic> diagnostics) Verify()
         {
             if (_ruleFileParseSuccess.HasValue && !_ruleFileParseSuccess.Value)
             {
@@ -186,16 +144,8 @@ namespace aggregator.Engine
             }
 
             // if parsing succeeded try to compile the script and look for errors
-            ImmutableArray<Diagnostic> diagnostics = _roslynScript.Compile();
-            (bool, ImmutableArray<Diagnostic>) result;
-            if (diagnostics.Any())
-            {
-                result = (false, diagnostics);
-            }
-            else
-            {
-                result = (true, ImmutableArray.Create<Diagnostic>());
-            }
+            var diagnostics = _roslynScript.Compile();
+            var result = diagnostics.Any() ? (false, diagnostics) : (true, ImmutableArray.Create<Diagnostic>());
 
             return result;
         }

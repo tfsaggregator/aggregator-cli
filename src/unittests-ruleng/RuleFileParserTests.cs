@@ -97,7 +97,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
-            (IRuleDirectives directives, bool parsingSuccess) = RuleFileParser.Read(ruleCode.Mince());
+            (IRuleDirectives directives, _) = RuleFileParser.Read(ruleCode.Mince());
 
             var ruleCode2 = RuleFileParser.Write(directives);
 

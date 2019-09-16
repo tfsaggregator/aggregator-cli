@@ -58,7 +58,7 @@ namespace aggregator.cli
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
                 string ruleFullName = $"{InstanceName.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(
-                    new MappingOutputData(instance, ruleFullName, ruleUrl.IsImpersonatationEnabled(), foundProject.Name, subscription.EventType, subscription.Status.ToString())
+                    new MappingOutputData(instance, ruleFullName, ruleUrl.IsImpersonationEnabled(), foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
             }
             return result;

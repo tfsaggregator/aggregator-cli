@@ -82,11 +82,27 @@ list.mappings --instance my1 --project SampleProject
 ```
 
 
-### Disable and enable rules
-Disabling a broken rule leaves any mappings in place.
+### Configuring rules
+
+Configuring a rule leaves any mappings in place.
+
+#### Disable and enable rules
+
+e.g. disabling a broken rule
 ```Batchfile
 configure.rule --verbose --instance my1 --name test1 --disable
 configure.rule --verbose --instance my1 --name test1 --enable
+```
+
+#### Execute Impersonated
+
+configure a rule to run impersonated
+**Attention:** To use this the identify accessing Azure DevOps needs special permissions, 
+see [Rule Examples](setup.md#azure-devops-personal-access-token--PAT-).
+
+```Batchfile
+configure.rule --verbose --instance my1 --name test1 --disableImpersonate
+configure.rule --verbose --instance my1 --name test1 --enableImpersonate
 ```
 
 

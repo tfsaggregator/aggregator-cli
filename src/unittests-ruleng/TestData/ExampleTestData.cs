@@ -50,7 +50,7 @@ namespace unittests_ruleng.TestData
         public static string[] ResolveParent => Helper.GetFromResource("advanced.resolve-parent.rulecode");
     }
 
-    public static class ExampleTestData
+    internal static class ExampleTestData
     {
         public static WorkItem DeltedWorkItem => Helper.GetFromResource<WorkItem>("DeletedWorkItem.json");
         public static WorkItem WorkItem => Helper.GetFromResource<WorkItem>("WorkItem.22.json");
@@ -68,8 +68,11 @@ namespace unittests_ruleng.TestData
         public static ProcessConfiguration ProcessConfigDefaultAgile => Helper.GetFromResource<ProcessConfiguration>("WorkClient.ProcessConfiguration.Agile.json");
         public static ProcessConfiguration ProcessConfigDefaultScrum => Helper.GetFromResource<ProcessConfiguration>("WorkClient.ProcessConfiguration.Scrum.json");
         public static WorkItemStateColor[] WorkItemStateColorDefault => Helper.GetFromResource<WorkItemStateColor[]>("WitClient.WorkItemStateColor.EpicFeatureUserStory.json");
+    }
 
 
+    public static class ExampleEvents
+    {
         public static WebHookEvent TestEvent => Helper.GetFromResource<WebHookEvent>("TestEvent.json");
         public static string TestEventAsString => Helper.GetEmbeddedResourceContent("TestEvent.json");
     }

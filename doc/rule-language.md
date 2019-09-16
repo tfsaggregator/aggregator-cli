@@ -25,7 +25,7 @@ Equivalent to C# namespace
 Aggregator uses credentials for accessing Azure DevOps. By default the changes which 
 were saved back to Azure DevOps are done with the credentials provided for accessing 
 Azure DevOps.
-In order to do the changes on behalf of the account who initiated an event, which Aggregator will handle, 
+In order to do the changes on behalf of the account who initiated an event, which Aggregator is going to handle, 
 specify
 `.impersonate=onBehalfOfInitiator`
 

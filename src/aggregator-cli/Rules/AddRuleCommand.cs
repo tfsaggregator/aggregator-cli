@@ -22,9 +22,6 @@ namespace aggregator.cli
         [Option('f', "file", Required = true, HelpText = "Aggregator rule code.")]
         public string File { get; set; }
 
-        [Option("impersonate", Required = false, HelpText = "Do rule changes on behalf of the person triggered the rule execution. See wiki for details, requires special account privileges.")]
-        public bool ImpersonateExecution { get; set; }
-
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
@@ -32,7 +29,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instance = new InstanceName(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
-            bool ok = await rules.AddAsync(instance, Name, File, ImpersonateExecution, cancellationToken);
+            bool ok = await rules.AddAsync(instance, Name, File, cancellationToken);
             return ok ? 0 : 1;
         }
     }

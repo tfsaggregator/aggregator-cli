@@ -43,9 +43,9 @@ namespace aggregator.Engine
             return result;
         }
 
-        protected abstract Task<string> ExecuteRuleAsync(IRule rule, Globals executionContext, CancellationToken cancellationToken = default);
+        protected abstract Task<string> ExecuteRuleAsync(IRule rule, RuleExecutionContext executionContext, CancellationToken cancellationToken = default);
 
-        protected Globals CreateRuleExecutionContext(Guid projectId, WorkItemData workItemPayload, IClientsContext clients)
+        protected RuleExecutionContext CreateRuleExecutionContext(Guid projectId, WorkItemData workItemPayload, IClientsContext clients)
         {
             var workItem = workItemPayload.WorkItem;
             var context = new EngineContext(clients, projectId, workItem.GetTeamProject(), logger);
@@ -54,7 +54,7 @@ namespace aggregator.Engine
             var selfChanges = new WorkItemUpdateWrapper(workItemPayload.WorkItemUpdate);
             logger.WriteInfo($"Initial WorkItem {self.Id} retrieved from {clients.WitClient.BaseAddress}");
 
-            var globals = new Globals
+            var globals = new RuleExecutionContext
             {
                 self = self,
                 selfChanges = selfChanges,
@@ -72,7 +72,7 @@ namespace aggregator.Engine
         {
         }
 
-        protected override async Task<string> ExecuteRuleAsync(IRule rule, Globals executionContext, CancellationToken cancellationToken = default)
+        protected override async Task<string> ExecuteRuleAsync(IRule rule, RuleExecutionContext executionContext, CancellationToken cancellationToken = default)
         {
             var result = await rule.ApplyAsync(executionContext, cancellationToken);
 

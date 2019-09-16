@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace aggregator.cli
 {
     [Verb("invoke.rule", HelpText = "Executes a rule locally or in an existing Aggregator instance.")]

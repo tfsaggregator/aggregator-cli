@@ -9,34 +9,30 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator.Engine.Language;
-using Microsoft.Azure.Management.AppService.Fluent;
+
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 
 namespace aggregator.cli
 {
-    internal class AggregatorRules
+    internal class AggregatorRules : AzureBaseClass
     {
-        private readonly IAzure _azure;
-        private readonly ILogger _logger;
-
-        public AggregatorRules(IAzure azure, ILogger logger)
-        {
-            _azure = azure;
-            _logger = logger;
-        }
+        public AggregatorRules(IAzure azure, ILogger logger) : base(azure, logger)
+        { }
 
         internal async Task<IEnumerable<RuleOutputData>> ListAsync(InstanceName instance, CancellationToken cancellationToken)
         {
-            var kudu = new KuduApi(instance, _azure, _logger);
+            var kudu = GetKudu(instance);
             _logger.WriteInfo($"Retrieving Functions in {instance.PlainName}...");
 
             var webFunctionApp = await GetWebApp(instance, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+            var configuration = await AggregatorConfiguration.ReadConfiguration(webFunctionApp);
 
             using (var client = new HttpClient())
             {
@@ -89,20 +85,14 @@ namespace aggregator.cli
                             }
                         }
 
-                        var isDisabled = IsDisabled(webFunctionApp, ruleName);
+                        var ruleConfiguration = configuration.GetRuleConfiguration(ruleName);
                         var (ruleDirectives, _) = RuleFileParser.Read(ruleCode.ToArray());
-                        ruleData.Add(new RuleOutputData(instance, ruleName, isDisabled, ruleDirectives.Impersonate));
+                        ruleData.Add(new RuleOutputData(instance, ruleConfiguration, ruleDirectives.LanguageAsString()));
                     }
                 }
 
                 return ruleData;
             }
-        }
-
-        private static bool IsDisabled(IWebApp webFunctionApp, string ruleName)
-        {
-            var value = webFunctionApp.GetAppSettings().GetValueOrDefault($"AzureWebJobs.{ruleName}.Disabled")?.Value ?? "false";
-            return Boolean.TryParse(value, out bool result) && result;
         }
 
         internal static Uri GetInvocationUrl(InstanceName instance, string rule)
@@ -113,7 +103,7 @@ namespace aggregator.cli
 
         internal async Task<(Uri url, string key)> GetInvocationUrlAndKey(InstanceName instance, string rule, CancellationToken cancellationToken = default)
         {
-            var kudu = new KuduApi(instance, _azure, _logger);
+            var kudu = GetKudu(instance);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
             using (var client = new HttpClient())
@@ -142,20 +132,16 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string name, string filePath, bool impersonate, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceName instance, string ruleName, string filePath, CancellationToken cancellationToken)
         {
             _logger.WriteInfo($"Validate rule file {filePath}");
 
             var engineLogger = new EngineWrapperLogger(_logger);
             var (ruleDirectives, _) = await RuleFileParser.ReadFile(filePath, engineLogger, cancellationToken);
-            if (impersonate)
-            {
-                ruleDirectives.Impersonate = true;
-            }
             try
             {
-                var rule = new Engine.ScriptedRuleWrapper(name, ruleDirectives, engineLogger);
-                (var success, var diagnostics) = rule.Verify();
+                var rule = new Engine.ScriptedRuleWrapper(ruleName, ruleDirectives, engineLogger);
+                var (success, diagnostics) = rule.Verify();
                 if (success)
                 {
                     _logger.WriteInfo($"Rule file is valid");
@@ -179,14 +165,24 @@ namespace aggregator.cli
             }
 
             _logger.WriteVerbose($"Layout rule files");
-            var inMemoryFiles = await PackagingFilesAsync(name, ruleDirectives);
-            _logger.WriteInfo($"Packaging rule {name} complete.");
+            var inMemoryFiles = await PackagingFilesAsync(ruleName, ruleDirectives);
+            _logger.WriteInfo($"Packaging rule {ruleName} complete.");
 
             _logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
-            bool ok = await UploadRuleFilesAsync(instance, name, inMemoryFiles, cancellationToken);
+            bool ok = await UploadRuleFilesAsync(instance, ruleName, inMemoryFiles, cancellationToken);
             if (ok)
             {
-                _logger.WriteInfo($"All {name} files successfully uploaded to {instance.PlainName}.");
+                _logger.WriteInfo($"All {ruleName} files successfully uploaded to {instance.PlainName}.");
+            }
+
+            if (ruleDirectives.Impersonate)
+            {
+                _logger.WriteInfo($"Configure {ruleName} to execute impersonated.");
+                ok &= await ConfigureAsync(instance, ruleName, impersonate: true, cancellationToken: cancellationToken);
+                if (ok)
+                {
+                    _logger.WriteInfo($"Updated {ruleName} configuration successfully.");
+                }
             }
 
             return ok;
@@ -234,7 +230,7 @@ namespace aggregator.cli
 
             Note: when updating or deleting a file, ETag behavior will apply. You can pass a If-Match: "*" header to disable the ETag check.
             */
-            var kudu = new KuduApi(instance, _azure, _logger);
+            var kudu = GetKudu(instance);
             var relativeUrl = $"api/vfs/site/wwwroot/{name}/";
 
             using (var client = new HttpClient())
@@ -299,7 +295,7 @@ namespace aggregator.cli
 
         internal async Task<bool> RemoveAsync(InstanceName instance, string name, CancellationToken cancellationToken)
         {
-            var kudu = new KuduApi(instance, _azure, _logger);
+            var kudu = GetKudu(instance);
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
             _logger.WriteInfo($"Removing Function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
@@ -314,39 +310,40 @@ namespace aggregator.cli
 
                 return ok;
             }
+
+            //TODO BobSilent remove configuration (Enable/Disable or Impersonate)
         }
 
-        internal async Task<bool> EnableAsync(InstanceName instance, string name, bool disable, CancellationToken cancellationToken)
+        internal async Task<bool> ConfigureAsync(InstanceName instance, string name, bool? disable = null, bool? impersonate = null, CancellationToken cancellationToken = default)
         {
             var webFunctionApp = await GetWebApp(instance, cancellationToken);
-            webFunctionApp
-                .Update()
-                .WithAppSetting($"AzureWebJobs.{name}.Disabled", disable.ToString().ToLower())
-                .Apply();
+            var configuration = await AggregatorConfiguration.ReadConfiguration(webFunctionApp);
+            var ruleConfig = configuration.GetRuleConfiguration(name);
+
+            if (disable.HasValue)
+            {
+                ruleConfig.IsDisabled = disable.Value;
+            }
+
+            if (impersonate.HasValue)
+            {
+                ruleConfig.Impersonate = impersonate.Value;
+            }
+
+            ruleConfig.WriteConfiguration(webFunctionApp);
 
             return true;
         }
 
-        private async Task<IWebApp> GetWebApp(InstanceName instance, CancellationToken cancellationToken)
-        {
-            var webFunctionApp = await _azure
-                .AppServices
-                .WebApps
-                .GetByResourceGroupAsync(
-                    instance.ResourceGroupName,
-                    instance.FunctionAppName, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            return webFunctionApp;
-        }
 
-        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, bool impersonate, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             // check runtime package
             var package = new FunctionRuntimePackage(_logger);
             bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
             if (ok)
             {
-                ok = await AddAsync(instance, name, filePath, impersonate, cancellationToken);
+                ok = await AddAsync(instance, name, filePath, cancellationToken);
             }
 
             return ok;
@@ -451,24 +448,21 @@ namespace aggregator.cli
 
             using (var client = new HttpClient())
             {
-                using (var request = new HttpRequestMessage(HttpMethod.Post, ruleUrl))
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+                client.DefaultRequestHeaders.Add("x-functions-key", ruleKey);
+                var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                using (var response = await client.PostAsync(ruleUrl, content, cancellationToken))
                 {
-                    request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                    request.Headers.Add("x-functions-key", ruleKey);
-                    request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                    using (var response = await client.SendAsync(request, cancellationToken))
+                    if (response.IsSuccessStatusCode)
                     {
-                        if (response.IsSuccessStatusCode)
-                        {
-                            string result = await response.Content.ReadAsStringAsync();
-                            _logger.WriteInfo($"{result}");
-                            return true;
-                        }
-
-                        _logger.WriteError($"Failed with {response.ReasonPhrase}");
-                        return false;
+                        string result = await response.Content.ReadAsStringAsync();
+                        _logger.WriteInfo($"{result}");
+                        return true;
                     }
+
+                    _logger.WriteError($"Failed with {response.ReasonPhrase}");
+                    return false;
                 }
             }
         }

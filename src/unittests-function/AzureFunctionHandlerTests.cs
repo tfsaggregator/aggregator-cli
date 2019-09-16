@@ -46,7 +46,7 @@ namespace unittests_function
         [Fact]
         public async void HandleTestEvent_ReturnAggregatorInformation_Succeeds()
         {
-            request.Content = new StringContent(ExampleTestData.TestEventAsString, Encoding.UTF8, "application/json");
+            request.Content = new StringContent(ExampleEvents.TestEventAsString, Encoding.UTF8, "application/json");
 
             var handler = new AzureFunctionHandler(logger, context);
             var response = await handler.RunAsync(request, CancellationToken.None);
