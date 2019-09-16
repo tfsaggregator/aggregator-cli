@@ -1,7 +1,7 @@
 # aggregator-cli
 
-![Build Status: CI](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg)
-![Build Status: Release](https://github.com/tfsaggregator/aggregator-cli/workflows/release-to-GitHub/badge.svg)
+[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg)](https://github.com/tfsaggregator/aggregator-cli/actions)
+[![Release Status](https://github.com/tfsaggregator/aggregator-cli/workflows/release-to-GitHub/badge.svg)](https://github.com/tfsaggregator/aggregator-cli/actions)
 
 This is the successor to renowned TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
