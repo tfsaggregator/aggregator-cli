@@ -264,6 +264,70 @@ Deletes the given work item and returns `true` if work item can be deleted.
 Restores the given work item from recycle bin and returns `true` if work item 
 can be restored.
 
+`IEnumerable<WorkItemTypeCategory> GetWorkItemCategories()`
+Returns a list of work item category names with the mapped work item types, see 
+[WorkItemTypeCategory](#workitemtypecategory)
+
+
+`IEnumerable<BacklogWorkItemTypeStates> GetBacklogWorkItemTypesAndStates()`
+Returns a list of backlog work item types with their backlog level information and the state to state 
+category mappings, see [BacklogWorkItemTypeStates](#backlogworkitemtypestates)
+
+
+
+# WorkItemTypeCategory
+Work item categories group work items types together, you can see a list of
+available categories in query editor:
+
+![Work Item Category Names](images/work-item-categories.png)
+
+`string ReferenceName`
+Category ReferenceName, e.g. "Microsoft.EpicCategory"
+
+`string Name`
+Category Display Name, e.g. "Epic Category"
+
+`IEnumerable<string> WorkItemTypeNames`
+WorkItemType Names in this Category, e.g. "Epic" or "Test Plan"
+
+# BacklogWorkItemTypeStates
+A work item type with its Backlog Level Information and the 
+work item State to State Category mapping.
+The mappings can be seen per work item template in the states configuration, e.g. "Epic":
+
+![Epic: State Category to State Name Mapping](images/state-to-state-category-default-agile-epic.png)
+
+
+`string Name`
+WorkItem Name, e.g. "Epic"
+
+`BacklogInfo Backlog`
+[Backlog Level Information](#backloginfo) for this WorkItem Type.
+
+`IDictionary<string, string[]> StateCategoryStateNames`
+State Category (Meta-State) to WorkItem state name mapping.
+
+Example: mapping for the WorkItem Type Epic of default Agile Process:
+ - "Proposed"   = "New"
+ - "InProgress" = "Active", "Resolved"
+ - "Resolved"   = \<empty>
+ - "Complete"   = "Closed"
+ - "Removed"    = "Removed"
+
+
+
+# BacklogInfo
+Available Backlog Levels can be seen in the used process configuration. 
+Example: The default Agile Backlog level names are: Epics, Features, Stories, Tasks
+
+![Default Agile Backlog Levels](images/backlog-levels-default-agile.png)
+
+
+`string ReferenceName`
+The Category Reference Name of this Backlog Level, e.g. "Microsoft.EpicCategory" or "Microsoft.RequirementCategory"
+
+`string Name`
+The Backlog Level Display Name, e.g. "Epics" or "Stories"
 
 # WorkItemRelationCollection type
 Navigate and modify related objects.

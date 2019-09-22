@@ -1,0 +1,27 @@
+[
+  {
+    "name": "New",
+    "color": "b2b2b2",
+    "category": "Proposed"
+  },
+  {
+    "name": "Active",
+    "color": "007acc",
+    "category": "InProgress"
+  },
+  {
+    "name": "Resolved",
+    "color": "007acc",
+    "category": "InProgress"
+  },
+  {
+    "name": "Closed",
+    "color": "339933",
+    "category": "Completed"
+  },
+  {
+    "name": "Removed",
+    "color": "ffffff",
+    "category": "Removed"
+  }
+]

@@ -8,9 +8,9 @@ namespace aggregator.Engine
 {
     public class EngineContext
     {
-        public EngineContext(WorkItemTrackingHttpClient client, Guid projectId, string projectName, IAggregatorLogger logger)
+        public EngineContext(IClientsContext clients, Guid projectId, string projectName, IAggregatorLogger logger)
         {
-            Client = client;
+            Clients = clients;
             Logger = logger;
             Tracker = new Tracker();
             ProjectId = projectId;
@@ -19,7 +19,7 @@ namespace aggregator.Engine
 
         public Guid ProjectId { get; internal set; }
         public string ProjectName { get; internal set; }
-        internal WorkItemTrackingHttpClient Client { get; }
+        internal IClientsContext Clients { get; }
         internal IAggregatorLogger Logger { get; }
         internal Tracker Tracker { get; }
     }

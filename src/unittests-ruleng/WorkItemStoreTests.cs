@@ -17,30 +17,32 @@ namespace unittests_ruleng
 {
     public class WorkItemStoreTests
     {
-        private const string CollectionUrl = "https://dev.azure.com/fake-organization";
-        private readonly Guid projectId = Guid.NewGuid();
-        private const string ProjectName = "test-project";
-        private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
-        private WorkItemTrackingHttpClient client;
-        private IAggregatorLogger logger;
+        private readonly IAggregatorLogger logger;
+        private readonly WorkItemTrackingHttpClient witClient;
+        private readonly TestClientsContext clientsContext;
 
         public WorkItemStoreTests()
         {
             logger = Substitute.For<IAggregatorLogger>();
-            client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
+
+            clientsContext = new TestClientsContext();
+
+            witClient = clientsContext.WitClient;
+            witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
         }
+
 
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
                 Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -53,7 +55,7 @@ namespace unittests_ruleng
         public void GetWorkItems_ByIds_Succeeds()
         {
             var ids = new [] { 42, 99 };
-            client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
+            witClient.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
                 .ReturnsForAnyArgs(new List<WorkItem>
                 {
                     new WorkItem
@@ -68,7 +70,7 @@ namespace unittests_ruleng
                     }
                 });
 
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -82,8 +84,8 @@ namespace unittests_ruleng
         [Fact]
         public async Task NewWorkItem_Succeeds()
         {
-            client.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -100,9 +102,9 @@ namespace unittests_ruleng
         [Fact]
         public void AddChild_Succeeds()
         {
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             int workItemId = 1;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
                 Fields = new Dictionary<string, object>(),
@@ -111,12 +113,12 @@ namespace unittests_ruleng
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{workItemsBaseUrl}/42"
+                        Url = $"{clientsContext.WorkItemsBaseUrl}/42"
                     },
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{workItemsBaseUrl}/99"
+                        Url = $"{clientsContext.WorkItemsBaseUrl}/99"
                     }
                 },
             });
@@ -139,8 +141,8 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteWorkItem_Succeeds()
         {
-            var context = new EngineContext(client, projectId, ProjectName, logger);
-            var workItem = ExampleTestData.Instance.WorkItem;
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
             var sut = new WorkItemStore(context, workItem);
@@ -163,8 +165,8 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteAlreadyDeletedWorkItem_NoChange()
         {
-            var context = new EngineContext(client, projectId, ProjectName, logger);
-            var workItem = ExampleTestData.Instance.DeltedWorkItem;
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var workItem = ExampleTestData.DeltedWorkItem;
             int workItemId = workItem.Id.Value;
 
             var sut = new WorkItemStore(context, workItem);
@@ -187,8 +189,8 @@ namespace unittests_ruleng
         [Fact]
         public void RestoreNotDeletedWorkItem_NoChange()
         {
-            var context = new EngineContext(client, projectId, ProjectName, logger);
-            var workItem = ExampleTestData.Instance.WorkItem;
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
             var sut = new WorkItemStore(context, workItem);

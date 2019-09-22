@@ -11,20 +11,20 @@ namespace unittests_ruleng
 {
     public class WorkItemWrapperTests
     {
-
-        private const string CollectionUrl = "https://dev.azure.com/fake-organization";
-        private readonly Guid projectId = Guid.NewGuid();
-        private const string ProjectName = "test-project";
-        private readonly IAggregatorLogger logger = Substitute.For<IAggregatorLogger>();
-        private readonly WorkItemTrackingHttpClient client;
-        private readonly string workItemsBaseUrl = $"{CollectionUrl}/_apis/wit";
-        private EngineContext context;
-
+        private readonly WorkItemTrackingHttpClient witClient;
+        private readonly TestClientsContext clientsContext;
+        private readonly EngineContext context;
 
         public WorkItemWrapperTests()
         {
-            client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
-            context = new EngineContext(client, projectId, ProjectName, logger);
+            var logger = Substitute.For<IAggregatorLogger>();
+
+            clientsContext = new TestClientsContext();
+
+            witClient = clientsContext.WitClient;
+            witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+
+            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace unittests_ruleng
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
                 },
-                Url = $"{workItemsBaseUrl}/recyclebin/{workItemId}"
+                Url = $"{clientsContext.RecycleBinBaseUrl}/{workItemId}"
             };
 
             var wrapper = new WorkItemWrapper(context, workItem);
@@ -60,7 +60,7 @@ namespace unittests_ruleng
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
                 },
-                Url = $"{workItemsBaseUrl}/workItems/{workItemId}"
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
             };
 
             var wrapper = new WorkItemWrapper(context, workItem);

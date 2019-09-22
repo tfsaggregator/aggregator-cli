@@ -1,0 +1,82 @@
+{
+  "typeFields": {
+    "Effort": {
+      "referenceName": "Microsoft.VSTS.Scheduling.Effort",
+      "name": "Effort",
+      "url": "https://dev.azure.com/_apis/wit/fields/Microsoft.VSTS.Scheduling.Effort"
+    },
+    "Order": {
+      "referenceName": "Microsoft.VSTS.Common.BacklogPriority",
+      "name": "Backlog Priority",
+      "url": "https://dev.azure.com/_apis/wit/fields/Microsoft.VSTS.Common.BacklogPriority"
+    },
+    "RemainingWork": {
+      "referenceName": "Microsoft.VSTS.Scheduling.RemainingWork",
+      "name": "Remaining Work",
+      "url": "https://dev.azure.com/_apis/wit/fields/Microsoft.VSTS.Scheduling.RemainingWork"
+    },
+    "Team": {
+      "referenceName": "System.AreaPath",
+      "name": "Area Path",
+      "url": "https://dev.azure.com/_apis/wit/fields/System.AreaPath"
+    },
+    "Activity": {
+      "referenceName": "Microsoft.VSTS.Common.Activity",
+      "name": "Activity",
+      "url": "https://dev.azure.com/_apis/wit/fields/Microsoft.VSTS.Common.Activity"
+    }
+  },
+  "taskBacklog": {
+    "name": "Tasks",
+    "referenceName": "Microsoft.TaskCategory",
+    "workItemTypes": [
+      {
+        "name": "Task",
+        "url": "https://dev.azure.com/70018fd1-401c-4c1a-831d-84b1865d8338/_apis/wit/workItemTypes/Task"
+      }
+    ]
+  },
+  "requirementBacklog": {
+    "name": "Backlog items",
+    "referenceName": "Microsoft.RequirementCategory",
+    "workItemTypes": [
+      {
+        "name": "Product Backlog Item",
+        "url": "https://dev.azure.com/70018fd1-401c-4c1a-831d-84b1865d8338/_apis/wit/workItemTypes/Product%20Backlog%20Item"
+      }
+    ]
+  },
+  "portfolioBacklogs": [
+    {
+      "name": "Epics",
+      "referenceName": "Microsoft.EpicCategory",
+      "workItemTypes": [
+        {
+          "name": "Epic",
+          "url": "https://dev.azure.com/70018fd1-401c-4c1a-831d-84b1865d8338/_apis/wit/workItemTypes/Epic"
+        }
+      ]
+    },
+    {
+      "name": "Features",
+      "referenceName": "Microsoft.FeatureCategory",
+      "workItemTypes": [
+        {
+          "name": "Feature",
+          "url": "https://dev.azure.com/70018fd1-401c-4c1a-831d-84b1865d8338/_apis/wit/workItemTypes/Feature"
+        }
+      ]
+    }
+  ],
+  "bugWorkItems": {
+    "name": "Bugs",
+    "referenceName": "Microsoft.BugCategory",
+    "workItemTypes": [
+      {
+        "name": "Bug",
+        "url": "https://dev.azure.com/70018fd1-401c-4c1a-831d-84b1865d8338/_apis/wit/workItemTypes/Bug"
+      }
+    ]
+  },
+  "url": "https://dev.azure.com/70018fd1-401c-4c1a-831d-84b1865d8338/_apis/work/processconfiguration"
+}

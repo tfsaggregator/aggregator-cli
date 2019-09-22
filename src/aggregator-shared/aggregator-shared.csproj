@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.25.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.143.2" />
     <PackageReference Include="Microsoft.VisualStudio.Services.ServiceHooks.WebApi" Version="16.143.2" />
   </ItemGroup>
 

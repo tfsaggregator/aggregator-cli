@@ -78,7 +78,7 @@ namespace aggregator.Engine
                 {
                     // TODO we shouldn't use the client in this class, move to WorkItemStore.GetRevisionAsync, workitemstore should check tracker if already loaded
                     // TODO think about passing workitemstore into workitemwrapper constructor, instead of engineContext, workitemstore is used several times, see also Property Children/Parent
-                    var previousRevision = _context.Client.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
+                    var previousRevision = _context.Clients.WitClient.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, previousRevision, true);
                 }
 
@@ -91,7 +91,7 @@ namespace aggregator.Engine
             get
             {
                 // TODO load a few revisions at a time
-                //var all = _context.Client.GetRevisionsAsync(this.Id.Value, expand: WorkItemExpand.All).Result;
+                //var all = _context.Clients.WitClient.GetRevisionsAsync(this.Id.Value, expand: WorkItemExpand.All).Result;
                 var revision = this;
                 while ((revision = revision.PreviousRevision) != null)
                 {

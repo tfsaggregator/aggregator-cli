@@ -1,0 +1,34 @@
+﻿{
+  "id": 2,
+  "rev": 2,
+  "fields": {
+    "System.AreaPath": "test-project\\Area 1",
+    "System.TeamProject": "test-project",
+    "System.IterationPath": "test-project\\Path 1",
+    "System.WorkItemType": "User Story",
+    "System.State": "Active",
+    "System.Reason": "Implementation started",
+    "System.Title": "Story 1",
+    "Microsoft.VSTS.Common.StateChangeDate": "2019-03-22T11:19:55.45Z",
+    "Microsoft.VSTS.Common.Priority": 2
+  },
+  "relations": [
+    {
+      "rel": "System.LinkTypes.Hierarchy-Reverse",
+      "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/1",
+      "attributes": {
+        "isLocked": false,
+        "comment": "a comment"
+      }
+    }
+  ],
+  "_links": {
+    "self": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/1/revisions/2"
+    },
+    "workItemRevisions": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/1/revisions"
+    }
+  },
+  "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/1/revisions/2"
+}
