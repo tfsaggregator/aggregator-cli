@@ -252,24 +252,8 @@ namespace aggregator.Engine
 
             if (commit)
             {
+                _ = await ExecuteBatchRequest(batchRequests, cancellationToken);
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
-
-                var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
-                var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
-                var hasFailures = failedResponses.Any();
-
-                if (hasFailures)
-                {
-                    string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
-                    _context.Logger.WriteVerbose(stringResponse);
-
-                    foreach (var batchResponse in failedResponses)
-                    {
-                        _context.Logger.WriteError($"Save failed: {batchResponse.Body}");
-                    }
-
-                    throw new InvalidOperationException("Save failed.");
-                }
             }
             else
             {
@@ -321,15 +305,9 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                if (batchRequests.Any())
-                {
-                    var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                var batchResponses = await ExecuteBatchRequest(batchRequests, cancellationToken);
 
-                    if (batchResponses.Any())
-                    {
-                        UpdateIdsInRelations(batchResponses);
-                    }
-                }
+                UpdateIdsInRelations(batchResponses);
 
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
             }
@@ -359,10 +337,7 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                if (batchRequests.Any())
-                {
-                    var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
-                }
+                _ = await ExecuteBatchRequest(batchRequests, cancellationToken);
             }
             else
             {
@@ -371,6 +346,30 @@ namespace aggregator.Engine
 
             return (created, updated);
         }
+
+        private async Task<IEnumerable<WitBatchResponse>> ExecuteBatchRequest(IList<WitBatchRequest> batchRequests, CancellationToken cancellationToken)
+        {
+            if (!batchRequests.Any()) return Enumerable.Empty<WitBatchResponse>();
+
+            var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+
+            var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
+            foreach (var failedResponse in failedResponses)
+            {
+                string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
+                _context.Logger.WriteVerbose(stringResponse);
+                _context.Logger.WriteError($"Save failed: {failedResponse.Body}");
+            }
+
+            //TODO should we throw exception?
+            //if (failedResponses.Any())
+            //{
+            //    throw new InvalidOperationException("Save failed.");
+            //}
+
+            return batchResponses;
+        }
+
 
         private async Task RestoreAndDelete(IEnumerable<WorkItemWrapper> restore, IEnumerable<WorkItemWrapper> delete, CancellationToken cancellationToken = default)
         {
