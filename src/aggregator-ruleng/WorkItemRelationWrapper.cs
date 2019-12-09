@@ -42,7 +42,7 @@ namespace aggregator.Engine
 
         public string Url => _relation.Url;
 
-        public WorkItemId<int> LinkedId { get; set; }
+        public WorkItemId LinkedId { get; }
 
         public IDictionary<string, object> Attributes => _relation.Attributes;
     }

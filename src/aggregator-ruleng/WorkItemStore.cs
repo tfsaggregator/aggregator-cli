@@ -48,10 +48,7 @@ namespace aggregator.Engine
 
         public WorkItemWrapper GetWorkItem(WorkItemRelationWrapper item)
         {
-            int id = int.Parse(
-                item.Url.Substring(
-                    item.Url.LastIndexOf('/') + 1));
-            return GetWorkItem(id);
+            return GetWorkItem(item.LinkedId);
         }
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
@@ -67,14 +64,7 @@ namespace aggregator.Engine
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<WorkItemRelationWrapper> collection)
         {
-            var ids = new List<int>();
-            foreach (var item in collection)
-            {
-                ids.Add(
-                    int.Parse(
-                        item.Url.Substring(
-                            item.Url.LastIndexOf('/') + 1)));
-            }
+            var ids = collection.Select<WorkItemRelationWrapper, int>(relation => relation.LinkedId);
 
             return GetWorkItems(ids);
         }
@@ -93,10 +83,10 @@ namespace aggregator.Engine
                 Links = new Microsoft.VisualStudio.Services.WebApi.ReferenceLinks()
             };
             var wrapper = new WorkItemWrapper(_context, item);
-            _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id.Value}");
+            _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id}");
             //HACK
             string baseUriString = _clients.WitClient.BaseAddress.AbsoluteUri;
-            item.Url = FormattableString.Invariant($"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}");
+            item.Url = FormattableString.Invariant($"{baseUriString}/_apis/wit/workitems/{wrapper.Id}");
             return wrapper;
         }
 
@@ -193,7 +183,7 @@ namespace aggregator.Engine
             }
             else if (workItems.Deleted.Any() || workItems.Restored.Any())
             {
-                string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id.Value));
+                string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id));
                 var teamProjectName = workItems.Restored.FirstOrDefault()?.TeamProject ??
                                       workItems.Deleted.FirstOrDefault()?.TeamProject;
                 _context.Logger.WriteInfo($"Dry-run mode: should restore: {FormatIds(workItems.Restored)} and delete {FormatIds(workItems.Deleted)} workitems");
@@ -207,7 +197,7 @@ namespace aggregator.Engine
                     _context.Logger.WriteInfo($"Updating workitem {item.Id}");
                     _ = await _clients.WitClient.UpdateWorkItemAsync(
                         item.Changes,
-                        item.Id.Value,
+                        item.Id,
                         cancellationToken: cancellationToken
                     );
                 }
@@ -247,9 +237,9 @@ namespace aggregator.Engine
 
             foreach (var item in workItems.Updated)
             {
-                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {item.TeamProject}");
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id} in {item.TeamProject}");
 
-                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id.Value,
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
                                                                             bypassRules: false,
                                                                             suppressNotifications: false);
@@ -358,9 +348,9 @@ namespace aggregator.Engine
                 {
                     continue;
                 }
-                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id} in {_context.ProjectName}");
 
-                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id.Value,
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
                                                                             bypassRules: false,
                                                                             suppressNotifications: false);
@@ -387,13 +377,13 @@ namespace aggregator.Engine
             foreach (var item in delete)
             {
                 _context.Logger.WriteInfo($"Deleting workitem {item.Id} in {item.TeamProject}");
-                _ = await _clients.WitClient.DeleteWorkItemAsync(item.Id.Value, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.DeleteWorkItemAsync(item.Id, cancellationToken: cancellationToken);
             }
 
             foreach (var item in restore)
             {
                 _context.Logger.WriteInfo($"Restoring workitem {item.Id} in {item.TeamProject}");
-                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id.Value, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id, cancellationToken: cancellationToken);
             }
         }
 
@@ -404,7 +394,7 @@ namespace aggregator.Engine
                                    // the response order matches the request order
                                    .Zip(batchResponses, (item, response) =>
                                    {
-                                       var oldId = item.Id.Value;
+                                       int oldId = item.Id;
                                        var newId = response.ParseBody<WorkItem>().Id.Value;
 
                                        //TODO oldId should be known by item, and not needed to be passed as parameter

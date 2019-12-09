@@ -7,11 +7,9 @@ using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.Work.WebApi;
-using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using NSubstitute;
-using NSubstitute.Core.Arguments;
 
 using unittests_ruleng.TestData;
 using Xunit;
@@ -552,8 +550,7 @@ return customField.ToString(""N"");
 var allWorkItemLinks = self.RelationLinks;
 foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""System.LinkTypes.Dependency-Forward"", link.Rel)))
 {
-    var id = int.Parse(successorLink.Url.Split('/').Last());
-    var successor = store.GetWorkItem(id);
+    var successor = store.GetWorkItem(successorLink);
 
     return successor.Title;
 }
