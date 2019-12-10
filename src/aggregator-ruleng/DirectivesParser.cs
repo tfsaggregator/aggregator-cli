@@ -103,7 +103,11 @@ namespace aggregator.Engine
 
         internal string GetRuleCode()
         {
-            return string.Join(Environment.NewLine, ruleCode, firstCodeLine, ruleCode.Length - firstCodeLine);
+            StringBuilder sb = new StringBuilder();
+            // Keep directive lines commented out, to maintain source location of rule code for diagnostics.
+            for(int i=0; i<ruleCode.Length; i++)
+               sb.AppendLine(i < firstCodeLine ? $"//{ruleCode[i]}" : ruleCode[i]);
+            return sb.ToString();
         }
 
         // directives
