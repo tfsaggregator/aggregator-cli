@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -327,7 +326,7 @@ namespace aggregator.cli
                     teamProjectId = project.Id;
                 }
 
-                using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
+                using (var clientsContext = new AzureDevOpsClientsContext(devops))
                 {
                     _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
                     var ruleCode = await File.ReadAllLinesAsync(ruleFilePath, cancellationToken);
@@ -335,8 +334,8 @@ namespace aggregator.cli
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, ruleCode, saveMode, dryRun: dryRun);
 
-                    var workItem = await witClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
-                    string result = await engine.ExecuteAsync(teamProjectId, workItem, witClient, cancellationToken);
+                    var workItem = await clientsContext.WitClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
+                    string result = await engine.ExecuteAsync(teamProjectId, workItem, clientsContext, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;

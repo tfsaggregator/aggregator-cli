@@ -3,12 +3,11 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 
 
@@ -17,10 +16,16 @@ namespace aggregator.Engine
     public class WorkItemStore
     {
         private readonly EngineContext _context;
+        private readonly IClientsContext _clients;
+        private readonly Lazy<Task<IEnumerable<WorkItemTypeCategory>>> _lazyGetWorkItemCategories;
+        private readonly Lazy<Task<IEnumerable<BacklogWorkItemTypeStates>>> _lazyGetBacklogWorkItemTypesAndStates;
 
         public WorkItemStore(EngineContext context)
         {
             _context = context;
+            _clients = _context.Clients;
+            _lazyGetWorkItemCategories = new Lazy<Task<IEnumerable<WorkItemTypeCategory>>>(async () => await GetWorkItemCategories_Internal());
+            _lazyGetBacklogWorkItemTypesAndStates = new Lazy<Task<IEnumerable<BacklogWorkItemTypeStates>>>(async () => await GetBacklogWorkItemTypesAndStates_Internal());
         }
 
         public WorkItemStore(EngineContext context, WorkItem workItem) : this(context)
@@ -36,7 +41,7 @@ namespace aggregator.Engine
             return _context.Tracker.LoadWorkItem(id, (workItemId) =>
                 {
                     _context.Logger.WriteInfo($"Loading workitem {workItemId}");
-                    var item = _context.Client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Result;
+                    var item = _clients.WitClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, item);
                 });
         }
@@ -55,7 +60,7 @@ namespace aggregator.Engine
             return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
             {
                 _context.Logger.WriteInfo($"Loading workitems {workItemIds.ToSeparatedString()}");
-                var items = _context.Client.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
+                var items = _clients.WitClient.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
                 return items.ConvertAll(i => new WorkItemWrapper(_context, i));
             });
         }
@@ -90,7 +95,7 @@ namespace aggregator.Engine
             var wrapper = new WorkItemWrapper(_context, item);
             _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id.Value}");
             //HACK
-            string baseUriString = _context.Client.BaseAddress.AbsoluteUri;
+            string baseUriString = _clients.WitClient.BaseAddress.AbsoluteUri;
             item.Url = FormattableString.Invariant($"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}");
             return wrapper;
         }
@@ -125,6 +130,16 @@ namespace aggregator.Engine
             return updated;
         }
 
+        public async Task<IEnumerable<WorkItemTypeCategory>> GetWorkItemCategories()
+        {
+            return await _lazyGetWorkItemCategories.Value;
+        }
+
+        public async Task<IEnumerable<BacklogWorkItemTypeStates>> GetBacklogWorkItemTypesAndStates()
+        {
+            return await _lazyGetBacklogWorkItemTypesAndStates.Value;
+        }
+
         public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, CancellationToken cancellationToken)
         {
             switch (mode)
@@ -157,7 +172,7 @@ namespace aggregator.Engine
                 if (commit)
                 {
                     _context.Logger.WriteInfo($"Creating a {item.WorkItemType} workitem in {item.TeamProject}");
-                    _ = await _context.Client.CreateWorkItemAsync(
+                    _ = await _clients.WitClient.CreateWorkItemAsync(
                         item.Changes,
                         _context.ProjectName,
                         item.WorkItemType,
@@ -190,7 +205,7 @@ namespace aggregator.Engine
                 if (commit)
                 {
                     _context.Logger.WriteInfo($"Updating workitem {item.Id}");
-                    _ = await _context.Client.UpdateWorkItemAsync(
+                    _ = await _clients.WitClient.UpdateWorkItemAsync(
                         item.Changes,
                         item.Id.Value,
                         cancellationToken: cancellationToken
@@ -222,11 +237,11 @@ namespace aggregator.Engine
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
-                var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName,
-                                                                         item.WorkItemType,
-                                                                         item.Changes,
-                                                                         bypassRules: false,
-                                                                         suppressNotifications: false);
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(_context.ProjectName,
+                                                                            item.WorkItemType,
+                                                                            item.Changes,
+                                                                            bypassRules: false,
+                                                                            suppressNotifications: false);
                 batchRequests.Add(request);
             }
 
@@ -234,10 +249,10 @@ namespace aggregator.Engine
             {
                 _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {item.TeamProject}");
 
-                var request = _context.Client.CreateWorkItemBatchRequest(item.Id.Value,
-                                                                         item.Changes,
-                                                                         bypassRules: false,
-                                                                         suppressNotifications: false);
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id.Value,
+                                                                            item.Changes,
+                                                                            bypassRules: false,
+                                                                            suppressNotifications: false);
                 batchRequests.Add(request);
             }
 
@@ -249,7 +264,7 @@ namespace aggregator.Engine
             {
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
 
-                var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
                 var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
                 var hasFailures = failedResponses.Any();
 
@@ -306,11 +321,11 @@ namespace aggregator.Engine
                 var document = new JsonPatchDocument();
                 document.AddRange(changesWithoutRelation);
 
-                var request = _context.Client.CreateWorkItemBatchRequest(_context.ProjectName,
-                                                                         item.WorkItemType,
-                                                                         document,
-                                                                         bypassRules: false,
-                                                                         suppressNotifications: false);
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(_context.ProjectName,
+                                                                            item.WorkItemType,
+                                                                            document,
+                                                                            bypassRules: false,
+                                                                            suppressNotifications: false);
                 batchRequests.Add(request);
             }
 
@@ -318,7 +333,7 @@ namespace aggregator.Engine
             {
                 if (batchRequests.Any())
                 {
-                    var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                    var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
 
                     if (batchResponses.Any())
                     {
@@ -345,10 +360,10 @@ namespace aggregator.Engine
                 }
                 _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
 
-                var request = _context.Client.CreateWorkItemBatchRequest(item.Id.Value,
-                                                                         item.Changes,
-                                                                         bypassRules: false,
-                                                                         suppressNotifications: false);
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id.Value,
+                                                                            item.Changes,
+                                                                            bypassRules: false,
+                                                                            suppressNotifications: false);
                 batchRequests.Add(request);
             }
 
@@ -356,7 +371,7 @@ namespace aggregator.Engine
             {
                 if (batchRequests.Any())
                 {
-                    var batchResponses = await _context.Client.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                    var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
                 }
             }
             else
@@ -372,13 +387,13 @@ namespace aggregator.Engine
             foreach (var item in delete)
             {
                 _context.Logger.WriteInfo($"Deleting workitem {item.Id} in {item.TeamProject}");
-                _ = await _context.Client.DeleteWorkItemAsync(item.Id.Value, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.DeleteWorkItemAsync(item.Id.Value, cancellationToken: cancellationToken);
             }
 
             foreach (var item in restore)
             {
                 _context.Logger.WriteInfo($"Restoring workitem {item.Id} in {item.TeamProject}");
-                _ = await _context.Client.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id.Value, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id.Value, cancellationToken: cancellationToken);
             }
         }
 
@@ -403,5 +418,114 @@ namespace aggregator.Engine
                 item.RemapIdReferences(realIds);
             }
         }
+
+        private async Task<IEnumerable<WorkItemTypeCategory>> GetWorkItemCategories_Internal()
+        {
+            var workItemTypeCategories = await _clients.WitClient.GetWorkItemTypeCategoriesAsync(_context.ProjectName);
+            var result = workItemTypeCategories.Select(workItemTypeCategory => new WorkItemTypeCategory()
+            {
+                ReferenceName = workItemTypeCategory.ReferenceName,
+                Name = workItemTypeCategory.Name,
+                WorkItemTypeNames = workItemTypeCategory.WorkItemTypes.Select(wiType => wiType.Name)
+            })
+                                               .ToList();
+
+            return result;
+        }
+
+        private async Task<IEnumerable<BacklogWorkItemTypeStates>> GetBacklogWorkItemTypesAndStates_Internal()
+        {
+            var processConfiguration = await _clients.WorkClient.GetProcessConfigurationAsync(_context.ProjectName);
+            var backlogWorkItemTypes = new List<CategoryConfiguration>(processConfiguration.PortfolioBacklogs)
+                                       {
+                                           processConfiguration.BugWorkItems,
+                                           processConfiguration.RequirementBacklog,
+                                           processConfiguration.TaskBacklog,
+                                       };
+
+            var workItemCategoryStates = new List<BacklogWorkItemTypeStates>();
+            foreach (var backlog in backlogWorkItemTypes)
+            {
+                var backlogInfo = new BacklogInfo()
+                {
+                    Name = backlog.Name,
+                    ReferenceName = backlog.ReferenceName
+                };
+
+                foreach (var workItemType in backlog.WorkItemTypes)
+                {
+                    var states = await _clients.WitClient.GetWorkItemTypeStatesAsync(_context.ProjectName, workItemType.Name);
+
+                    var itemTypeStates = new BacklogWorkItemTypeStates()
+                    {
+                        Name = workItemType.Name,
+                        Backlog = backlogInfo,
+                        StateCategoryStateNames = states.ToLookup(state => state.Category)
+                                                        .ToDictionary(kvp => kvp.Key,
+                                                                      kvp => kvp.Select(state => state.Name)
+                                                                                .ToArray())
+                    };
+
+                    workItemCategoryStates.Add(itemTypeStates);
+                }
+
+            }
+
+            return workItemCategoryStates;
+        }
+
     }
+
+    public class WorkItemTypeCategory
+    {
+        /// <summary>
+        /// Category ReferenceName, e.g. "Microsoft.EpicCategory"
+        /// </summary>
+        public string ReferenceName { get; set; }
+
+        /// <summary>
+        /// Display Name, e.g. "Epic Category"
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// WorkItemTypes in this Category, e.g. "Epic" or "Test Plan"
+        /// </summary>
+        public IEnumerable<string> WorkItemTypeNames { get; set; }
+    }
+
+    public class BacklogWorkItemTypeStates
+    {
+        /// <summary>
+        /// WorkItem Name, e.g. "Epic"
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Backlog Information this WorkItem Type is in
+        /// </summary>
+        public BacklogInfo Backlog { get; set; }
+
+        /// <summary>
+        /// Meta-State to WorkItem state name mapping, e.g.
+        /// "InProgress" = "Active", "Resolved"
+        /// "Proposed"   = "New"
+        /// "Complete"   = "Closed"
+        /// "Resolved"
+        /// </summary>
+        public IDictionary<string, string[]> StateCategoryStateNames { get; set; }
+    }
+
+    public class BacklogInfo
+    {
+        /// <summary>
+        /// The Category Reference Name, e.g. "Microsoft.EpicCategory" or "Microsoft.RequirementCategory"
+        /// </summary>
+        public string ReferenceName { get; set; }
+        /// <summary>
+        /// The Backlog Level Display Name, e.g. "Epics" or "Stories"
+        /// </summary>
+        public string Name { get; set; }
+    }
+
 }

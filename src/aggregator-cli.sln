@@ -19,7 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-A
 		..\doc\command-examples.md = ..\doc\command-examples.md
 		..\doc\production.md = ..\doc\production.md
 		..\README.md = ..\README.md
-		..\doc\rule-examples.md = ..\doc\rule-examples.md
+		..\doc\rule-examples-advanced.md = ..\doc\rule-examples-advanced.md
+		..\doc\rule-examples-basic.md = ..\doc\rule-examples-basic.md
 		..\doc\rule-language.md = ..\doc\rule-language.md
 		..\doc\setup.md = ..\doc\setup.md
 	EndProjectSection

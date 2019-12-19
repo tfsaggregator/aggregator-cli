@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator.Engine;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
@@ -49,7 +48,7 @@ namespace aggregator
             {
                 await devops.ConnectAsync(cancellationToken);
                 logger.WriteInfo($"Connected to Azure DevOps");
-                using (var witClient = devops.GetClient<WorkItemTrackingHttpClient>())
+                using (var clientsContext = new AzureDevOpsClientsContext(devops))
                 {
                     string ruleFilePath = Path.Combine(functionDirectory, $"{ruleName}.rule");
                     if (!File.Exists(ruleFilePath))
@@ -68,7 +67,7 @@ namespace aggregator
 
                     var engine = new Engine.RuleEngine(logger, ruleCode, configuration.SaveMode, configuration.DryRun);
 
-                    return await engine.ExecuteAsync(eventContext.ProjectId, eventContext.WorkItemPayload, witClient, cancellationToken);
+                    return await engine.ExecuteAsync(eventContext.ProjectId, eventContext.WorkItemPayload, clientsContext, cancellationToken);
                 }
             }
         }

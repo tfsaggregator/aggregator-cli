@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
+using Microsoft.TeamFoundation.Work.WebApi;
+using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using NSubstitute;
+using NSubstitute.Core.Arguments;
+
 using unittests_ruleng.TestData;
 using Xunit;
 
@@ -23,18 +28,20 @@ namespace unittests_ruleng
 
     public class RuleTests
     {
-        private const string CollectionUrl = "https://dev.azure.com/fake-organization";
-        private readonly Guid projectId = Guid.NewGuid();
-        private const string ProjectName = "test-project";
-        private readonly IAggregatorLogger logger = Substitute.For<IAggregatorLogger>();
-        private readonly WorkItemTrackingHttpClient client;
-        private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
-
+        private readonly IAggregatorLogger logger;
+        private readonly WorkHttpClient workClient;
+        private readonly WorkItemTrackingHttpClient witClient;
+        private readonly TestClientsContext clientsContext;
 
         public RuleTests()
         {
-            client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
-            client.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+            logger = Substitute.For<IAggregatorLogger>();
+
+            clientsContext = new TestClientsContext();
+
+            workClient = clientsContext.WorkClient;
+            witClient = clientsContext.WitClient;
+            witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
         }
 
         [Fact]
@@ -48,19 +55,19 @@ namespace unittests_ruleng
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
-            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
 
         [Fact]
@@ -74,20 +81,20 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @".lang=CS
 return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
-            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
 
         [Fact]
@@ -101,16 +108,16 @@ return string.Empty;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @".lang=WHAT
 return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal(EngineState.Error, engine.State);
         }
@@ -126,33 +133,33 @@ return string.Empty;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 },
                 Relations = new List<WorkItemRelation>
                 {
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Reverse",
-                        Url = $"{workItemsBaseUrl}/1"
+                        Url = $"{clientsContext.WorkItemsBaseUrl}/1"
                     }
                 },
             };
-            client.GetWorkItemAsync(workItemId2, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId2, expand: WorkItemExpand.All).Returns(workItem);
             int workItemId1 = 1;
-            client.GetWorkItemAsync(1, expand: WorkItemExpand.All).Returns(new WorkItem
+            witClient.GetWorkItemAsync(1, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId1,
                 Fields = new Dictionary<string, object>
                 {
                     { "System.WorkItemType", "User Story" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 },
                 Relations = new List<WorkItemRelation>
                 {
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = FormattableString.Invariant($"{workItemsBaseUrl}/{workItemId2}")
+                        Url = FormattableString.Invariant($"{clientsContext.WorkItemsBaseUrl}/{workItemId2}")
                     }
                 },
             });
@@ -167,10 +174,10 @@ return message;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal("Parent is 1", result);
-            await client.Received(1).GetWorkItemAsync(Arg.Is(workItemId1), expand: Arg.Is(WorkItemExpand.All));
+            await witClient.Received(1).GetWorkItemAsync(Arg.Is(workItemId1), expand: Arg.Is(WorkItemExpand.All));
         }
 
         [Fact]
@@ -184,20 +191,20 @@ return message;
                 {
                     { "System.WorkItemType", "User Story" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var wi = store.NewWorkItem(""Task"");
 wi.Title = ""Brand new"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Null(result);
-            logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
+            logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 1 created, 0 updated.");
         }
@@ -213,10 +220,10 @@ wi.Title = ""Brand new"";
                 {
                     { "System.WorkItemType", "User Story" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var parent = self;
 var newChild = store.NewWorkItem(""Task"");
@@ -225,11 +232,11 @@ parent.Relations.AddChild(newChild);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Null(result);
-            logger.Received().WriteInfo($"Found a request for a new Task workitem in {ProjectName}");
-            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {ProjectName}");
+            logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
+            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 1 created, 1 updated.");
         }
@@ -244,20 +251,20 @@ parent.Relations.AddChild(newChild);
                 Fields = new Dictionary<string, object>
                 {
                     { "System.Description", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 self.Description = self.Description + ""."";
 return self.Description;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello.", result);
-            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {ProjectName}");
+            logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
             logger.Received().WriteWarning("Dry-run mode: no updates sent to Azure DevOps.");
             logger.Received().WriteInfo("Changes saved to Azure DevOps (mode Default): 0 created, 1 updated.");
         }
@@ -273,17 +280,17 @@ return self.Description;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @".r=System.Xml.XDocument
 var doc = new System.Xml.Linq.XDocument();
 return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -300,17 +307,17 @@ return string.Empty;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @".import=System.Diagnostics
 Debug.WriteLine(""test"");
 return string.Empty;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
@@ -327,10 +334,10 @@ return string.Empty;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 Debug.WriteLine(""test"");
 return string.Empty;
@@ -338,7 +345,7 @@ return string.Empty;
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None)
+                () => engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
             );
         }
 
@@ -353,10 +360,10 @@ return string.Empty;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 Debug.WriteLine(""test"");
 return string.Empty;
@@ -364,35 +371,34 @@ return string.Empty;
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None)
+                () => engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
             );
         }
 
         [Fact]
         public async Task HelloWorldRuleOnUpdate_Succeeds()
         {
-            var workItem = ExampleTestData.Instance.WorkItem;
-            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+            var workItem = ExampleTestData.WorkItem;
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
-            client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed Title from { selfChanges.Fields[""System.Title""].OldValue } to { selfChanges.Fields[""System.Title""].NewValue }!"";
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, new WorkItemData(workItem, workItemUpdate), client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello #22 - Update 3 changed Title from Initial Title to Hello!", result);
-            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
 
         [Fact]
-        public async Task DocumentationRuleOnUpdateExample_Succeeds()
+        public async Task DocumentationRule_OnUpdateExample_Succeeds()
         {
-            var workItem = ExampleTestData.Instance.WorkItem;
-            var workItemUpdate = ExampleTestData.Instance.WorkItemUpdateFields;
+            var workItem = ExampleTestData.WorkItem;
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
-            client.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItem.Id.Value, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
             if (selfChanges.Fields.ContainsKey(""System.Title""))
             {
@@ -406,10 +412,10 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
             ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, new WorkItemData(workItem, workItemUpdate), client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("Title was changed from 'Initial Title' to 'Hello'", result);
-            await client.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
 
         [Fact]
@@ -423,18 +429,18 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                     { "MyOrg.CustomStringField", "some value" },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDefault"");
 return customField;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("some value", result);
         }
 
@@ -449,17 +455,17 @@ return customField;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDefault"");
 return customField;
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("MyDefault", result);
         }
 
@@ -474,18 +480,18 @@ return customField;
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                     { "MyOrg.CustomNumericField", 42 },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
 return customField.ToString(""N2"");
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("42.00", result);
         }
 
@@ -500,19 +506,75 @@ return customField.ToString(""N2"");
                 {
                     { "System.WorkItemType", "Bug" },
                     { "System.Title", "Hello" },
-                    { "System.TeamProject", ProjectName },
+                    { "System.TeamProject", clientsContext.ProjectName },
                 }
             };
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
 return customField.ToString(""N2"");
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(projectId, workItem, client, CancellationToken.None);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("3.00", result);
         }
 
+        [Fact]
+        public async Task DocumentationRule_BacklogWorkItemsActivateParent_Succeeds()
+        {
+            var workItemUS = ExampleTestData.BacklogUserStoryActive;
+            var workItemFeature = ExampleTestData.BacklogFeatureOneChild;
+
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
+
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
+            witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
+
+            var engine = new RuleEngine(logger, ExampleRuleCode.ActivateParent, SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+
+            Assert.Equal("updated Parent Feature #1 to State='Active'", result);
+        }
+
+        [Fact]
+        public async Task DocumentationRule_BacklogWorkItemsResolveParent_Succeeds()
+        {
+            var workItemFeature = ExampleTestData.BacklogFeatureOneChild;
+            var workItemUS = ExampleTestData.BacklogUserStoryClosed;
+
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
+
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
+            witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
+
+            var engine = new RuleEngine(logger, ExampleRuleCode.ResolveParent, SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+
+            Assert.Equal("updated Parent #1 to State='Resolved'", result);
+        }
+
+        [Fact]
+        public async Task DocumentationRule_BacklogWorkItemsResolveParent_FailsDueToChildren()
+        {
+            var workItemFeature = ExampleTestData.BacklogFeatureTwoChildren;
+            var workItemUS2 = ExampleTestData.BacklogUserStoryClosed;
+            var workItemUS3= ExampleTestData.BacklogUserStoryActive;
+            workItemUS3.Id = 3;
+
+            var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
+
+            witClient.GetWorkItemTypeStatesAsync(clientsContext.ProjectName, Arg.Any<string>()).Returns(ExampleTestData.WorkItemStateColorDefault.ToList());
+            workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
+            witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
+            witClient.GetWorkItemsAsync(Arg.Is<IEnumerable<int>>(ints => ints.Single() == workItemUS3.Id.Value), expand: WorkItemExpand.All).Returns(new List<WorkItem>() { workItemUS3 });
+
+            var engine = new RuleEngine(logger, ExampleRuleCode.ResolveParent, SaveMode.Default, dryRun: true);
+            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS2, workItemUpdate), clientsContext, CancellationToken.None);
+
+            Assert.Equal("Not all child work items <Removed> or <Completed>: #2=Closed,#3=Active", result);
+        }
     }
 }
