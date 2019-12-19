@@ -48,10 +48,7 @@ namespace aggregator.Engine
 
         public WorkItemWrapper GetWorkItem(WorkItemRelationWrapper item)
         {
-            int id = int.Parse(
-                item.Url.Substring(
-                    item.Url.LastIndexOf('/') + 1));
-            return GetWorkItem(id);
+            return GetWorkItem(item.LinkedId);
         }
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
@@ -67,14 +64,7 @@ namespace aggregator.Engine
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<WorkItemRelationWrapper> collection)
         {
-            var ids = new List<int>();
-            foreach (var item in collection)
-            {
-                ids.Add(
-                    int.Parse(
-                        item.Url.Substring(
-                            item.Url.LastIndexOf('/') + 1)));
-            }
+            var ids = collection.Select<WorkItemRelationWrapper, int>(relation => relation.LinkedId);
 
             return GetWorkItems(ids);
         }
@@ -93,10 +83,10 @@ namespace aggregator.Engine
                 Links = new Microsoft.VisualStudio.Services.WebApi.ReferenceLinks()
             };
             var wrapper = new WorkItemWrapper(_context, item);
-            _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id.Value}");
+            _context.Logger.WriteVerbose($"Made new workitem in {wrapper.TeamProject} with temporary id {wrapper.Id}");
             //HACK
             string baseUriString = _clients.WitClient.BaseAddress.AbsoluteUri;
-            item.Url = FormattableString.Invariant($"{baseUriString}/_apis/wit/workitems/{wrapper.Id.Value}");
+            item.Url = FormattableString.Invariant($"{baseUriString}/_apis/wit/workitems/{wrapper.Id}");
             return wrapper;
         }
 
@@ -193,7 +183,7 @@ namespace aggregator.Engine
             }
             else if (workItems.Deleted.Any() || workItems.Restored.Any())
             {
-                string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id.Value));
+                string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id));
                 var teamProjectName = workItems.Restored.FirstOrDefault()?.TeamProject ??
                                       workItems.Deleted.FirstOrDefault()?.TeamProject;
                 _context.Logger.WriteInfo($"Dry-run mode: should restore: {FormatIds(workItems.Restored)} and delete {FormatIds(workItems.Deleted)} workitems");
@@ -207,7 +197,7 @@ namespace aggregator.Engine
                     _context.Logger.WriteInfo($"Updating workitem {item.Id}");
                     _ = await _clients.WitClient.UpdateWorkItemAsync(
                         item.Changes,
-                        item.Id.Value,
+                        item.Id,
                         cancellationToken: cancellationToken
                     );
                 }
@@ -247,9 +237,9 @@ namespace aggregator.Engine
 
             foreach (var item in workItems.Updated)
             {
-                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {item.TeamProject}");
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id} in {item.TeamProject}");
 
-                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id.Value,
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
                                                                             bypassRules: false,
                                                                             suppressNotifications: false);
@@ -262,24 +252,8 @@ namespace aggregator.Engine
 
             if (commit)
             {
+                _ = await ExecuteBatchRequest(batchRequests, cancellationToken);
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
-
-                var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
-                var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
-                var hasFailures = failedResponses.Any();
-
-                if (hasFailures)
-                {
-                    string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
-                    _context.Logger.WriteVerbose(stringResponse);
-
-                    foreach (var batchResponse in failedResponses)
-                    {
-                        _context.Logger.WriteError($"Save failed: {batchResponse.Body}");
-                    }
-
-                    throw new InvalidOperationException("Save failed.");
-                }
             }
             else
             {
@@ -331,15 +305,9 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                if (batchRequests.Any())
-                {
-                    var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+                var batchResponses = await ExecuteBatchRequest(batchRequests, cancellationToken);
 
-                    if (batchResponses.Any())
-                    {
-                        UpdateIdsInRelations(batchResponses);
-                    }
-                }
+                UpdateIdsInRelations(batchResponses);
 
                 await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
             }
@@ -358,9 +326,9 @@ namespace aggregator.Engine
                 {
                     continue;
                 }
-                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id.Value} in {_context.ProjectName}");
+                _context.Logger.WriteInfo($"Found a request to update workitem {item.Id} in {_context.ProjectName}");
 
-                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id.Value,
+                var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
                                                                             bypassRules: false,
                                                                             suppressNotifications: false);
@@ -369,10 +337,7 @@ namespace aggregator.Engine
 
             if (commit)
             {
-                if (batchRequests.Any())
-                {
-                    var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
-                }
+                _ = await ExecuteBatchRequest(batchRequests, cancellationToken);
             }
             else
             {
@@ -382,18 +347,42 @@ namespace aggregator.Engine
             return (created, updated);
         }
 
+        private async Task<IEnumerable<WitBatchResponse>> ExecuteBatchRequest(IList<WitBatchRequest> batchRequests, CancellationToken cancellationToken)
+        {
+            if (!batchRequests.Any()) return Enumerable.Empty<WitBatchResponse>();
+
+            var batchResponses = await _clients.WitClient.ExecuteBatchRequest(batchRequests, cancellationToken: cancellationToken);
+
+            var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
+            foreach (var failedResponse in failedResponses)
+            {
+                string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
+                _context.Logger.WriteVerbose(stringResponse);
+                _context.Logger.WriteError($"Save failed: {failedResponse.Body}");
+            }
+
+            //TODO should we throw exception?
+            //if (failedResponses.Any())
+            //{
+            //    throw new InvalidOperationException("Save failed.");
+            //}
+
+            return batchResponses;
+        }
+
+
         private async Task RestoreAndDelete(IEnumerable<WorkItemWrapper> restore, IEnumerable<WorkItemWrapper> delete, CancellationToken cancellationToken = default)
         {
             foreach (var item in delete)
             {
                 _context.Logger.WriteInfo($"Deleting workitem {item.Id} in {item.TeamProject}");
-                _ = await _clients.WitClient.DeleteWorkItemAsync(item.Id.Value, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.DeleteWorkItemAsync(item.Id, cancellationToken: cancellationToken);
             }
 
             foreach (var item in restore)
             {
                 _context.Logger.WriteInfo($"Restoring workitem {item.Id} in {item.TeamProject}");
-                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id.Value, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id, cancellationToken: cancellationToken);
             }
         }
 
@@ -404,7 +393,7 @@ namespace aggregator.Engine
                                    // the response order matches the request order
                                    .Zip(batchResponses, (item, response) =>
                                    {
-                                       var oldId = item.Id.Value;
+                                       int oldId = item.Id;
                                        var newId = response.ParseBody<WorkItem>().Id.Value;
 
                                        //TODO oldId should be known by item, and not needed to be passed as parameter
