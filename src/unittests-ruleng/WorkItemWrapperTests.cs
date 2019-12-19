@@ -68,5 +68,44 @@ namespace unittests_ruleng
             Assert.False(wrapper.IsDeleted);
             Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
         }
+
+
+        public static IEnumerable<object[]> AssignSameValueShouldNotInvalidateIsDirty_AdditionalTestData
+        {
+            get
+            {
+                yield return new object[] { DateTime.Now };
+            }
+        }
+
+        [Theory]
+        [InlineData("Hello")]  // string
+        [InlineData(13)]       // int
+        [InlineData(13.6)]     // double
+        [InlineData(true)]     // bool
+        [MemberData(nameof(AssignSameValueShouldNotInvalidateIsDirty_AdditionalTestData))] // DateTime
+        public void AssignSameValueShouldNotInvalidateIsDirty_Success(object testValue)
+        {
+            var testKey = "testKey";
+            WorkItem workItem = new WorkItem
+                                {
+                                    Id = 11,
+                                    Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                                 { testKey, testValue },
+                                             },
+                                    Url = $"{clientsContext.WorkItemsBaseUrl}/11"
+                                };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+
+
+            Assert.False(wrapper.IsDirty);
+
+            wrapper[testKey] = testValue;
+            Assert.False(wrapper.IsDirty);
+        }
     }
 }
