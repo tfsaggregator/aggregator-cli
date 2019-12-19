@@ -38,7 +38,8 @@ Returns a read-only copy of all revisions of this work item.
 
 
 ## Relations
-Navigate to related work items.
+Navigate to related work items. See also Type [WorkItemRelation](#workitemrelation-type)
+or [WorkItemRelationCollection](#workitemrelationcollection-type)
 
 `IEnumerable<WorkItemRelation> RelationLinks`
 Returns all relations as `WorkItemRelation`.
@@ -112,7 +113,7 @@ Use this field to provide indepth information about a work item.
 `string History`
 The record of changes that were made to the work item after it was created.
 
-`WorkItemId<int> Id` Read-only.
+`int Id` Read-only.
 The unique identifier that is assigned to a work item.
  Negative when `IsNew` equals `true`.
 
@@ -374,6 +375,9 @@ Returns `true` is collection is read-only.
 
 
 # WorkItemRelation type
+
+`int LinkedId`
+Read-only, returns the Id to the target object.
 
 `string Title`
 Read-only, returns the title property of the relation.
