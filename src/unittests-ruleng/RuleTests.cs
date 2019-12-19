@@ -22,7 +22,7 @@ namespace unittests_ruleng
     {
         internal static string[] Mince(this string ruleCode)
         {
-            return ruleCode.Split(Environment.NewLine);
+            return ruleCode.Split('\n').Select(line => line.TrimEnd('\r')).ToArray();
         }
     }
 
@@ -350,6 +350,21 @@ return string.Empty;
         }
 
         [Fact]
+        public void Diagnostic_Location_Returned_Correctly()
+        {
+            string ruleCode = @".import=""System.Diagnostics""
+Debug.WriteLine(""test"");
+return string.Empty
+";
+
+            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            var (success, diagnostics) = engine.VerifyRule();
+            Assert.False(success);
+            Assert.Single(diagnostics);
+            Assert.Equal(2, diagnostics[0].Location.GetLineSpan().StartLinePosition.Line);
+        }
+
+        [Fact]
         public async Task DeleteWorkItem()
         {
             int workItemId = 42;
@@ -487,7 +502,7 @@ return customField;
             witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
-return customField.ToString(""N"");
+return customField.ToString(""N"", System.Globalization.CultureInfo.InvariantCulture);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
@@ -512,7 +527,7 @@ return customField.ToString(""N"");
             witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
-return customField.ToString(""N"");
+return customField.ToString(""N"", System.Globalization.CultureInfo.InvariantCulture);
 ";
 
             var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
