@@ -11,6 +11,7 @@ namespace aggregator.Engine.Language {
             Language = RuleLanguage.Unknown;
             References = new List<string>();
             Imports = new List<string>();
+            RuleCodeOffset = 0;
             RuleCode = new List<string>();
         }
 
@@ -28,6 +29,8 @@ namespace aggregator.Engine.Language {
         public IList<string> References { get; }
 
         public IList<string> Imports { get; }
+
+        public int RuleCodeOffset { get; set; }
 
         public IList<string> RuleCode { get; }
     }

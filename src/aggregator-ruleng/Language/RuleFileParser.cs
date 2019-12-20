@@ -122,9 +122,11 @@ namespace aggregator.Engine.Language
                     }
                 }//switch
 
+                ruleDirectives.RuleCode.Add($"//{directive}");
                 directiveLineIndex++;
             }//while
 
+            ruleDirectives.RuleCodeOffset = directiveLineIndex;
             ruleDirectives.RuleCode.AddRange(ruleCode.Skip(directiveLineIndex));
             var parseSuccessful = !parsingIssues;
             return (ruleDirectives, parseSuccessful);
@@ -151,7 +153,7 @@ namespace aggregator.Engine.Language
 
             content.AddRange(ruleDirectives.References.Select(reference => $".reference={reference}"));
             content.AddRange(ruleDirectives.Imports.Select(import => $".import={import}"));
-            content.AddRange(ruleDirectives.RuleCode);
+            content.AddRange(ruleDirectives.RuleCode.Skip(ruleDirectives.RuleCodeOffset));
 
             return content.ToArray();
         }

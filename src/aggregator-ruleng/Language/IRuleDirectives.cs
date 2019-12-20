@@ -8,6 +8,7 @@ namespace aggregator.Engine.Language {
         RuleLanguage Language { get; }
         IReadOnlyList<string> References { get; }
         IReadOnlyList<string> Imports { get; }
+        int RuleCodeOffset { get; }
         IReadOnlyList<string> RuleCode { get; }
     }
 }
