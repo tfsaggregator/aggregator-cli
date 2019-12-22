@@ -215,9 +215,14 @@ namespace aggregator.cli
 
         private async Task<SemVersion> GetLocalPackageVersionAsync(string runtimePackageFile)
         {
-            if (File.Exists(runtimePackageFile))
+            if (!File.Exists(runtimePackageFile))
             {
-                var zip = ZipFile.OpenRead(runtimePackageFile);
+                // this default allows SemVer to parse and compare
+                return new SemVersion(0, 0);
+            }
+
+            using (var zip = ZipFile.OpenRead(runtimePackageFile))
+            {
                 var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
                 using (var byteStream = manifestEntry.Open())
                 using (var reader = new StreamReader(byteStream))
@@ -227,9 +232,6 @@ namespace aggregator.cli
                     return info.Version;
                 }
             }
-
-            // this default allows SemVer to parse and compare
-            return new SemVersion(0, 0);
         }
 
         private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHubAsync(string tag = "latest")
