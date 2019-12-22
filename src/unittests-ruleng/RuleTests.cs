@@ -101,7 +101,7 @@ return string.Empty;
         }
 
         [Fact]
-        public async Task LanguageDirective_Fails()
+        public void LanguageDirective_Fails()
         {
             int workItemId = 42;
             WorkItem workItem = new WorkItem
