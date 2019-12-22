@@ -50,8 +50,8 @@ namespace aggregator.Engine
 
 
         internal WorkItemWrapper(EngineContext context, WorkItem item, bool isReadOnly)
-            // we cannot reuse the code, because tracking is different
-            //: this(context, item)
+        // we cannot reuse the code, because tracking is different
+        //: this(context, item)
         {
             _context = context;
             _item = item;
@@ -64,7 +64,7 @@ namespace aggregator.Engine
                 Path = "/rev",
                 Value = item.Rev
             });
-            IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id.Value}", StringComparison.OrdinalIgnoreCase) ?? false;
+            IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id}", StringComparison.OrdinalIgnoreCase) ?? false;
 
             IsReadOnly = isReadOnly;
             _context.Tracker.TrackRevision(this);
@@ -78,7 +78,7 @@ namespace aggregator.Engine
                 {
                     // TODO we shouldn't use the client in this class, move to WorkItemStore.GetRevisionAsync, workitemstore should check tracker if already loaded
                     // TODO think about passing workitemstore into workitemwrapper constructor, instead of engineContext, workitemstore is used several times, see also Property Children/Parent
-                    var previousRevision = _context.Clients.WitClient.GetRevisionAsync(this.Id.Value, this.Rev - 1, expand: WorkItemExpand.All).Result;
+                    var previousRevision = _context.Clients.WitClient.GetRevisionAsync(this.Id, this.Rev - 1, expand: WorkItemExpand.All).Result;
                     return new WorkItemWrapper(_context, previousRevision, true);
                 }
 
@@ -91,7 +91,7 @@ namespace aggregator.Engine
             get
             {
                 // TODO load a few revisions at a time
-                //var all = _context.Clients.WitClient.GetRevisionsAsync(this.Id.Value, expand: WorkItemExpand.All).Result;
+                //var all = _context.Clients.WitClient.GetRevisionsAsync(this.Id, expand: WorkItemExpand.All).Result;
                 var revision = this;
                 while ((revision = revision.PreviousRevision) != null)
                 {
@@ -158,17 +158,17 @@ namespace aggregator.Engine
         {
             get
             {
-                 if (ParentLink != null)
-                 {
-                     var store = new WorkItemStore(_context);
-                     return store.GetWorkItem(ParentLink);
-                 }
-                 else
-                     return null;
+                if (ParentLink != null)
+                {
+                    var store = new WorkItemStore(_context);
+                    return store.GetWorkItem(ParentLink);
+                }
+                else
+                    return null;
             }
         }
 
-        public WorkItemId<int> Id
+        public WorkItemId Id
         {
             get;
             private set;
@@ -292,6 +292,12 @@ namespace aggregator.Engine
             set => SetFieldValue(CoreFieldRefNames.RelatedLinkCount, value);
         }
 
+        public IdentityRef RevisedBy
+        {
+            get => GetFieldValue<IdentityRef>(CoreFieldRefNames.RevisedBy);
+            set => SetFieldValue(CoreFieldRefNames.RevisedBy, value);
+        }
+
         public DateTime? RevisedDate
         {
             get => GetFieldValue<DateTime?>(CoreFieldRefNames.RevisedDate);
@@ -355,6 +361,12 @@ namespace aggregator.Engine
 
             if (_item.Fields.ContainsKey(field))
             {
+                if (_item.Fields[field].Equals(value))
+                {
+                    // if new value does not differ from existing value, just ignore change
+                    return;
+                }
+
                 _item.Fields[field] = value;
                 Changes.Add(new JsonPatchOperation()
                 {
@@ -382,13 +394,13 @@ namespace aggregator.Engine
             switch (value)
             {
                 case IdentityRef id:
-                {
-                    return id.DisplayName;
-                }
+                    {
+                        return id.DisplayName;
+                    }
                 default:
-                {
-                    return value;
-                }
+                    {
+                        return value;
+                    }
             }
         }
 

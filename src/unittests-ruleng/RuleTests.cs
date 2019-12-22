@@ -22,6 +22,7 @@ namespace unittests_ruleng
     {
         internal static string[] Mince(this string ruleCode)
         {
+			// looks odd, but the file might come from any OS: Windows, Linux or Mac
             return ruleCode.Split(new string[] {"\r\n","\r","\n" }, StringSplitOptions.None);
         }
     }
@@ -31,6 +32,7 @@ namespace unittests_ruleng
         private readonly IAggregatorLogger logger;
         private readonly WorkHttpClient workClient;
         private readonly WorkItemTrackingHttpClient witClient;
+        private readonly RuleEngine engine;
         private readonly TestClientsContext clientsContext;
 
         public RuleTests()
@@ -42,6 +44,8 @@ namespace unittests_ruleng
             workClient = clientsContext.WorkClient;
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+
+            engine = new RuleEngine(logger, SaveMode.Default, dryRun: true);
         }
 
         [Fact]
@@ -63,8 +67,8 @@ namespace unittests_ruleng
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -89,10 +93,9 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
-            Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
@@ -116,10 +119,10 @@ return string.Empty;
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            var result = rule.Verify();
 
-            Assert.Equal(EngineState.Error, engine.State);
+            Assert.False(result.success);
         }
 
         [Fact]
@@ -173,8 +176,8 @@ if (parent != null)
 return message;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal("Parent is 1", result);
             await witClient.Received(1).GetWorkItemAsync(Arg.Is(workItemId1), expand: Arg.Is(WorkItemExpand.All));
@@ -200,8 +203,8 @@ var wi = store.NewWorkItem(""Task"");
 wi.Title = ""Brand new"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
@@ -231,9 +234,9 @@ newChild.Title = ""Brand new"";
 parent.Relations.AddChild(newChild);
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
-
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+			
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
@@ -260,8 +263,8 @@ self.Description = self.Description + ""."";
 return self.Description;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello.", result);
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
@@ -289,10 +292,9 @@ var doc = new System.Xml.Linq.XDocument();
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
-            Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
         }
 
@@ -316,10 +318,9 @@ Debug.WriteLine(""test"");
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
 
-            Assert.Equal(EngineState.Success, engine.State);
             Assert.Equal(string.Empty, result);
         }
 
@@ -343,10 +344,27 @@ Debug.WriteLine(""test"");
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
+                () => engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
             );
+        }
+
+        [Fact]
+        public void Diagnostic_Location_Returned_Correctly()
+        {
+            string ruleCode = @".import=""System.Diagnostics""
+Debug.WriteLine(""test"");
+return string.Empty
+";
+            string[] mincedCode = ruleCode.Mince();
+            var rule = new ScriptedRuleWrapper("Test", mincedCode);
+            
+            var (success, diagnostics) = rule.Verify();
+
+            Assert.False(success);
+            Assert.Single(diagnostics);
+            Assert.Equal(2, diagnostics[0].Location.GetLineSpan().StartLinePosition.Line);
         }
 
         [Fact]
@@ -369,9 +387,9 @@ Debug.WriteLine(""test"");
 return string.Empty;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
+                () => engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
             );
         }
 
@@ -385,8 +403,8 @@ return string.Empty;
 return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed Title from { selfChanges.Fields[""System.Title""].OldValue } to { selfChanges.Fields[""System.Title""].NewValue }!"";
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello #22 - Update 3 changed Title from Initial Title to Hello!", result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -411,8 +429,8 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
             }
             ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("Title was changed from 'Initial Title' to 'Hello'", result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -439,8 +457,8 @@ var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDe
 return customField;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("some value", result);
         }
 
@@ -464,8 +482,8 @@ var customField = self.GetFieldValue<string>(""MyOrg.CustomStringField"", ""MyDe
 return customField;
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("MyDefault", result);
         }
 
@@ -487,11 +505,11 @@ return customField;
             witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
-return customField.ToString(""N2"");
+return customField.ToString(""N"", System.Globalization.CultureInfo.InvariantCulture);
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("42.00", result);
         }
 
@@ -512,12 +530,56 @@ return customField.ToString(""N2"");
             witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
             string ruleCode = @"
 var customField = self.GetFieldValue<decimal>(""MyOrg.CustomNumericField"", 3.0m);
-return customField.ToString(""N2"");
+return customField.ToString(""N"", System.Globalization.CultureInfo.InvariantCulture);
 ";
 
-            var engine = new RuleEngine(logger, ruleCode.Mince(), SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
             Assert.Equal("3.00", result);
+        }
+
+
+        [Fact]
+        public async Task SuccesorLink_Test()
+        {
+            int predecessorId = 42;
+            WorkItem predecessor = new WorkItem
+            {
+                Id = predecessorId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Predecessor" },
+                    { "System.TeamProject", clientsContext.ProjectName },
+                },
+                Relations = new List<WorkItemRelation>()
+                {
+                    new WorkItemRelation()
+                    {
+                        Rel = "System.LinkTypes.Dependency-Forward",
+                        Url = "https://dev.azure.com/fake-organization/_apis/wit/workItems/22"
+                    }
+                }
+            };
+            witClient.GetWorkItemAsync(predecessorId, expand: WorkItemExpand.All).Returns(predecessor);
+
+            var successor = ExampleTestData.WorkItem;
+            successor.Fields["System.Title"] = "Successor";
+            witClient.GetWorkItemAsync(22, expand: WorkItemExpand.All).Returns(successor);
+            string ruleCode = @"
+var allWorkItemLinks = self.RelationLinks;
+foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""System.LinkTypes.Dependency-Forward"", link.Rel)))
+{
+    var successor = store.GetWorkItem(successorLink);
+
+    return successor.Title;
+}
+";
+
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, predecessor, clientsContext, CancellationToken.None);
+
+            Assert.Equal("Successor", result);
         }
 
         [Fact]
@@ -532,8 +594,8 @@ return customField.ToString(""N2"");
             workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
             witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
 
-            var engine = new RuleEngine(logger, ExampleRuleCode.ActivateParent, SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ExampleRuleCode.ActivateParent);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("updated Parent Feature #1 to State='Active'", result);
         }
@@ -550,8 +612,8 @@ return customField.ToString(""N2"");
             workClient.GetProcessConfigurationAsync(clientsContext.ProjectName).Returns(ExampleTestData.ProcessConfigDefaultAgile);
             witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
 
-            var engine = new RuleEngine(logger, ExampleRuleCode.ResolveParent, SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ExampleRuleCode.ResolveParent);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("updated Parent #1 to State='Resolved'", result);
         }
@@ -571,8 +633,8 @@ return customField.ToString(""N2"");
             witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
             witClient.GetWorkItemsAsync(Arg.Is<IEnumerable<int>>(ints => ints.Single() == workItemUS3.Id.Value), expand: WorkItemExpand.All).Returns(new List<WorkItem>() { workItemUS3 });
 
-            var engine = new RuleEngine(logger, ExampleRuleCode.ResolveParent, SaveMode.Default, dryRun: true);
-            string result = await engine.ExecuteAsync(clientsContext.ProjectId, new WorkItemData(workItemUS2, workItemUpdate), clientsContext, CancellationToken.None);
+            var rule = new ScriptedRuleWrapper("Test", ExampleRuleCode.ResolveParent);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS2, workItemUpdate), clientsContext, CancellationToken.None);
 
             Assert.Equal("Not all child work items <Removed> or <Completed>: #2=Closed,#3=Active", result);
         }

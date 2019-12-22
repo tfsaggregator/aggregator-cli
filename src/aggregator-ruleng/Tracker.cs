@@ -23,7 +23,7 @@ namespace aggregator.Engine
         }
 
         private int watermark = -1;
-        IDictionary<WorkItemId<int>, TrackedWrapper> tracked = new Dictionary<WorkItemId<int>, TrackedWrapper>();
+        IDictionary<WorkItemId, TrackedWrapper> tracked = new Dictionary<WorkItemId, TrackedWrapper>();
 
         internal Tracker()
         {
@@ -45,7 +45,7 @@ namespace aggregator.Engine
 
         internal void TrackNew(WorkItemWrapper workItemWrapper)
         {
-            var t = new TrackedWrapper(workItemWrapper.Id.Value, workItemWrapper);
+            var t = new TrackedWrapper(workItemWrapper.Id, workItemWrapper);
             tracked.Add(workItemWrapper.Id, t);
         }
 

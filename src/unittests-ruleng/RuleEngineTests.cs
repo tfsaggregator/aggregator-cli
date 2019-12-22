@@ -11,10 +11,10 @@ namespace unittests_ruleng
         public void GivenAnValidRule_WhenTheRuleIsVerified_ThenTheResult_ShouldBeSuccessfull()
         {
             //Given
-            var engine = new RuleEngine(Substitute.For<IAggregatorLogger>(), new [] { "" }, SaveMode.Batch, true);
+            var rule = new ScriptedRuleWrapper("Test", new[] { "" });
 
             //When
-            var result = engine.VerifyRule();
+            var result = rule.Verify();
 
             //Then
             Assert.True(result.success);
@@ -25,10 +25,10 @@ namespace unittests_ruleng
         public void GivenAnInvalidRule_WhenTheRuleIsVerified_ThenTheResult_ShouldNotBeSuccessfull()
         {
             //Given
-            var engine = new RuleEngine(Substitute.For<IAggregatorLogger>(), new [] { "(" }, SaveMode.Batch, true);
+            var rule = new ScriptedRuleWrapper("Test", new[] { "(" });
 
             //When
-            var result = engine.VerifyRule();
+            var result = rule.Verify();
 
             //Then
             Assert.False(result.success);

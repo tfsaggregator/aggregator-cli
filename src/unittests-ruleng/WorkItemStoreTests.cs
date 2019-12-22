@@ -90,7 +90,7 @@ namespace unittests_ruleng
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = await sut.SaveChanges(SaveMode.Default, false, CancellationToken.None);
+            var save = await sut.SaveChanges(SaveMode.Default, false, false, CancellationToken.None);
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);
