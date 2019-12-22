@@ -71,11 +71,4 @@ namespace unittests_ruleng.TestData
         public static ProcessConfiguration ProcessConfigDefaultScrum => Helper.GetFromResource<ProcessConfiguration>("WorkClient.ProcessConfiguration.Scrum.json");
         public static WorkItemStateColor[] WorkItemStateColorDefault => Helper.GetFromResource<WorkItemStateColor[]>("WitClient.WorkItemStateColor.EpicFeatureUserStory.json");
     }
-
-
-    public static class ExampleEvents
-    {
-        public static WebHookEvent TestEvent => Helper.GetFromResource<WebHookEvent>("TestEvent.json");
-        public static string TestEventAsString => Helper.GetEmbeddedResourceContent("TestEvent.json");
-    }
 }
