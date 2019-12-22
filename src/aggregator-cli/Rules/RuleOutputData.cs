@@ -11,18 +11,20 @@ namespace aggregator.cli
         private readonly string ruleName;
         private readonly string ruleLanguage;
         private readonly bool isDisabled;
+        private readonly bool isImpersonated;
 
         internal RuleOutputData(InstanceName instance, IRuleConfiguration ruleConfiguration, string ruleLanguage)
         {
             this.instanceName = instance.PlainName;
             this.ruleName = ruleConfiguration.RuleName;
             this.isDisabled = ruleConfiguration.IsDisabled;
+            this.isImpersonated = ruleConfiguration.Impersonate;
             this.ruleLanguage = ruleLanguage;
         }
 
         public string AsHumanReadable()
         {
-            return $"Rule {instanceName}/{ruleName} {(isDisabled ? "(disabled)" : string.Empty)}";
+            return $"Rule {instanceName}/{ruleName} {(isImpersonated ? "*execute impersonated*" : string.Empty)} {(isDisabled ? "(disabled)" : string.Empty)}";
         }
     }
 }

@@ -56,6 +56,7 @@ namespace aggregator.Engine
         private void Initialize(IPreprocessedRule preprocessedRule)
         {
             RuleDirectives = preprocessedRule;
+            ImpersonateExecution = RuleDirectives.Impersonate;
 
             var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(RuleDirectives.LoadAssemblyReferences()));
             var imports = new HashSet<string>(DefaultImports().Concat(RuleDirectives.Imports));

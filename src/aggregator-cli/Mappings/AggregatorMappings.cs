@@ -58,7 +58,7 @@ namespace aggregator.cli
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
                 string ruleFullName = $"{InstanceName.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(
-                    new MappingOutputData(instance, ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
+                    new MappingOutputData(instance, ruleFullName, ruleUrl.IsImpersonationEnabled(), foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
             }
             return result;
@@ -72,7 +72,7 @@ namespace aggregator.cli
             public IEnumerable<string> Fields { get; set; }
         }
 
-        internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, CancellationToken cancellationToken)
+        internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
             var projectClient = devops.GetClient<ProjectHttpClient>();
@@ -84,7 +84,7 @@ namespace aggregator.cli
             (Uri ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            ruleUrl = ruleUrl.AddToUrl();
+            ruleUrl = ruleUrl.AddToUrl(impersonate: impersonateExecution);
 
             // check if the subscription already exists and bail out
             var query = new SubscriptionsQuery {

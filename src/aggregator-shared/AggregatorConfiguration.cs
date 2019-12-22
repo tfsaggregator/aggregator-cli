@@ -38,6 +38,7 @@ namespace aggregator
     {
         string RuleName { get; }
         bool IsDisabled { get; set; }
+        bool Impersonate { get; set; }
     }
 
 
@@ -66,6 +67,11 @@ namespace aggregator
                 if (string.Equals("Disabled", key, StringComparison.OrdinalIgnoreCase))
                 {
                     ruleConfig.IsDisabled = Boolean.TryParse(ruleSetting.value, out bool result) && result;
+                }
+
+                if (string.Equals("Impersonate", key, StringComparison.OrdinalIgnoreCase))
+                {
+                    ruleConfig.Impersonate = string.Equals("onBehalfOfInitiator", ruleSetting.value, StringComparison.OrdinalIgnoreCase);
                 }
             }
 
@@ -144,6 +150,7 @@ namespace aggregator
         private static void AddRuleSettings(this Dictionary<string, string> settings, IRuleConfiguration ruleSetting)
         {
             settings[$"{RULE_SETTINGS_PREFIX}{ruleSetting.RuleName}.Disabled"] = ruleSetting.IsDisabled.ToString();
+            settings[$"{RULE_SETTINGS_PREFIX}{ruleSetting.RuleName}.Impersonate"] = ruleSetting.Impersonate ? "onBehalfOfInitiator" : "false";
         }
 
         private static void ApplyWithAppSettings(this Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp, Dictionary<string, string> settings)

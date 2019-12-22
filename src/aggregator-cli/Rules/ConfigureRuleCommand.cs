@@ -24,6 +24,12 @@ namespace aggregator.cli
         [Option('e', "enable", SetName = "enable", HelpText = "Enable the rule.")]
         public bool? Enable { get; set; }
 
+        [Option("disableImpersonate", Required = false, HelpText = "Disable do rule changes impersonated.")]
+        public bool? DisableImpersonateExecution { get; set; }
+
+        [Option("enableImpersonate", Required = false, HelpText = "Enable do rule changes on behalf of the person triggered the rule execution. See wiki for details, requires special account privileges.")]
+        public bool? EnableImpersonateExecution { get; set; }
+
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
             var context = await Context
@@ -33,8 +39,9 @@ namespace aggregator.cli
             var rules = new AggregatorRules(context.Azure, context.Logger);
 
             var disable = GetDisableStatus(Disable, Enable);
+            var impersonate = GetEnableStatus(DisableImpersonateExecution, EnableImpersonateExecution);
 
-            var ok = await rules.ConfigureAsync(instance, Name, disable, cancellationToken);
+            var ok = await rules.ConfigureAsync(instance, Name, disable, impersonate, cancellationToken);
             return ok ? 0 : 1;
         }
 

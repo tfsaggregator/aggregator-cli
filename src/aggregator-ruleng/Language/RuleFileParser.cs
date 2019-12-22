@@ -104,6 +104,17 @@ namespace aggregator.Engine.Language
                         }
                         break;
 
+                    case "impersonate":
+                        if (parts.Length < 2)
+                        {
+                            FailParsingWithMessage($"Invalid impersonate directive {directive}");
+                        }
+                        else
+                        {
+                            preprocessedRule.Impersonate = string.Equals("onBehalfOfInitiator", parts[1].TrimEnd(), StringComparison.OrdinalIgnoreCase);
+                        }
+                        break;
+
                     default:
                     {
                         FailParsingWithMessage($"Unrecognized directive {directive}");
@@ -138,6 +149,11 @@ namespace aggregator.Engine.Language
                           {
                               $".language={preprocessedRule.LanguageAsString()}"
                           };
+
+            if (preprocessedRule.Impersonate)
+            {
+                content.Add($".impersonate=onBehalfOfInitiator");
+            }
 
             content.AddRange(preprocessedRule.References.Select(reference => $".reference={reference}"));
             content.AddRange(preprocessedRule.Imports.Select(import => $".import={import}"));

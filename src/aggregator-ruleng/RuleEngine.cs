@@ -77,7 +77,7 @@ namespace aggregator.Engine
             var result = await rule.ApplyAsync(executionContext, cancellationToken);
 
             var store = executionContext.store;
-            var (created, updated) = await store.SaveChanges(saveMode, !dryRun, cancellationToken);
+            var (created, updated) = await store.SaveChanges(saveMode, !dryRun, rule.ImpersonateExecution, cancellationToken);
             if (created + updated > 0)
             {
                 logger.WriteInfo($"Changes saved to Azure DevOps (mode {saveMode}): {created} created, {updated} updated.");

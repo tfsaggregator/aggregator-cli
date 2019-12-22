@@ -175,6 +175,16 @@ namespace aggregator.cli
                 _logger.WriteInfo($"All {ruleName} files successfully uploaded to {instance.PlainName}.");
             }
 
+            if (preprocessedRule.Impersonate)
+            {
+                _logger.WriteInfo($"Configure {ruleName} to execute impersonated.");
+                ok &= await ConfigureAsync(instance, ruleName, impersonate: true, cancellationToken: cancellationToken);
+                if (ok)
+                {
+                    _logger.WriteInfo($"Updated {ruleName} configuration successfully.");
+                }
+            }
+
             return ok;
         }
 
@@ -301,10 +311,10 @@ namespace aggregator.cli
                 return ok;
             }
 
-            //TODO BobSilent remove configuration (Enable/Disable)
+            //TODO BobSilent remove configuration (Enable/Disable or Impersonate)
         }
 
-        internal async Task<bool> ConfigureAsync(InstanceName instance, string name, bool? disable = null, CancellationToken cancellationToken = default)
+        internal async Task<bool> ConfigureAsync(InstanceName instance, string name, bool? disable = null, bool? impersonate = null, CancellationToken cancellationToken = default)
         {
             var webFunctionApp = await GetWebApp(instance, cancellationToken);
             var configuration = await AggregatorConfiguration.ReadConfiguration(webFunctionApp);
@@ -313,6 +323,11 @@ namespace aggregator.cli
             if (disable.HasValue)
             {
                 ruleConfig.IsDisabled = disable.Value;
+            }
+
+            if (impersonate.HasValue)
+            {
+                ruleConfig.Impersonate = impersonate.Value;
             }
 
             ruleConfig.WriteConfiguration(webFunctionApp);
@@ -334,7 +349,7 @@ namespace aggregator.cli
             return ok;
         }
 
-        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, CancellationToken cancellationToken)
+        internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, bool impersonateExecution, CancellationToken cancellationToken)
         {
             if (!File.Exists(ruleFilePath))
             {
@@ -375,7 +390,10 @@ namespace aggregator.cli
                 {
                     _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
                     var (preprocessedRule, _) = await RuleFileParser.ReadFile(ruleFilePath, cancellationToken);
-                    var rule = new Engine.ScriptedRuleWrapper(Path.GetFileNameWithoutExtension(ruleFilePath), preprocessedRule);
+                    var rule = new Engine.ScriptedRuleWrapper(Path.GetFileNameWithoutExtension(ruleFilePath), preprocessedRule)
+                               {
+                                   ImpersonateExecution = impersonateExecution
+                               };
 
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);
@@ -389,14 +407,14 @@ namespace aggregator.cli
             }
         }
 
-        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode, CancellationToken cancellationToken)
+        internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode, bool impersonateExecution, CancellationToken cancellationToken)
         {
             // build the request ...
             _logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
             var (ruleUrl, ruleKey) = await GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             _logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            ruleUrl = ruleUrl.AddToUrl(dryRun, saveMode);
+            ruleUrl = ruleUrl.AddToUrl(dryRun, saveMode, impersonateExecution);
 
             string baseUrl = $"https://dev.azure.com/{account}";
             Guid teamProjectId = Guid.Empty;

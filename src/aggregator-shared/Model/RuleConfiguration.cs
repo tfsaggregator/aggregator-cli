@@ -12,5 +12,6 @@ namespace aggregator.Model
         }
         public string RuleName { get; }
         public bool IsDisabled { get; set; }
+        public bool Impersonate { get; set; }
     }
 }

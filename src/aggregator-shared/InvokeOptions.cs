@@ -23,7 +23,8 @@ namespace aggregator
             var queryBuilder = new UriQueryBuilder();
 
             queryBuilder.AddIfNotDefault("dryRun", dryRun)
-                        .AddIfNotDefault("saveMode", saveMode);
+                        .AddIfNotDefault("saveMode", saveMode)
+                        .AddIfNotDefault("execute", impersonate, valueString: "impersonated");
 
             return queryBuilder.AddToUri(ruleUrl);
         }
@@ -41,8 +42,21 @@ namespace aggregator
 
             configuration.DryRun = IsDryRunEnabled(parameters);
             configuration.SaveMode = GetSaveMode(parameters);
+            configuration.GetRuleConfiguration(ruleName).Impersonate = IsImpersonationEnabled(parameters);
 
             return configuration;
+        }
+
+        public static bool IsImpersonationEnabled(this Uri ruleUrl)
+        {
+            var parameters = System.Web.HttpUtility.ParseQueryString(ruleUrl.Query);
+
+            return IsImpersonationEnabled(parameters);
+        }
+
+        private static bool IsImpersonationEnabled(NameValueCollection parameters)
+        {
+            return string.Equals(parameters["execute"], "impersonated", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsDryRunEnabled(NameValueCollection parameters)

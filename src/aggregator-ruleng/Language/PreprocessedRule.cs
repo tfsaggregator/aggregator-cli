@@ -7,12 +7,15 @@ namespace aggregator.Engine.Language {
     {
         public PreprocessedRule()
         {
+            Impersonate = false;
             Language = RuleLanguage.Unknown;
             References = new List<string>();
             Imports = new List<string>();
             FirstCodeLine = 0;
             RuleCode = new List<string>();
         }
+
+        public bool Impersonate { get; set; }
 
         public RuleLanguage Language { get; internal set; }
 

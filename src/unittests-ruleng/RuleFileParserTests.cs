@@ -75,6 +75,18 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         }
 
         [Fact]
+        public void RuleImpersonateDirectiveParse_Succeeds()
+        {
+            string ruleCode = @".impersonate=onBehalfOfInitiator 
+";
+
+            (IPreprocessedRule ppRule, bool parsingSuccess) = RuleFileParser.Read(ruleCode.Mince());
+
+            Assert.True(parsingSuccess);
+            Assert.True(ppRule.Impersonate);
+        }
+
+        [Fact]
         public void RuleLanguageReadWrite_Succeeds()
         {
             string ruleCode = @".language=C#
