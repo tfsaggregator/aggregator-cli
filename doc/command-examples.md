@@ -64,7 +64,7 @@ This is the last step: gluing Azure DevOps to the Rule hosted in Azure Functions
 
 ```Batchfile
 map.rule --verbose --project SampleProject --event workitem.created --instance my1 --rule test1
-map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2
+map.rule --verbose --project SampleProject --event workitem.updated --instance my1 --rule test2 --impersonate
 map.rule --verbose --project SampleProject --event workitem.created --instance my3 --resourceGroup myRG1 --rule test3
 ```
 The same rule can be triggered by multiple events from different Azure DevOps projects. Currently only these events are supported:  
@@ -82,11 +82,27 @@ list.mappings --instance my1 --project SampleProject
 ```
 
 
-### Disable and enable rules
-Disabling a broken rule leaves any mappings in place.
+### Configuring rules
+
+Configuring a rule leaves any mappings in place.
+
+#### Disable and enable rules
+
+e.g. disabling a broken rule
 ```Batchfile
 configure.rule --verbose --instance my1 --name test1 --disable
 configure.rule --verbose --instance my1 --name test1 --enable
+```
+
+#### Execute Impersonated
+
+configure a rule to run impersonated
+**Attention:** To use this the identify accessing Azure DevOps needs special permissions, 
+see [Rule Examples](setup.md#azure-devops-personal-access-token--PAT-).
+
+```Batchfile
+configure.rule --verbose --instance my1 --name test1 --disableImpersonate
+configure.rule --verbose --instance my1 --name test1 --enableImpersonate
 ```
 
 
