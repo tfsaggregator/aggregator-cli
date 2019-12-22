@@ -292,6 +292,12 @@ namespace aggregator.Engine
             set => SetFieldValue(CoreFieldRefNames.RelatedLinkCount, value);
         }
 
+        public IdentityRef RevisedBy
+        {
+            get => GetFieldValue<IdentityRef>(CoreFieldRefNames.RevisedBy);
+            set => SetFieldValue(CoreFieldRefNames.RevisedBy, value);
+        }
+
         public DateTime? RevisedDate
         {
             get => GetFieldValue<DateTime?>(CoreFieldRefNames.RevisedDate);

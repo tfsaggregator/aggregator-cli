@@ -25,6 +25,9 @@ namespace aggregator.cli
         [Option('r', "rule", Required = true, HelpText = "Aggregator rule name.")]
         public string Rule { get; set; }
 
+        [Option("impersonate", Required = false, HelpText = "Do rule changes on behalf of the person triggered the rule execution. See wiki for details, requires special account privileges.")]
+        public bool ImpersonateExecution { get; set; }
+
         // event filters: but cannot make AreaPath & Tag work
         //[Option("filterAreaPath", Required = false, HelpText = "Filter Azure DevOps event to include only Work Items under the specified Area Path.")]
         public string FilterAreaPath { get; set; }
@@ -58,7 +61,7 @@ namespace aggregator.cli
             };
 
             var instance = new InstanceName(Instance, ResourceGroup);
-            var id = await mappings.AddAsync(Project, Event, filters, instance, Rule, cancellationToken);
+            var id = await mappings.AddAsync(Project, Event, filters, instance, Rule, ImpersonateExecution, cancellationToken);
             return id.Equals(Guid.Empty) ? 1 : 0;
         }
     }

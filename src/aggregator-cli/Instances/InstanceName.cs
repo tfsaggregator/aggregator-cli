@@ -35,9 +35,9 @@ namespace aggregator.cli
         }
 
         // used only in mappings.ListAsync
-        public static InstanceName FromFunctionAppUrl(string url)
+        public static InstanceName FromFunctionAppUrl(Uri url)
         {
-            string host = new Uri(url).Host;
+            string host = url.Host;
             host = host.Substring(0, host.IndexOf('.'));
             return new InstanceName(host.Remove(host.Length - functionAppSuffix.Length), null);
         }
