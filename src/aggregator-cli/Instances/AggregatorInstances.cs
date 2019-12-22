@@ -12,16 +12,11 @@ using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
-    class AggregatorInstances
+    class AggregatorInstances : AzureBaseClass
     {
-        private readonly IAzure azure;
-        private readonly ILogger logger;
 
-        public AggregatorInstances(IAzure azure, ILogger logger)
-        {
-            this.azure = azure;
-            this.logger = logger;
-        }
+        public AggregatorInstances(IAzure azure, ILogger logger) : base(azure, logger)
+        { }
 
         public async Task<IEnumerable<ILogDataObject>> ListAllAsync(CancellationToken cancellationToken)
         {
@@ -218,19 +213,14 @@ namespace aggregator.cli
 
         internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode, CancellationToken cancellationToken)
         {
-            var webFunctionApp = await azure
-                .AppServices
-                .WebApps
-                .GetByResourceGroupAsync(
-                    instance.ResourceGroupName,
-                    instance.FunctionAppName, cancellationToken);
-            var configuration = new AggregatorConfiguration
-            {
-                DevOpsTokenType = devopsLogonData.Mode,
-                DevOpsToken = devopsLogonData.Token,
-                SaveMode = saveMode
-            };
-            configuration.Write(webFunctionApp);
+            var webFunctionApp = await GetWebApp(instance, cancellationToken);
+            var configuration = await AggregatorConfiguration.ReadConfiguration(webFunctionApp);
+
+            configuration.DevOpsTokenType = devopsLogonData.Mode;
+            configuration.DevOpsToken = devopsLogonData.Token;
+            configuration.SaveMode = saveMode;
+
+            configuration.WriteConfiguration(webFunctionApp);
             return true;
         }
 
@@ -297,7 +287,7 @@ namespace aggregator.cli
 
         internal async Task<bool> StreamLogsAsync(InstanceName instance, CancellationToken cancellationToken)
         {
-            var kudu = new KuduApi(instance, azure, logger);
+            var kudu = GetKudu(instance);
             logger.WriteVerbose($"Connecting to {instance.PlainName}...");
 
             // Main takes care of resetting color

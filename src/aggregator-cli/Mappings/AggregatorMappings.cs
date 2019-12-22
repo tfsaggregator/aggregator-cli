@@ -8,12 +8,13 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.Azure.Management.Fluent;
 using System.Threading;
 using Microsoft.VisualStudio.Services.FormInput;
+using aggregator;
 
 namespace aggregator.cli
 {
     internal class AggregatorMappings
     {
-        private VssConnection devops;
+        private readonly VssConnection devops;
         private readonly IAzure azure;
         private readonly ILogger logger;
 
@@ -53,9 +54,9 @@ namespace aggregator.cli
                     continue;
                 }
                 // HACK need to factor the URL<->rule_name
-                string ruleUrl = subscription.ConsumerInputs.GetValue("url","/");
-                string ruleName = ruleUrl.Substring(ruleUrl.LastIndexOf('/'));
-                string ruleFullName = InstanceName.FromFunctionAppUrl(ruleUrl).PlainName + ruleName;
+                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url","https://example.com"));
+                string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
+                string ruleFullName = $"{InstanceName.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(
                     new MappingOutputData(instance, ruleFullName, foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
@@ -80,10 +81,10 @@ namespace aggregator.cli
 
             var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (string ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
+            (Uri ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
-            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
+            ruleUrl = ruleUrl.AddToUrl();
 
             // check if the subscription already exists and bail out
             var query = new SubscriptionsQuery {
@@ -108,7 +109,7 @@ namespace aggregator.cli
                             new InputFilterCondition
                             {
                                 InputId = "url",
-                                InputValue  = ruleUrl,
+                                InputValue  = ruleUrl.ToString(),
                                 Operator = InputFilterOperator.Equals,
                                 CaseSensitive = false
                             }
@@ -118,6 +119,7 @@ namespace aggregator.cli
             };
 
             cancellationToken.ThrowIfCancellationRequested();
+            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
             var queryResult = await serviceHooksClient.QuerySubscriptionsAsync(query);
             if (queryResult.Results.Any())
             {
@@ -132,7 +134,7 @@ namespace aggregator.cli
                 ConsumerActionId = "httpRequest",
                 ConsumerInputs = new Dictionary<string, string>
                 {
-                    { "url", ruleUrl },
+                    { "url", ruleUrl.ToString() },
                     { "httpHeaders", $"x-functions-key:{ruleKey}" },
                     // careful with casing!
                     { "resourceDetailsToSend", "all" },
@@ -201,7 +203,7 @@ namespace aggregator.cli
                     instance.FunctionAppUrl));
             if (@event != "*")
             {
-                ruleSubs = ruleSubs.Where(s => s.EventType == @event);
+                ruleSubs = ruleSubs.Where(s => string.Equals(s.EventType, @event, StringComparison.OrdinalIgnoreCase));
             }
 
             if (projectName != "*")
@@ -211,14 +213,15 @@ namespace aggregator.cli
                 var project = await projectClient.GetProject(projectName);
                 logger.WriteInfo($"Project {projectName} data read.");
 
-                ruleSubs = ruleSubs.Where(s => s.PublisherInputs["projectId"] == project.Id.ToString());
+                ruleSubs = ruleSubs.Where(s => string.Equals(s.PublisherInputs["projectId"], project.Id.ToString(), StringComparison.OrdinalIgnoreCase));
             }
 
             if (rule != "*")
             {
-                ruleSubs = ruleSubs
-                .Where(s => s.ConsumerInputs.GetValue("url", "").StartsWith(
-                    AggregatorRules.GetInvocationUrl(instance, rule)));
+                var invocationUrl = AggregatorRules.GetInvocationUrl(instance, rule).ToString();
+                ruleSubs = ruleSubs.Where(s => s.ConsumerInputs
+                                                .GetValue("url", "")
+                                                .StartsWith(invocationUrl, StringComparison.OrdinalIgnoreCase));
             }
 
             foreach (var ruleSub in ruleSubs)

@@ -2,11 +2,11 @@
 {
     internal class MappingOutputData : ILogDataObject
     {
-        string instanceName;
-        string rule;
-        string project;
-        string @event;
-        string status;
+        private string instanceName;
+        private string rule;
+        private string project;
+        private string @event;
+        private string status;
 
         internal MappingOutputData(InstanceName instance, string rule, string project, string @event, string status)
         {

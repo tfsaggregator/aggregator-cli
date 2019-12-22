@@ -2,22 +2,27 @@
 using System.Collections.Generic;
 using System.Text;
 
+
 namespace aggregator.cli
 {
     internal class RuleOutputData : ILogDataObject
     {
-        string instanceName;
-        KuduFunction function;
+        private readonly string instanceName;
+        private readonly string ruleName;
+        private readonly string ruleLanguage;
+        private readonly bool isDisabled;
 
-        internal RuleOutputData(InstanceName instance, KuduFunction function)
+        internal RuleOutputData(InstanceName instance, IRuleConfiguration ruleConfiguration, string ruleLanguage)
         {
             this.instanceName = instance.PlainName;
-            this.function = function;
+            this.ruleName = ruleConfiguration.RuleName;
+            this.isDisabled = ruleConfiguration.IsDisabled;
+            this.ruleLanguage = ruleLanguage;
         }
 
         public string AsHumanReadable()
         {
-            return $"Rule {instanceName}/{function.Name} {(function.Config.Disabled ? "(disabled)" : string.Empty)}";
+            return $"Rule {instanceName}/{ruleName} {(isDisabled ? "(disabled)" : string.Empty)}";
         }
     }
 }
