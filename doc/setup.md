@@ -8,7 +8,7 @@ We developed and tested Aggregator on Windows 10 and presumably it works fine on
 To use Aggregator you need three things:
 - Access to an Azure Subscription
 - Access to an Azure DevOps Organization
-- [.Net Core 2.2](https://www.microsoft.com/net/download) installed on the machine where you run Aggregator CLI
+- [.Net Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1) installed on the machine where you run Aggregator CLI
 
 Aggregator uses a Service Principal (SP) to interact with Azure. For testing you can grant the SP powerful permissions; in a production scenario, is more typical to create one or more Azure Resource Groups and grant the SP permission to those.
 In addition Aggregator uses an Azure DevOps Personal Access Token (PAT) to create the event subscriptions and interact with object in the target Azure DevOps Project.

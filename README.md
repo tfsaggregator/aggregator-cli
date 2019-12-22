@@ -84,7 +84,7 @@ If you go this route, remember add the `--resourceGroup` to all commands requiri
 ## Usage
 
 Download and unzip the latest CLI.zip file from [Releases](https://github.com/tfsaggregator/aggregator-cli/releases).
-It requires [.Net Core 2.1](https://www.microsoft.com/net/download) installed on the machine.
+It requires [.Net Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1) installed on the machine.
 To run Aggregator run `aggregator-cli` or `dotnet aggregator-cli.dll` followed by a verb and its options.
 
 ### Verbs

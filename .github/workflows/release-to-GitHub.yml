@@ -22,7 +22,7 @@ jobs:
         git branch --create-reflog master origin/master
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.2.401' # SDK Version to use.
+        dotnet-version: '3.1.100' # SDK Version to use.
 
     # dump to a file
     #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -nocache -output buildserver -exec /bin/sh -execargs "-c \"echo \$GitVersion_FullSemVer > /repo/gitversion.txt\""
@@ -31,11 +31,11 @@ jobs:
     # patch file
     #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -l /repo/gitversion.log -nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /repo/src/aggregator-function/aggregator-manifest.ini\""
     - name: Update AssemblyInfo files
-      uses: docker://gittools/gitversion:5.0.2-linux
+      uses: docker://gittools/gitversion:5.1.3-linux
       with:
         args: '-updateassemblyinfo -nocache -output buildserver'
     - name: 'Set version in aggregator-manifest.ini'
-      uses: docker://gittools/gitversion:5.0.2-linux
+      uses: docker://gittools/gitversion:5.1.3-linux
       with:
         args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=$GitVersion_FullSemVer/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\""'
 

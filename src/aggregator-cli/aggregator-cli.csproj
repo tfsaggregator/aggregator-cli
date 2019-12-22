@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>aggregator.cli</RootNamespace>
     <StartupObject>aggregator.cli.Program</StartupObject>
     <ApplicationIcon>../../art/Aggregator.ico</ApplicationIcon>

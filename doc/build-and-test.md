@@ -1,7 +1,7 @@
 # Build
 
 Building locally requires
-- Visual Studio 2019
+- Visual Studio 2019 with .Net Core 3.1 SDK
 - Azure Functions and Web Jobs Tools
 
 
