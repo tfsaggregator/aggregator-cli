@@ -25,3 +25,4 @@ jobs:
     - run: 'dotnet build src/aggregator-cli.sln'
     - run: 'dotnet test src/unittests-core/unittests-core.csproj'
     - run: 'dotnet test src/unittests-ruleng/unittests-ruleng.csproj'
+    - run: 'dotnet test src/unittests-function/unittests-function.csproj'

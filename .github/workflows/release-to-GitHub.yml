@@ -41,6 +41,7 @@ jobs:
     - run: 'dotnet build --configuration Release src/aggregator-cli.sln'
     - run: 'dotnet test --configuration Release src/unittests-core/unittests-core.csproj'
     - run: 'dotnet test --configuration Release src/unittests-ruleng/unittests-ruleng.csproj'
+    - run: 'dotnet test src/unittests-function/unittests-function.csproj'
     # logon-data.json is stored in project Secrets
     - name: 'Get integration tests secrets'
       run: |
