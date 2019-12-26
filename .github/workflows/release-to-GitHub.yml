@@ -29,7 +29,7 @@ jobs:
       with:
         updateAssemblyInfo: true
     - name: 'Set version in aggregator-manifest.ini'
-      run: 'sed -E -i \"s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini'
+      run: 'sed -E -i "s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/" ${GITHUB_WORKSPACE}/src/aggregator-function/aggregator-manifest.ini'
 
     # compile and test
     - uses: actions/setup-dotnet@v1
