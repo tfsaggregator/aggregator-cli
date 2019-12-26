@@ -23,21 +23,18 @@ jobs:
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.100' # SDK Version to use.
+    - name: Install GitVersion
+      uses: gittools/actions/setup-gitversion@v0.3
+      with:
+          versionSpec: '5.1.x'
 
-    # dump to a file
-    #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -nocache -output buildserver -exec /bin/sh -execargs "-c \"echo \$GitVersion_FullSemVer > /repo/gitversion.txt\""
-    # Update AssemblyInfo files
-    #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -updateassemblyinfo -output buildserver -nocache
-    # patch file
-    #   docker run --rm -v "$(pwd):/repo" gittools/gitversion:5.0.2-linux /repo -l /repo/gitversion.log -nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=\$GitVersion_FullSemVer/\" /repo/src/aggregator-function/aggregator-manifest.ini\""
     - name: Update AssemblyInfo files
-      uses: docker://gittools/gitversion:5.1.3-linux
+      id: gitversion # step id used as reference for output values
+      uses: gittools/actions/execute-gitversion@v0.3
       with:
-        args: '-updateassemblyinfo -nocache -output buildserver'
+        updateAssemblyInfo: true
     - name: 'Set version in aggregator-manifest.ini'
-      uses: docker://gittools/gitversion:5.1.3-linux
-      with:
-        args: '-nocache -output buildserver -exec /bin/bash -execargs "-c \"sed -E -i \"s/version=.*/version=$GitVersion_FullSemVer/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\""'
+      run: 'sed -E -i \"s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\"'
 
     # compile and test
     - name: 'Delete Directory.Build.targets from src/aggregator-function'
