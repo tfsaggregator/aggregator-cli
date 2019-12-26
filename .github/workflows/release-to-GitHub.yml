@@ -19,7 +19,6 @@ jobs:
     - run: |
         git fetch --tags
         git branch --create-reflog master origin/master
-        git checkout master
     - name: Install GitVersion
       uses: gittools/actions/setup-gitversion@v0.3
       with:
@@ -30,7 +29,7 @@ jobs:
       with:
         updateAssemblyInfo: true
     - name: 'Set version in aggregator-manifest.ini'
-      run: 'sed -E -i \"s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini\"'
+      run: 'sed -E -i \"s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/\" /github/workspace/src/aggregator-function/aggregator-manifest.ini'
 
     # compile and test
     - uses: actions/setup-dotnet@v1
