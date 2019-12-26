@@ -7,5 +7,6 @@
   "pat": "azuredevops-personal-access-token",
   "location": "azure-region",
   "resourceGroup": "azure-resource-group-name",
-  "projectName": "azuredevops-project-name"
+  "projectName": "azuredevops-project-name",
+  "uniqueSuffix": "OPTIONAL-resource-name-suffix"
 }
