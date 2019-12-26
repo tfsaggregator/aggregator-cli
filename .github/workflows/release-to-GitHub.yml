@@ -3,7 +3,6 @@ name: release-to-GitHub
 on:
   push:
     tags:
-    - '*' # just for testing
     - 'v[0-9].[0-9]*'
     paths:
     - 'src/*'
@@ -20,13 +19,13 @@ jobs:
     - run: |
         git fetch --tags
         git branch --create-reflog master origin/master
-    - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.100' # SDK Version to use.
     - name: Install GitVersion
       uses: gittools/actions/setup-gitversion@v0.3
       with:
           versionSpec: '5.1.x'
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.100' # SDK Version to use.
 
     - name: Update AssemblyInfo files
       id: gitversion # step id used as reference for output values
