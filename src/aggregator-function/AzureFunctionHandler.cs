@@ -11,6 +11,8 @@ using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
+
 using Newtonsoft.Json.Linq;
 using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 
@@ -116,7 +118,7 @@ namespace aggregator
             return data;
         }
 
-        private static WorkItemEventContext CreateContextFromEvent(WebHookEvent eventData)
+        protected WorkItemEventContext CreateContextFromEvent(WebHookEvent eventData)
         {
             var collectionUrl = eventData.ResourceContainers.GetValueOrDefault("collection")?.BaseUrl ?? "https://example.com";
             var teamProjectId = eventData.ResourceContainers.GetValueOrDefault("project")?.Id ?? Guid.Empty;
@@ -125,13 +127,72 @@ namespace aggregator
             if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventData.EventType)
             {
                 var workItem = resourceObject.GetValue("revision").ToObject<WorkItem>();
+                MigrateIdentityInformation(eventData.ResourceVersion, workItem);
                 var workItemUpdate = resourceObject.ToObject<WorkItemUpdate>();
                 return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem, workItemUpdate);
             }
             else
             {
                 var workItem = resourceObject.ToObject<WorkItem>();
+                MigrateIdentityInformation(eventData.ResourceVersion, workItem);
                 return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem);
+            }
+        }
+
+        /// <summary>
+        /// in Event Resource Version == 1.0 the Identity Information is provided in a single string "DisplayName <UniqueName>", in newer Revisions
+        /// the Identity Information as on Object of type IdentityRef
+        /// As we rely on IdentityRef we could switch the WebHook to use ResourceVersion > 1.0 but unfortunately there is a bug
+        /// as these Resources do not send the relation information in the event (although resource details is set to all).
+        /// Option 1: Use Resource Version > 1.0 and load work item later to get relation information
+        /// Option 2: Use Resource Version == 1.0 and convert string to IdentityRef
+        ///
+        /// Use Option 2, as less server round trips, write warning in case of too new Resource Version, Open ticket at Microsoft and see if they accept it as Bug.
+        /// </summary>
+        /// <param name="resourceVersion"></param>
+        /// <param name="workItem"></param>
+        protected void MigrateIdentityInformation(string resourceVersion, WorkItem workItem)
+        {
+            const char UNIQUE_NAME_START_CHAR = '<';
+            const char UNIQUE_NAME_END_CHAR = '>';
+
+            if (!resourceVersion.StartsWith("1.0"))
+            {
+                _log.LogWarning($"Mapping is using Resource Version {resourceVersion}, which can lead to some issues with e.g. not available relation information on trigger work item.");
+                return;
+            }
+
+            IdentityRef ConvertOrDefault(string input)
+            {
+                var uniqueNameStartIndex = input.LastIndexOf(UNIQUE_NAME_START_CHAR);
+                var uniqueNameEndIndex = input.LastIndexOf(UNIQUE_NAME_END_CHAR);
+
+                if (uniqueNameStartIndex < 0 || uniqueNameEndIndex != input.Length -1)
+                {
+                    return null;
+                }
+
+                var uniqueNameLength = uniqueNameEndIndex - uniqueNameStartIndex + 1;
+
+                return new IdentityRef()
+                       {
+                            DisplayName = input.Substring(0, uniqueNameStartIndex).Trim(),
+                            UniqueName = new string(input.Skip(uniqueNameStartIndex + 1).Take(uniqueNameLength).ToArray())
+                       };
+            }
+
+            // assumtion to get all string Identity Fields, normally the naming convention is: These fields ends with TO or BY (e.g. AssignedTO, CreatedBY)
+            var identityFieldReferenceNameEndings = new[]
+                                 {
+                                     "By", "To"
+                                 };
+
+            foreach (var identityField in workItem.Fields.Where(field => identityFieldReferenceNameEndings.Any(name => field.Key.EndsWith(name))).ToList())
+            {
+                if (identityField.Value is string identityString)
+                {
+                    workItem.Fields[identityField.Key] = ConvertOrDefault(identityString) ?? identityField.Value;
+                }
             }
         }
 

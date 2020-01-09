@@ -1,0 +1,58 @@
+﻿{
+  "id": 30,
+  "rev": 5,
+  "fields": {
+    "System.AreaPath": "ExampleProject\\Area 1",
+    "System.TeamProject": "ExampleProject",
+    "System.IterationPath": "ExampleProject\\Path 1",
+    "System.WorkItemType": "User Story",
+    "System.State": "Active",
+    "System.Reason": "Implementation started",
+    "System.AssignedTo": {
+      "name": "Bob Silent (Its Me) <bob@zzz.com>",
+      "displayName": "Bob Silent (Its Me) <bob@zzz.com>",
+      "uniqueName": "Bob Silent (Its Me) <bob@zzz.com>"
+    },
+    "System.CreatedDate": "2019-07-09T12:48:37.253Z",
+    "System.CreatedBy": {
+      "name": "Alice Silent (Its Someone Else) <alice@zzz.com>",
+      "displayName": "Alice Silent (Its Someone Else) <alice@zzz.com>",
+      "uniqueName": "Alice Silent (Its Someone Else) <alice@zzz.com>"
+    },
+    "System.ChangedDate": "2020-01-07T13:16:04.837Z",
+    "System.ChangedBy": {
+      "name": "Carol Silent (Its Another one) <carol@zzz.com>",
+      "displayName": "Carol Silent (Its Another one) <carol@zzz.com>",
+      "uniqueName": "Carol Silent (Its Another one) <carol@zzz.com>"
+    },
+    "System.CommentCount": 0,
+    "System.Title": "Implement a framework that migrates legacy to portable frameworks",
+    "System.BoardColumn": "Active",
+    "System.BoardColumnDone": false,
+    "Microsoft.VSTS.Common.ActivatedDate": "2019-07-22T09:18:03.733Z",
+    "Microsoft.VSTS.Common.ActivatedBy": {
+      "name": "Bob Silent (Its Me) <bob@zzz.com>",
+      "displayName": "Bob Silent (Its Me) <bob@zzz.com>",
+      "uniqueName": "Bob Silent (Its Me) <bob@zzz.com>"
+    },
+    "Microsoft.VSTS.Common.Priority": 2,
+    "Microsoft.VSTS.Common.StateChangeDate": "2016-12-18T20:41:39.98Z",
+    "Microsoft.VSTS.Common.ValueArea": "Architectural",
+    "WEF_EA18760EB7614A508782E4DBFFBAF4E9_Kanban.Column": "Active",
+    "WEF_EA18760EB7614A508782E4DBFFBAF4E9_Kanban.Column.Done": false,
+    "System.Description": "<div>add description&nbsp;</div>",
+    "System.Tags": "universal applications"
+  },
+  "_links": {
+    "self": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions/5"
+    },
+    "workItemRevisions": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions"
+    },
+    "parent": {
+      "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30"
+    }
+  },
+  "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions/5"
+}
