@@ -16,3 +16,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyVersion("0.9.0.0")]
 
 [assembly:InternalsVisibleTo("unittests-ruleng")]
+[assembly: InternalsVisibleTo("unittests-function")]

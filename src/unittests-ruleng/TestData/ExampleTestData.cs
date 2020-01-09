@@ -60,6 +60,11 @@ namespace unittests_ruleng.TestData
         public static WorkItemUpdate WorkItemUpdateLinks => Helper.GetFromResource<WorkItemUpdate>("WorkItem.22.UpdateLinks.json");
 
 
+        public static WorkItem WorkItemResourceVersion10 => Helper.GetFromResource<WorkItem>("WorkItem.30.ResourceVersion-1.0.json");
+        public static WorkItem WorkItemResourceVersion31preview3 => Helper.GetFromResource<WorkItem>("WorkItem.30.ResourceVersion-3.1-preview.3.json");
+        public static WorkItem WorkItemResourceVersion51preview3 => Helper.GetFromResource<WorkItem>("WorkItem.30.ResourceVersion-5.1-preview.3.json");
+
+
         public static WorkItem BacklogFeatureOneChild => Helper.GetFromResource<WorkItem>("Backlog.Feature1.OneChild.json");
         public static WorkItem BacklogFeatureTwoChildren => Helper.GetFromResource<WorkItem>("Backlog.Feature1.TwoChildren.json");
         public static WorkItem BacklogUserStoryNew => Helper.GetFromResource<WorkItem>("Backlog.UserStory2_New.json");

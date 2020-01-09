@@ -8,10 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestData\ResourceVersion-1.0.json" />
+    <None Remove="TestData\ResourceVersion-3.1-preview.3.json" />
+    <None Remove="TestData\ResourceVersion-5.1-preview.3.json" />
     <None Remove="TestData\TestEvent.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="TestData\ResourceVersion-3.1-preview.3.json" />
+    <EmbeddedResource Include="TestData\ResourceVersion-5.1-preview.3.json" />
     <EmbeddedResource Include="TestData\TestEvent.json" />
   </ItemGroup>
 
@@ -32,6 +37,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aggregator-function\aggregator-function.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="TestData\ResourceVersion-1.0.json" />
   </ItemGroup>
 
 </Project>

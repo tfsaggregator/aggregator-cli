@@ -48,6 +48,11 @@ namespace unittests_function.TestData
 
     public static class ExampleEvents
     {
+        public static WebHookEvent WorkItemUpdateEventResourceVersion10 => Helper.GetFromResource<WebHookEvent>("ResourceVersion-1.0.json");
+        public static WebHookEvent WorkItemUpdateEventResourceVersion31Preview3 => Helper.GetFromResource<WebHookEvent>("ResourceVersion-3.1-preview.3.json");
+        public static WebHookEvent WorkItemUpdateEventResourceVersion51Preview3 => Helper.GetFromResource<WebHookEvent>("ResourceVersion-5.1-preview.3.json");
+
+
         public static WebHookEvent TestEvent => Helper.GetFromResource<WebHookEvent>("TestEvent.json");
         public static string TestEventAsString => Helper.GetEmbeddedResourceContent("TestEvent.json");
     }
