@@ -7,7 +7,9 @@ They are parsed by Aggregator and removed before compiling the code.
 `.lang=C#`
 `.language=Csharp`
 
-Currently the only supported language is C#. You can use the `.lang` directive to specify the programming language used by the rule.
+Currently the only supported language is C#. 
+You can use the `.lang` directive to specify the programming language used by the rule.
+If no language is specified: C# is default.
 
 ## reference directive
 Loads the specified assembly in the Rule execution context
@@ -19,8 +21,16 @@ Example
 Equivalent to C# namespace
 `.import=System.Collections.Generic`
 
+## impersonate directive
+Aggregator uses credentials for accessing Azure DevOps. By default the changes which 
+were saved back to Azure DevOps are done with the credentials provided for accessing 
+Azure DevOps.
+In order to do the changes on behalf of the account who initiated an event, which Aggregator is going to handle, 
+specify
+`.impersonate=onBehalfOfInitiator`
 
-
+**Attention:** To use this the identify accessing Azure DevOps needs special permissions, 
+see [Rule Examples](setup.md#azure-devops-personal-access-token--PAT-).
 
 
 # WorkItem Object
@@ -38,7 +48,8 @@ Returns a read-only copy of all revisions of this work item.
 
 
 ## Relations
-Navigate to related work items.
+Navigate to related work items. See also Type [WorkItemRelation](#workitemrelation-type)
+or [WorkItemRelationCollection](#workitemrelationcollection-type)
 
 `IEnumerable<WorkItemRelation> RelationLinks`
 Returns all relations as `WorkItemRelation`.
@@ -112,7 +123,7 @@ Use this field to provide indepth information about a work item.
 `string History`
 The record of changes that were made to the work item after it was created.
 
-`WorkItemId<int> Id` Read-only.
+`int Id` Read-only.
 The unique identifier that is assigned to a work item.
  Negative when `IsNew` equals `true`.
 
@@ -156,10 +167,19 @@ The name of the work item type.
 `object this[string field]`
 Read-write access to non-core fields.
 Must use reference name, like _System.Title_, instead of language specific, like _Titolo_, _Titel_ or _Title_.
+> Careful: Reference name is **case-sensitive**.
+
+`public T GetFieldValue<T>(string field, T defaultValue)`
+Typed read-only access to non-core fields. The value is converted to the requested type, if the field nas no value, `defaultValue` is returned. Example:
+```
+var customField1 = self.GetFieldValue<string>("MyOrg.StringCustomField1", "MyDefault");
+var customField2 = self.GetFieldValue<decimal>("MyOrg.NumericCustomField2", 3.0m);
+```
 
 
 ## Status properties
-`bool IsDeleted` Read-only.
+`bool IsDeleted` Read-only, returns `true` if the work item is currently located
+in recycle bin.
 
 `bool IsReadOnly` Read-only, returns `true` if work item cannot be modified.
 
@@ -171,6 +191,60 @@ Must use reference name, like _System.Title_, instead of language specific, like
 ## Attachments
 `int AttachedFileCount`
 Returns the number of attached files.
+
+
+# WorkItem Changes
+If the rule was triggered by the `workitem.updated` event, the changes 
+which were made to the WorkItem object, are contained in the `selfChanges` variable.
+
+## Fields
+Data fields of the work item update. 
+
+`int Id` Read-only.
+The unique identifier of the _Update_.
+Each change leads to an increased update id, but not necessarily to an updated revision number.
+Changing only relations, without changing any other information does not increase revision number.
+
+`int WorkItemId` Read-only.
+The unique identifier of the _work item_.
+
+`int Rev` Read-only.
+The revision number of work item update.
+
+`IdentityRef RevisedBy` Read-only.
+The Identity of the team member who updated the work item. 
+
+`DateTime RevisedDate` Read-only.
+The date and time when the work item updates revision date.
+
+`WorkItemFieldUpdate Fields[string field]` Read-only. 
+Access to the list of updated fields.
+Must use reference name, like _System.Title_, instead of language specific, like _Titolo_, _Titel_ or _Title_.
+
+`WorkItemRelationUpdates Relations` Read-only. 
+Returns the information about updated relations
+
+## WorkItemFieldUpdate
+Updated Field Information containing old and new value.
+
+`object OldValue` Read-only. 
+Returns the previous value of the field or `null`
+
+`object NewValue` Read-only. 
+Returns the new value of the field
+
+
+## WorkItemRelationUpdates
+Groups the changes of the relations
+
+`ICollection<WorkItemRelation> Added` Read-only. 
+Returns the added relations as `WorkItemRelation`.
+
+`ICollection<WorkItemRelation> Removed` Read-only. 
+Returns the removed relations as `WorkItemRelation`.
+
+`ICollection<WorkItemRelation> Updated` Read-only. 
+Returns the updated relations as `WorkItemRelation`.
 
 
 
@@ -190,11 +264,81 @@ Returns a list of work items.
 `IList<WorkItem> GetWorkItems(IEnumerable<WorkItemRelation> collection)`
 Returns a list of work items following the relation.
 
-`WorkItemWrapper NewWorkItem(string workItemType)`
+`WorkItem NewWorkItem(string workItemType)`
 Returns a new work item with a temporary Id. The work item is created when the rules ends.
 `IsNew` returns `true`.
 
+`bool DeleteWorkItem(WorkItem workItem)`
+Deletes the given work item and returns `true` if work item can be deleted.
 
+`bool RestoreWorkItem(WorkItem workItem)`
+Restores the given work item from recycle bin and returns `true` if work item 
+can be restored.
+
+`IEnumerable<WorkItemTypeCategory> GetWorkItemCategories()`
+Returns a list of work item category names with the mapped work item types, see 
+[WorkItemTypeCategory](#workitemtypecategory)
+
+
+`IEnumerable<BacklogWorkItemTypeStates> GetBacklogWorkItemTypesAndStates()`
+Returns a list of backlog work item types with their backlog level information and the state to state 
+category mappings, see [BacklogWorkItemTypeStates](#backlogworkitemtypestates)
+
+
+
+# WorkItemTypeCategory
+Work item categories group work items types together, you can see a list of
+available categories in query editor:
+
+![Work Item Category Names](images/work-item-categories.png)
+
+`string ReferenceName`
+Category ReferenceName, e.g. "Microsoft.EpicCategory"
+
+`string Name`
+Category Display Name, e.g. "Epic Category"
+
+`IEnumerable<string> WorkItemTypeNames`
+WorkItemType Names in this Category, e.g. "Epic" or "Test Plan"
+
+# BacklogWorkItemTypeStates
+A work item type with its Backlog Level Information and the 
+work item State to State Category mapping.
+The mappings can be seen per work item template in the states configuration, e.g. "Epic":
+
+![Epic: State Category to State Name Mapping](images/state-to-state-category-default-agile-epic.png)
+
+
+`string Name`
+WorkItem Name, e.g. "Epic"
+
+`BacklogInfo Backlog`
+[Backlog Level Information](#backloginfo) for this WorkItem Type.
+
+`IDictionary<string, string[]> StateCategoryStateNames`
+State Category (Meta-State) to WorkItem state name mapping.
+
+Example: mapping for the WorkItem Type Epic of default Agile Process:
+ - "Proposed"   = "New"
+ - "InProgress" = "Active", "Resolved"
+ - "Resolved"   = \<empty>
+ - "Complete"   = "Closed"
+ - "Removed"    = "Removed"
+
+
+
+# BacklogInfo
+Available Backlog Levels can be seen in the used process configuration. 
+Example: The default Agile Backlog level names are: Epics, Features, Stories, Tasks
+
+![Default Agile Backlog Levels](images/backlog-levels-default-agile.png)
+
+
+`string ReferenceName`
+The Category Reference Name of this Backlog Level, e.g. "Microsoft.EpicCategory" or "Microsoft.RequirementCategory"
+
+`string Name`
+The Backlog Level Display Name, e.g. "Epics" or "Stories"
 
 # WorkItemRelationCollection type
 Navigate and modify related objects.
@@ -205,10 +349,10 @@ Returns an enumerator on relations to use in `foreach` loops.
 `Add(WorkItemRelation item)`
 Adds the element to the collection.
 
-`AddChild(WorkItemWrapper child)`
+`AddChild(WorkItem child)`
 Adds a child work item.
 
-`AddParent(WorkItemWrapper parent)`
+`AddParent(WorkItem parent)`
 Adds a parent work item.
 
 `AddLink(string type, string url, string comment)`
@@ -241,6 +385,9 @@ Returns `true` is collection is read-only.
 
 
 # WorkItemRelation type
+
+`int LinkedId`
+Read-only, returns the Id to the target object.
 
 `string Title`
 Read-only, returns the title property of the relation.

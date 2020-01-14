@@ -38,6 +38,18 @@ namespace aggregator.cli
                 context.Logger.WriteError("Invalid azure credentials");
                 return 2;
             }
+            // FIX #60: call some read API to validate parameters
+            try
+            {
+                await azure.Subscriptions.ListAsync(false, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                int nl = ex.Message.IndexOf(Environment.NewLine);
+                string m = nl != -1 ? ex.Message.Remove(nl) : ex.Message;
+                context.Logger.WriteError("Invalid azure credentials: " + m);
+                return 2;
+            }
             return 0;
         }
     }

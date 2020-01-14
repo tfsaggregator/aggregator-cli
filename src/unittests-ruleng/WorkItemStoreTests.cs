@@ -8,30 +8,41 @@ using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using NSubstitute;
+
+using unittests_ruleng.TestData;
+
 using Xunit;
 
 namespace unittests_ruleng
 {
     public class WorkItemStoreTests
     {
-        private const string CollectionUrl = "https://dev.azure.com/fake-organization";
-        private readonly Guid projectId = Guid.NewGuid();
-        private const string ProjectName = "test-project";
-        private readonly string workItemsBaseUrl = $"{CollectionUrl}/{ProjectName}/_apis/wit/workItems";
+        private readonly IAggregatorLogger logger;
+        private readonly WorkItemTrackingHttpClient witClient;
+        private readonly TestClientsContext clientsContext;
+
+        public WorkItemStoreTests()
+        {
+            logger = Substitute.For<IAggregatorLogger>();
+
+            clientsContext = new TestClientsContext();
+
+            witClient = clientsContext.WitClient;
+            witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+        }
+
 
         [Fact]
         public void GetWorkItem_ById_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             int workItemId = 42;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
                 Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -43,10 +54,8 @@ namespace unittests_ruleng
         [Fact]
         public void GetWorkItems_ByIds_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
             var ids = new [] { 42, 99 };
-            client.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
+            witClient.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
                 .ReturnsForAnyArgs(new List<WorkItem>
                 {
                     new WorkItem
@@ -61,7 +70,7 @@ namespace unittests_ruleng
                     }
                 });
 
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -75,15 +84,13 @@ namespace unittests_ruleng
         [Fact]
         public async Task NewWorkItem_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
-            client.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = await sut.SaveChanges(SaveMode.Default, false, CancellationToken.None);
+            var save = await sut.SaveChanges(SaveMode.Default, false, false, CancellationToken.None);
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);
@@ -95,11 +102,9 @@ namespace unittests_ruleng
         [Fact]
         public void AddChild_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var client = Substitute.For<WorkItemTrackingHttpClient>(new Uri(CollectionUrl), null);
-            var context = new EngineContext(client, projectId, ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
             int workItemId = 1;
-            client.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
                 Id = workItemId,
                 Fields = new Dictionary<string, object>(),
@@ -108,19 +113,19 @@ namespace unittests_ruleng
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{workItemsBaseUrl}/42"
+                        Url = $"{clientsContext.WorkItemsBaseUrl}/42"
                     },
                     new WorkItemRelation
                     {
                         Rel = "System.LinkTypes.Hierarchy-Forward",
-                        Url = $"{workItemsBaseUrl}/99"
+                        Url = $"{clientsContext.WorkItemsBaseUrl}/99"
                     }
                 },
             });
 
             var sut = new WorkItemStore(context);
 
-            var parent = sut.GetWorkItem(1);
+            var parent = sut.GetWorkItem(workItemId);
             Assert.Equal(2, parent.Relations.Count);
 
             var newChild = sut.NewWorkItem("Task");
@@ -131,6 +136,78 @@ namespace unittests_ruleng
             Assert.True(newChild.IsNew);
             Assert.Equal(-1, newChild.Id.Value);
             Assert.Equal(3, parent.Relations.Count);
+        }
+
+        [Fact]
+        public void DeleteWorkItem_Succeeds()
+        {
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var workItem = ExampleTestData.WorkItem;
+            int workItemId = workItem.Id.Value;
+
+            var sut = new WorkItemStore(context, workItem);
+
+            var wrapper = sut.GetWorkItem(workItemId);
+            Assert.False(wrapper.IsDeleted);
+            Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
+
+            sut.DeleteWorkItem(wrapper);
+            Assert.True(wrapper.IsDirty);
+            Assert.Equal(RecycleStatus.ToDelete, wrapper.RecycleStatus);
+
+            var changedWorkItems = context.Tracker.GetChangedWorkItems();
+            Assert.Single(changedWorkItems.Deleted);
+            Assert.Empty(changedWorkItems.Created);
+            Assert.Empty(changedWorkItems.Updated);
+            Assert.Empty(changedWorkItems.Restored);
+        }
+
+        [Fact]
+        public void DeleteAlreadyDeletedWorkItem_NoChange()
+        {
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var workItem = ExampleTestData.DeltedWorkItem;
+            int workItemId = workItem.Id.Value;
+
+            var sut = new WorkItemStore(context, workItem);
+
+            var wrapper = sut.GetWorkItem(workItemId);
+            Assert.True(wrapper.IsDeleted);
+            Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
+
+            sut.DeleteWorkItem(wrapper);
+            Assert.False(wrapper.IsDirty);
+            Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
+
+            var changedWorkItems = context.Tracker.GetChangedWorkItems();
+            Assert.Empty(changedWorkItems.Deleted);
+            Assert.Empty(changedWorkItems.Created);
+            Assert.Empty(changedWorkItems.Updated);
+            Assert.Empty(changedWorkItems.Restored);
+        }
+
+        [Fact]
+        public void RestoreNotDeletedWorkItem_NoChange()
+        {
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var workItem = ExampleTestData.WorkItem;
+            int workItemId = workItem.Id.Value;
+
+            var sut = new WorkItemStore(context, workItem);
+
+            var wrapper = sut.GetWorkItem(workItemId);
+            Assert.False(wrapper.IsDeleted);
+            Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
+
+            sut.RestoreWorkItem(wrapper);
+            Assert.False(wrapper.IsDirty);
+            Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
+
+            var changedWorkItems = context.Tracker.GetChangedWorkItems();
+            Assert.Empty(changedWorkItems.Deleted);
+            Assert.Empty(changedWorkItems.Created);
+            Assert.Empty(changedWorkItems.Updated);
+            Assert.Empty(changedWorkItems.Restored);
         }
     }
 }

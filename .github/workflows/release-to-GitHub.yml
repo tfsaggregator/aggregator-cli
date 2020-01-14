@@ -1,0 +1,112 @@
+name: release-to-GitHub
+
+on:
+  push:
+    tags:
+    - 'v[0-9].[0-9]*'
+    paths:
+    - 'src/*'
+
+jobs:
+  build:
+
+    # crossing fingers
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    # HACK required for GitVersion
+    - run: |
+        git fetch --tags
+        git branch --create-reflog master origin/master
+    - name: Install GitVersion
+      uses: gittools/actions/setup-gitversion@v0.3
+      with:
+          versionSpec: '5.1.x'
+    - name: Update AssemblyInfo files
+      id: gitversion # step id used as reference for output values
+      uses: gittools/actions/execute-gitversion@v0.3
+      with:
+        updateAssemblyInfo: true
+    - name: 'Set version in aggregator-manifest.ini'
+      run: 'sed -E -i "s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/" ${GITHUB_WORKSPACE}/src/aggregator-function/aggregator-manifest.ini'
+
+    # compile and test
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.100' # SDK Version to use.
+    - name: 'Delete Directory.Build.targets from src/aggregator-function'
+      run: rm src/aggregator-function/Directory.Build.targets
+    - run: 'dotnet restore src/aggregator-cli.sln'
+    - run: 'dotnet build --configuration Release src/aggregator-cli.sln'
+    - run: 'dotnet test --configuration Release src/unittests-core/unittests-core.csproj'
+    - run: 'dotnet test --configuration Release src/unittests-ruleng/unittests-ruleng.csproj'
+    - run: 'dotnet test src/unittests-function/unittests-function.csproj'
+    # logon-data.json is stored in project Secrets
+    - name: 'Get integration tests secrets'
+      run: |
+        echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+        export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+        INTEGRATIONTEST_SUBSCRIPTIONID=$(jq -r '.subscription?' $LOGONDATA_FNAME)
+        echo "Azure subscription for testing: $INTEGRATIONTEST_SUBSCRIPTIONID"
+    
+      env:
+        LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
+    # heavy weight integration tests
+    - run: 'dotnet test --configuration Release src/integrationtests-cli/integrationtests-cli.csproj'
+    - name: 'Scrap secrets'
+      run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+
+    # Prepare Artifacts
+    - name: 'Publish FunctionRuntime'
+      run: |
+        mkdir -p outputs/function
+        dotnet publish --configuration Release --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
+        pushd outputs/function && \
+        7z a -bd -r FunctionRuntime.zip && \
+        popd    
+    - name: 'Publish aggregator-cli Windows'
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        pushd outputs/$RUNTIME && \
+        rm aggregator-cli && \
+        rm aggregator-cli.cmd && \
+        7z a -bd -r aggregator-cli-win-x64.zip && \
+        popd
+
+      env:
+        RUNTIME: win-x64
+    - name: 'Publish aggregator-cli Linux'
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        pushd outputs/$RUNTIME && \
+        rm *.cmd && \
+        7z a -bd -r aggregator-cli-linux-x64.zip && \
+        popd
+
+      env:
+        RUNTIME: linux-x64
+    - name: 'Publish aggregator-cli OS/X'
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        pushd outputs/$RUNTIME && \
+        rm *.cmd && \
+        7z a -bd -r aggregator-cli-osx-x64.zip && \
+        popd
+
+      env:
+        RUNTIME: osx-x64
+
+    # Create Release in GitHub as Draft
+    - name: 'Dump commit messages since last tag as draft release notes'
+      run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > release.log
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        bodyFile: release.log
+        artifacts: "outputs/function/FunctionRuntime.zip,outputs/win-x64/aggregator-cli-win-x64.zip,outputs/linux-x64/aggregator-cli-linux-x64.zip,outputs/osx-x64/aggregator-cli-osx-x64.zip"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        draft: true

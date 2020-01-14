@@ -26,13 +26,16 @@ namespace aggregator.cli
         [Option("sourceUrl", SetName="url", Required = false, HelpText = "URL of Aggregator Runtime.")]
         public string SourceUrl { get; set; }
 
-        /* next two should go toghether, no way to express this via CommandLine library */
+        /* next two should go together, no way to express this via CommandLine library */
 
         [Option('k', "hostingPlanSku", SetName = "plan", Required = false, Default = "Y1", HelpText = "Azure AppPlan SKU hosting the Aggregator instances .")]
         public string HostingPlanSku { get; set; }
 
         [Option('t', "hostingPlanTier", SetName = "plan", Required = false, Default = "Dynamic", HelpText = "Azure AppPlan Service tier hosting the Aggregator instances .")]
         public string HostingPlanTier { get; set; }
+
+        [Option("appInsightLocation", Required = false, HelpText = "AppInsight location (Azure region).")]
+        public string AppInsightLocation { get; set; }
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
@@ -48,6 +51,12 @@ namespace aggregator.cli
                 Logger.WriteError($"Invalid value for hostingPlanTier: must be one of {String.Join(",", validHostingPlanTiers)}");
                 return 2;
             }
+            var tuning = new AggregatorInstances.InstanceFineTuning
+            {
+                AppInsightLocation = string.IsNullOrWhiteSpace(AppInsightLocation) ? Location : AppInsightLocation,
+                HostingPlanSku = HostingPlanSku,
+                HostingPlanTier = HostingPlanTier
+            };
 
             var context = await Context
                 .WithAzureLogon()
@@ -55,7 +64,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger);
             var instance = new InstanceName(Name, ResourceGroup);
-            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, cancellationToken);
+            bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, tuning, cancellationToken);
             return ok ? 0 : 1;
         }
     }

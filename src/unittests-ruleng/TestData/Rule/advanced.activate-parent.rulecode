@@ -1,0 +1,38 @@
+﻿//Method to check if a 'workItem' is in a 'Progress' state
+bool IsInProgress(WorkItemWrapper workItem, BacklogWorkItemTypeStates workItemType)
+{
+    var concreteStateNames = workItemType?.StateCategoryStateNames
+                                            .Where(category => string.Equals("InProgress", category.Key, StringComparison.OrdinalIgnoreCase))
+                                            .SelectMany(category => category.Value);
+
+    return concreteStateNames?.Contains(workItem.State) ?? false;
+}
+
+// First simple check if there is a parent
+var parentWorkItem = self.Parent;
+if (parentWorkItem == null)
+{
+    return "No Parent";
+}
+
+// now get the backlog work item types with their state to category mapping
+var backlogWorkItems = await store.GetBacklogWorkItemTypesAndStates();
+var backlogWorkItemsLookup = backlogWorkItems.ToDictionary(itemType => itemType.Name, itemType => itemType);
+
+// Check if we are a back log work item and we are in an InProgress state
+var workItemType = backlogWorkItemsLookup.GetValueOrDefault(self.WorkItemType);
+if (!IsInProgress(self, workItemType))
+{
+    return workItemType == null ? "No Backlog work item type" : $"work item not <InProgress> (State={self.State})";
+}
+
+// Check if parent already in progress state and a back log work
+var parentWorkItemType = backlogWorkItemsLookup.GetValueOrDefault(parentWorkItem.WorkItemType);
+if (IsInProgress(parentWorkItem, parentWorkItemType))
+{
+    return parentWorkItemType == null ? "No Backlog work item type" : $"work item already <InProgress> (State={parentWorkItem.State})";
+}
+
+// Now set the parent to a state of the InProgress category
+parentWorkItem.State = parentWorkItemType.StateCategoryStateNames["InProgress"].First();
+return $"updated Parent {parentWorkItem.WorkItemType} #{parentWorkItem.Id} to State='{parentWorkItem.State}'";

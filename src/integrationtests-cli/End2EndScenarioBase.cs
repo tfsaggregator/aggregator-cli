@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 
 namespace integrationtests.cli
@@ -7,7 +9,9 @@ namespace integrationtests.cli
     public abstract class End2EndScenarioBase
     {
         static protected TestLogonData TestLogonData = new TestLogonData(
+            // CI scenario
             Environment.GetEnvironmentVariable("DOWNLOADSECUREFILE_SECUREFILEPATH")
+            // Visual Studio
             ?? "logon-data.json");
 
         private readonly ITestOutputHelper _output;
@@ -19,7 +23,11 @@ namespace integrationtests.cli
 
         protected (int rc, string output) RunAggregatorCommand(string commandLine)
         {
-            var args = commandLine.Split(' ');
+            // see https://stackoverflow.com/a/14655145/100864
+            var args = Regex.Matches(commandLine, @"[\""](?<a>.+?)[\""]|(?<a>[^ ]+)")
+                .Cast<Match>()
+                .Select(m => m.Groups["a"].Value)
+                .ToArray();
 
             var saveOut = Console.Out;
             var saveErr = Console.Error;

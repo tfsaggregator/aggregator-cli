@@ -22,7 +22,9 @@ namespace integrationtests.cli
             ProjectName = data.projectName;
             PAT = data.pat;
 
-            UniqueSuffix = GetRandomString(8);
+            string uniqueSuffix = data.uniqueSuffix;
+
+            UniqueSuffix = string.IsNullOrEmpty(uniqueSuffix) ? GetRandomString(8) : uniqueSuffix;
         }
 
         private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")

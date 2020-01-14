@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    paths:
+    - 'src/*'
+  pull_request:
+    paths:
+    - 'src/*'
+
+jobs:
+  build:
+
+    # crossing fingers
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.100' # SDK Version to use.
+    - name: 'Delete Directory.Build.targets from src/aggregator-function'
+      run: rm src/aggregator-function/Directory.Build.targets
+    - run: 'dotnet restore src/aggregator-cli.sln'
+    - run: 'dotnet build src/aggregator-cli.sln'
+    - run: 'dotnet test src/unittests-core/unittests-core.csproj'
+    - run: 'dotnet test src/unittests-ruleng/unittests-ruleng.csproj'
+    - run: 'dotnet test src/unittests-function/unittests-function.csproj'

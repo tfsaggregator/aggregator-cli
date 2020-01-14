@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>unittests_ruleng</RootNamespace>
 
     <IsPackable>false</IsPackable>
@@ -10,9 +10,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.0" />
-    <PackageReference Include="NSubstitute" Version="4.2.0" />
-    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.9" />
+    <None Remove="TestData\Backlog.Feature1.OneChild.json" />
+    <None Remove="TestData\Backlog.Feature1.TwoChildren.json" />
+    <None Remove="TestData\Backlog.UserStory2_Active.json" />
+    <None Remove="TestData\Backlog.UserStory2_Closed.json" />
+    <None Remove="TestData\Backlog.UserStory2_New.json" />
+    <None Remove="TestData\Config\WitClient.WorkItemStateColor.EpicFeatureUserStory.json" />
+    <None Remove="TestData\Config\WorkClient.ProcessConfiguration.Agile.json" />
+    <None Remove="TestData\Config\WorkClient.ProcessConfiguration.Scrum.json" />
+    <None Remove="TestData\DeletedWorkItem.json" />
+    <None Remove="TestData\Rule\advanced.activate-parent.rulecode" />
+    <None Remove="TestData\Rule\advanced.resolve-parent.rulecode" />
+    <None Remove="TestData\WorkItem.22.json" />
+    <None Remove="TestData\WorkItem.22.UpdateLinks.json" />
+    <None Remove="WorkItem.22.UpdateFields.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+    <PackageReference Include="NSubstitute" Version="4.2.1" />
+    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.11" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
@@ -22,7 +39,27 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="TestData\Backlog.Feature1.TwoChildren.json" />
+    <EmbeddedResource Include="TestData\Backlog.UserStory2_Closed.json" />
+    <EmbeddedResource Include="TestData\Backlog.UserStory2_Active.json" />
+    <EmbeddedResource Include="TestData\Backlog.Feature1.OneChild.json" />
+    <EmbeddedResource Include="TestData\Backlog.UserStory2_New.json" />
+    <EmbeddedResource Include="TestData\Rule\advanced.resolve-parent.rulecode" />
+    <EmbeddedResource Include="TestData\Rule\advanced.activate-parent.rulecode" />
+    <EmbeddedResource Include="TestData\WorkItem.22.UpdateLinks.json" />
+    <EmbeddedResource Include="TestData\WorkItem.22.json" />
+    <EmbeddedResource Include="TestData\DeletedWorkItem.json" />
+    <EmbeddedResource Include="TestData\WorkItem.22.UpdateFields.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="TestData\Config\WitClient.WorkItemStateColor.EpicFeatureUserStory.json" />
+    <EmbeddedResource Include="TestData\Config\WorkClient.ProcessConfiguration.Agile.json" />
+    <EmbeddedResource Include="TestData\Config\WorkClient.ProcessConfiguration.Scrum.json" />
   </ItemGroup>
 
 </Project>

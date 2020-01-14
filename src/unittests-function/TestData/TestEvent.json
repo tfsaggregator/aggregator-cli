@@ -1,0 +1,133 @@
+{
+  "id": "27646e0e-b520-4d2b-9411-bba7524947cd",
+  "eventType": "workitem.updated",
+  "publisherId": "tfs",
+  "message": null,
+  "detailedMessage": null,
+  "resource": {
+    "id": 2,
+    "workItemId": 0,
+    "rev": 2,
+    "revisedBy": {
+      "id": "e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+      "displayName": "Jamal Hartnett",
+      "url": "https://vssps.dev.azure.com/fabrikam/_apis/Identities/e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+      "_links": {
+        "avatar": {
+          "href": "https://dev.azure.com/mseng/_apis/GraphProfile/MemberAvatars/aad.YTkzODFkODYtNTYxYS03ZDdiLWJjM2QtZDUzMjllMjM5OTAz"
+        }
+      },
+      "uniqueName": "Jamal Hartnett",
+      "imageUrl": "https://dev.azure.com/fabrikam/_api/_common/identityImage?id=e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+      "descriptor": "ukn.VXkweExUVXRNakV0TWpFME5qYzNNekE0TlMwNU1ETXpOak15T0RVdE56RTVNelEwTnpBM0xURXpPRGswTlRN"
+    },
+    "revisedDate": "0001-01-01T00:00:00",
+    "fields": {
+      "System.Rev": {
+        "oldValue": "1",
+        "newValue": "2"
+      },
+      "System.AuthorizedDate": {
+        "oldValue": "2014-07-15T16:48:44.663Z",
+        "newValue": "2014-07-15T17:42:44.663Z"
+      },
+      "System.RevisedDate": {
+        "oldValue": "2014-07-15T17:42:44.663Z",
+        "newValue": "9999-01-01T00:00:00Z"
+      },
+      "System.State": {
+        "oldValue": "New",
+        "newValue": "Approved"
+      },
+      "System.Reason": {
+        "oldValue": "New defect reported",
+        "newValue": "Approved by the Product Owner"
+      },
+      "System.AssignedTo": {
+        "oldValue": "unassigned",
+        "newValue": "Jamal Hartnett"
+      },
+      "System.ChangedDate": {
+        "oldValue": "2014-07-15T16:48:44.663Z",
+        "newValue": "2014-07-15T17:42:44.663Z"
+      },
+      "System.Watermark": {
+        "oldValue": "2",
+        "newValue": "5"
+      },
+      "Microsoft.VSTS.Common.Severity": {
+        "oldValue": "3 - Medium",
+        "newValue": "2 - High"
+      }
+    },
+    "_links": {
+      "self": {
+        "href": "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5/updates/2"
+      },
+      "parent": {
+        "href": "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5"
+      },
+      "workItemUpdates": {
+        "href": "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5/updates"
+      }
+    },
+    "url": "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5/updates/2",
+    "revision": {
+      "id": 5,
+      "rev": 2,
+      "fields": {
+        "System.AreaPath": "FabrikamCloud",
+        "System.TeamProject": "FabrikamCloud",
+        "System.IterationPath": "FabrikamCloud\\Release 1\\Sprint 1",
+        "System.WorkItemType": "Bug",
+        "System.State": "New",
+        "System.Reason": "New defect reported",
+        "System.CreatedDate": "2014-07-15T16:48:44.663Z",
+        "System.CreatedBy": {
+          "displayName": "Jamal Hartnett",
+          "url": "https://vssps.dev.azure.com/fabrikam/_apis/Identities/e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+          "_links": {
+            "avatar": {
+              "href": "https://dev.azure.com/mseng/_apis/GraphProfile/MemberAvatars/aad.YTkzODFkODYtNTYxYS03ZDdiLWJjM2QtZDUzMjllMjM5OTAz"
+            }
+          },
+          "id": "e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+          "uniqueName": "Jamal Hartnett",
+          "imageUrl": "https://dev.azure.com/fabrikam/_api/_common/identityImage?id=e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+          "descriptor": "ukn.VXkweExUVXRNakV0TWpFME5qYzNNekE0TlMwNU1ETXpOak15T0RVdE56RTVNelEwTnpBM0xURXpPRGswTlRN"
+        },
+        "System.ChangedDate": "2014-07-15T16:48:44.663Z",
+        "System.ChangedBy": {
+          "displayName": "Jamal Hartnett",
+          "url": "https://vssps.dev.azure.com/fabrikam/_apis/Identities/e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+          "_links": {
+            "avatar": {
+              "href": "https://dev.azure.com/mseng/_apis/GraphProfile/MemberAvatars/aad.YTkzODFkODYtNTYxYS03ZDdiLWJjM2QtZDUzMjllMjM5OTAz"
+            }
+          },
+          "id": "e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+          "uniqueName": "Jamal Hartnett",
+          "imageUrl": "https://dev.azure.com/fabrikam/_api/_common/identityImage?id=e5a5f7f8-6507-4c34-b397-6c4818e002f4",
+          "descriptor": "ukn.VXkweExUVXRNakV0TWpFME5qYzNNekE0TlMwNU1ETXpOak15T0RVdE56RTVNelEwTnpBM0xURXpPRGswTlRN"
+        },
+        "System.Title": "Some great new idea!",
+        "Microsoft.VSTS.Common.Severity": "3 - Medium",
+        "WEF_EB329F44FE5F4A94ACB1DA153FDF38BA_Kanban.Column": "New"
+      },
+      "url": "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/wit/workItems/5/revisions/2"
+    }
+  },
+  "resourceVersion": "1.0",
+  "resourceContainers": {
+    "collection": {
+      "id": "c12d0eb8-e382-443b-9f9c-c52cba5014c2"
+    },
+    "account": {
+      "id": "f844ec47-a9db-4511-8281-8b63f4eaf94e"
+    },
+    "project": {
+      "id": "be9b3917-87e6-42a4-a549-2bc06a7a878f"
+    }
+  },
+  "createdDate": "2019-08-07T21:59:21.541Z"
+}

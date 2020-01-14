@@ -87,7 +87,7 @@ namespace integrationtests.cli
         void MapRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"map.rule --project {TestLogonData.ProjectName} --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
+            (int rc, string output) = RunAggregatorCommand($"map.rule --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -132,7 +132,7 @@ namespace integrationtests.cli
         void UnmapRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"unmap.rule --project {TestLogonData.ProjectName} --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
+            (int rc, string output) = RunAggregatorCommand($"unmap.rule --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);

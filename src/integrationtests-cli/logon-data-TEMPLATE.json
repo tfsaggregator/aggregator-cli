@@ -1,0 +1,12 @@
+{
+  "subscription": "azure-subscription-guid",
+  "client": "azure-aad-service-principal-guid",
+  "password": "azure-aad-service-principal-password",
+  "tenant": "azure-aad-tenant-guid",
+  "devopsUrl": "azuredevops-organization-url",
+  "pat": "azuredevops-personal-access-token",
+  "location": "azure-region",
+  "resourceGroup": "azure-resource-group-name",
+  "projectName": "azuredevops-project-name",
+  "uniqueSuffix": "OPTIONAL-resource-name-suffix"
+}

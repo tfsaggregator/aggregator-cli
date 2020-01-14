@@ -7,6 +7,11 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using aggregator.Engine;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
+using Newtonsoft.Json.Linq;
 using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 
 namespace aggregator
@@ -29,97 +34,104 @@ namespace aggregator
         {
             _log.LogDebug($"Context: {_context.InvocationId} {_context.FunctionName} {_context.FunctionDirectory} {_context.FunctionAppDirectory}");
 
+            var ruleName = _context.FunctionName;
             var aggregatorVersion = GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-
-            try
-            {
-                var rule = _context.FunctionName;
-                _log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{rule}'");
-            }
-            catch (Exception ex)
-            {
-                _log.LogWarning($"Failed parsing request headers: {ex.Message}");
-            }
-
+            _log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{ruleName}'");
             cancellationToken.ThrowIfCancellationRequested();
 
             // Get request body
+            var eventData = await GetWebHookEvent(req);
+            if (eventData == null)
+            {
+                return req.CreateErrorResponse(HttpStatusCode.BadRequest, "Request body is empty");
+            }
+
+            // sanity check
+            if (!DevOpsEvents.IsValidEvent(eventData.EventType)
+                || eventData.PublisherId != DevOpsEvents.PublisherId)
+            {
+                return req.CreateErrorResponse(HttpStatusCode.BadRequest, "Not a good Azure DevOps post...");
+            }
+
+            var eventContext = CreateContextFromEvent(eventData);
+            if (eventContext.IsTestEvent())
+            {
+                return req.CreateTestEventResponse(aggregatorVersion, ruleName);
+            }
+
+            var configContext = GetConfigurationContext();
+            var configuration = AggregatorConfiguration.ReadConfiguration(configContext)
+                                                       .UpdateFromUrl(ruleName, req.RequestUri);
+
+            var logger = new ForwarderLogger(_log);
+            var ruleProvider = new AzureFunctionRuleProvider(logger, _context.FunctionDirectory);
+            var ruleExecutor = new RuleExecutor(logger, configuration);
+            using (_log.BeginScope($"WorkItem #{eventContext.WorkItemPayload.WorkItem.Id}"))
+            {
+                try
+                {
+                    var rule = await ruleProvider.GetRule(ruleName);
+                    var execResult = await ruleExecutor.ExecuteAsync(rule, eventContext, cancellationToken);
+
+                    if (string.IsNullOrEmpty(execResult))
+                    {
+                        return req.CreateResponse(HttpStatusCode.OK);
+                    }
+                    else
+                    {
+                        _log.LogInformation($"Returning '{execResult}' from '{rule.Name}'");
+                        return req.CreateResponse(HttpStatusCode.OK, execResult);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.LogWarning($"Rule '{ruleName}' failed: {ex.Message}");
+                    return req.CreateErrorResponse(HttpStatusCode.NotImplemented, ex);
+                }
+            }
+        }
+
+
+        private IConfigurationRoot GetConfigurationContext()
+        {
+            var config = new ConfigurationBuilder()
+                         .SetBasePath(_context.FunctionAppDirectory)
+                         .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+                         .AddEnvironmentVariables()
+                         .Build();
+            return config;
+        }
+
+
+        private async Task<WebHookEvent> GetWebHookEvent(HttpRequestMessage req)
+        {
             var jsonContent = await req.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(jsonContent))
             {
                 _log.LogWarning($"Failed parsing request body: empty");
-
-                var resp = new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = new StringContent("Request body is empty")
-                };
-                return resp;
+                return null;
             }
 
-            dynamic data = JsonConvert.DeserializeObject(jsonContent);
-            string eventType = data.eventType;
+            var data = JsonConvert.DeserializeObject<WebHookEvent>(jsonContent);
+            return data;
+        }
 
-            // sanity check
-            if (!DevOpsEvents.IsValidEvent(eventType)
-                || data.publisherId != DevOpsEvents.PublisherId)
+        private static WorkItemEventContext CreateContextFromEvent(WebHookEvent eventData)
+        {
+            var collectionUrl = eventData.ResourceContainers.GetValueOrDefault("collection")?.BaseUrl ?? "https://example.com";
+            var teamProjectId = eventData.ResourceContainers.GetValueOrDefault("project")?.Id ?? Guid.Empty;
+
+            var resourceObject = eventData.Resource as JObject;
+            if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventData.EventType)
             {
-                return req.CreateResponse(HttpStatusCode.BadRequest, new
-                {
-                    error = "Not a good Azure DevOps post..."
-                });
+                var workItem = resourceObject.GetValue("revision").ToObject<WorkItem>();
+                var workItemUpdate = resourceObject.ToObject<WorkItemUpdate>();
+                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem, workItemUpdate);
             }
-
-            string resourceUrl = data.resource.url;
-            if (resourceUrl.StartsWith("http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/"))
+            else
             {
-                var resp = req.CreateResponse(HttpStatusCode.OK, new
-                {
-                    message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{_context.FunctionName}'"
-                });
-                resp.Headers.Add("X-Aggregator-Version", aggregatorVersion);
-                resp.Headers.Add("X-Aggregator-Rule", _context.FunctionName);
-                return resp;
-            }
-
-            var config = new ConfigurationBuilder()
-                .SetBasePath(_context.FunctionAppDirectory)
-                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-            var configuration = AggregatorConfiguration.Read(config);
-            configuration = InvokeOptions.ExtendFromUrl(configuration, req.RequestUri);
-
-            var logger = new ForwarderLogger(_log);
-            var wrapper = new RuleWrapper(configuration, logger, _context.FunctionName, _context.FunctionDirectory);
-            try
-            {
-                string execResult = await wrapper.ExecuteAsync(data, cancellationToken);
-
-                if (string.IsNullOrEmpty(execResult))
-                {
-                    var resp = new HttpResponseMessage(HttpStatusCode.OK);
-                    return resp;
-                }
-                else
-                {
-                    _log.LogInformation($"Returning '{execResult}' from '{_context.FunctionName}'");
-
-                    var resp = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(execResult)
-                    };
-                    return resp;
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.LogWarning($"Rule '{_context.FunctionName}' failed: {ex.Message}");
-
-                var resp = new HttpResponseMessage(HttpStatusCode.NotImplemented)
-                {
-                    Content = new StringContent(ex.Message)
-                };
-                return resp;
+                var workItem = resourceObject.ToObject<WorkItem>();
+                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem);
             }
         }
 
@@ -130,6 +142,21 @@ namespace aggregator
                 .GetExecutingAssembly()
                 .GetCustomAttributes(typeof(T), false)
                 .FirstOrDefault() as T;
+        }
+    }
+
+
+    internal static class HttpResponseMessageExtensions
+    {
+        public static HttpResponseMessage CreateTestEventResponse(this HttpRequestMessage req, string aggregatorVersion, string ruleName)
+        {
+            var resp = req.CreateResponse(HttpStatusCode.OK, new
+                                                             {
+                                                                 message = $"Hello from Aggregator v{aggregatorVersion} executing rule '{ruleName}'"
+                                                             });
+            resp.Headers.Add("X-Aggregator-Version", aggregatorVersion);
+            resp.Headers.Add("X-Aggregator-Rule", ruleName);
+            return resp;
         }
     }
 }

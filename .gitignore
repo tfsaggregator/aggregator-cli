@@ -340,3 +340,6 @@ src/aggregator-cli/FunctionRuntime.zip
 *.diagsession
 experiments/
 src/aggregator-function/test*/*
+.vscode
+.DS_Store
+build.sh
