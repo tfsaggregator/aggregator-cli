@@ -20,7 +20,8 @@ namespace aggregator.Engine
             _pivotWorkItem = workItem;
             _original = relations == null
                 ? new List<WorkItemRelationWrapper>()
-                : relations.Select(relation => new WorkItemRelationWrapper(relation))
+                : relations.Where(relation => relation.Rel.StartsWith("System.LinkType"))
+                           .Select(relation => new WorkItemRelationWrapper(relation))
                            .ToList();
 
             // do we need deep cloning?
