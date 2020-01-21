@@ -4,6 +4,8 @@ using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.WebApi;
+
 using NSubstitute;
 using Xunit;
 
@@ -67,6 +69,31 @@ namespace unittests_ruleng
 
             Assert.False(wrapper.IsDeleted);
             Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
+        }
+
+        [Fact]
+        public void AssignFieldWithAlreadyNullValueShouldNotThrowException()
+        {
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+                                {
+                                    Id = workItemId,
+                                    Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                             },
+                                    Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+                                };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+
+            wrapper.AssignedTo = null;
+
+            var idRef = new IdentityRef();
+            wrapper.AssignedTo = idRef;
+
+            Assert.Equal(idRef, wrapper.AssignedTo);
         }
 
 
