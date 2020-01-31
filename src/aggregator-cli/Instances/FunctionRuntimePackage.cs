@@ -28,7 +28,7 @@ namespace aggregator.cli
                 .Version;
         }
 
-        private string RuntimePackageFile => "FunctionRuntime.zip";
+        public string RuntimePackageFile => "FunctionRuntime.zip";
 
         internal async Task<bool> UpdateVersionAsync(string requiredVersion, string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
@@ -211,6 +211,26 @@ namespace aggregator.cli
 
             logger.WriteVerbose($"Function Runtime version is {uploadedRuntimeVer}.");
             return uploadedRuntimeVer;
+        }
+
+        internal static async Task<Stream> GetDeployedFunctionEntrypoint(InstanceName instance, IAzure azure, ILogger logger, CancellationToken cancellationToken)
+        {
+            logger.WriteVerbose($"Retrieving deployed aggregator-function.dll");
+            var kudu = new KuduApi(instance, azure, logger);
+            using (var client = new HttpClient())
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/bin/aggregator-function.dll", cancellationToken))
+            {
+                var response = await client.SendAsync(request, cancellationToken);
+                var stream = await response.Content.ReadAsStreamAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return stream;
+                }
+
+                logger.WriteError($"Cannot read aggregator-function.dll: {response.ReasonPhrase}");
+                return null;
+            }
         }
 
         private async Task<SemVersion> GetLocalPackageVersionAsync(string runtimePackageFile)

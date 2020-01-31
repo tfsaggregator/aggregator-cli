@@ -14,7 +14,6 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 
@@ -135,37 +134,20 @@ namespace aggregator.cli
         internal async Task<bool> AddAsync(InstanceName instance, string ruleName, string filePath, CancellationToken cancellationToken)
         {
             _logger.WriteInfo($"Validate rule file {filePath}");
-
-            var engineLogger = new EngineWrapperLogger(_logger);
-            var (preprocessedRule, _) = await RuleFileParser.ReadFile(filePath, engineLogger, cancellationToken);
-            try
+            var preprocessedRule = await LoadAndValidateRule(ruleName, filePath, cancellationToken);
+            if (preprocessedRule == null)
             {
-                var rule = new Engine.ScriptedRuleWrapper(ruleName, preprocessedRule, engineLogger);
-                var (success, diagnostics) = rule.Verify();
-                if (success)
-                {
-                    _logger.WriteInfo($"Rule file is valid");
-                }
-                else
-                {
-                    _logger.WriteInfo($"Rule file is invalid");
-                    var messages = string.Join('\n', diagnostics.Select(d => d.ToString()));
-                    if (!string.IsNullOrEmpty(messages))
-                    {
-                        _logger.WriteError($"Errors in the rule file {filePath}:\n{messages}");
-                    }
-
-                    return false;
-                }
-            }
-            catch
-            {
-                _logger.WriteInfo($"Rule file is invalid");
+                _logger.WriteError("Rule file is invalid");
                 return false;
             }
+            _logger.WriteInfo("Rule file is valid");
 
             _logger.WriteVerbose($"Layout rule files");
             var inMemoryFiles = await PackagingFilesAsync(ruleName, preprocessedRule);
+            using (var assemblyStream = await FunctionRuntimePackage.GetDeployedFunctionEntrypoint(instance, _azure, _logger, cancellationToken))
+            {
+                await inMemoryFiles.AddFunctionDefaultFiles(assemblyStream);
+            }
             _logger.WriteInfo($"Packaging rule {ruleName} complete.");
 
             _logger.WriteVerbose($"Uploading rule files to {instance.PlainName}");
@@ -188,38 +170,48 @@ namespace aggregator.cli
             return ok;
         }
 
-        private static async Task<IDictionary<string, string>> PackagingFilesAsync(string name, IPreprocessedRule preprocessedRule)
+        private async Task<IPreprocessedRule> LoadAndValidateRule(string ruleName, string filePath, CancellationToken cancellationToken)
+        {
+            var engineLogger = new EngineWrapperLogger(_logger);
+            var (preprocessedRule, _) = await RuleFileParser.ReadFile(filePath, engineLogger, cancellationToken);
+            try
+            {
+                var rule = new Engine.ScriptedRuleWrapper(ruleName, preprocessedRule, engineLogger);
+                var (success, diagnostics) = rule.Verify();
+                if (!success)
+                {
+                    var messages = string.Join('\n', diagnostics.Select(d => d.ToString()));
+                    if (!string.IsNullOrEmpty(messages))
+                    {
+                        _logger.WriteError($"Errors in the rule file {filePath}:\n{messages}");
+                    }
+
+                    return null;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            // Rule file is valid
+            return preprocessedRule;
+        }
+
+        private static async Task<IDictionary<string, string>> PackagingFilesAsync(string ruleName, IPreprocessedRule preprocessedRule)
         {
             var inMemoryFiles = new Dictionary<string, string>
             {
-                { $"{name}.rule", string.Join(Environment.NewLine, RuleFileParser.Write(preprocessedRule)) }
+                { $"{ruleName}.rule", string.Join(Environment.NewLine, RuleFileParser.Write(preprocessedRule)) }
             };
 
-            var assembly = Assembly.GetExecutingAssembly();
-
-            // TODO we can deserialize a KuduFunctionConfig instead of using a fixed file...
-            using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.function.json"))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    var content = await reader.ReadToEndAsync();
-                    inMemoryFiles.Add("function.json", content);
-                }
-            }
-
-            using (var stream = assembly.GetManifestResourceStream("aggregator.cli.Rules.run.csx"))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    var content = await reader.ReadToEndAsync();
-                    inMemoryFiles.Add("run.csx", content);
-                }
-            }
+            //var assembly = Assembly.GetExecutingAssembly();
+            //await inMemoryFiles.AddFunctionDefaultFiles(assembly);
 
             return inMemoryFiles;
         }
 
-        private async Task<bool> UploadRuleFilesAsync(InstanceName instance, string name, IDictionary<string, string> inMemoryFiles, CancellationToken cancellationToken)
+        internal async Task<bool> UploadRuleFilesAsync(InstanceName instance, string ruleName, IDictionary<string, string> uploadFiles, CancellationToken cancellationToken)
         {
             /*
             PUT /api/vfs/{path}
@@ -231,7 +223,7 @@ namespace aggregator.cli
             Note: when updating or deleting a file, ETag behavior will apply. You can pass a If-Match: "*" header to disable the ETag check.
             */
             var kudu = GetKudu(instance);
-            var relativeUrl = $"api/vfs/site/wwwroot/{name}/";
+            var relativeUrl = $"api/vfs/site/wwwroot/{ruleName}/";
 
             using (var client = new HttpClient())
             {
@@ -240,7 +232,7 @@ namespace aggregator.cli
                 // check if function already exists
                 using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl, cancellationToken))
                 {
-                    _logger.WriteVerbose($"Checking if function {name} already exists in {instance.PlainName}...");
+                    _logger.WriteVerbose($"Checking if function {ruleName} already exists in {instance.PlainName}...");
                     using (var response = await client.SendAsync(request))
                     {
                         exists = response.IsSuccessStatusCode;
@@ -249,7 +241,7 @@ namespace aggregator.cli
 
                 if (!exists)
                 {
-                    _logger.WriteVerbose($"Creating function {name} in {instance.PlainName}...");
+                    _logger.WriteVerbose($"Creating function {ruleName} in {instance.PlainName}...");
                     using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl, cancellationToken))
                     {
                         using (var response = await client.SendAsync(request, cancellationToken))
@@ -263,10 +255,10 @@ namespace aggregator.cli
                         }
                     }
 
-                    _logger.WriteInfo($"Function {name} created.");
+                    _logger.WriteInfo($"Function {ruleName} created.");
                 }
 
-                foreach (var (fileName, fileContent) in inMemoryFiles)
+                foreach (var (fileName, fileContent) in uploadFiles)
                 {
                     _logger.WriteVerbose($"Uploading {fileName} to {instance.PlainName}...");
                     var fileUrl = $"{relativeUrl}{fileName}";
@@ -336,16 +328,28 @@ namespace aggregator.cli
         }
 
 
-        internal async Task<bool> UpdateAsync(InstanceName instance, string name, string filePath, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        internal async Task<bool> UpdateAsync(InstanceName instance, string ruleName, string filePath, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             // check runtime package
             var package = new FunctionRuntimePackage(_logger);
             bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
             if (ok)
             {
-                ok = await AddAsync(instance, name, filePath, cancellationToken);
+                ok = await AddAsync(instance, ruleName, filePath, cancellationToken);
             }
 
+            return ok;
+        }
+
+        internal async Task<bool> UpdateAsync(InstanceName instance, string ruleName, string filePath, CancellationToken cancellationToken)
+        {
+            bool ok = await AddAsync(instance, ruleName, filePath, cancellationToken);
+            // AddAsync
+            // - read and parse file
+            // - compile and validate content
+                // - packaging
+                // - upload
+            // - Configure App for impersonate if needed
             return ok;
         }
 
