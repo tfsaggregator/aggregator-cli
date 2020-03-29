@@ -285,7 +285,7 @@ namespace aggregator.cli
         }
 
 
-        internal async Task<bool> StreamLogsAsync(InstanceName instance, CancellationToken cancellationToken)
+        internal async Task<bool> StreamLogsAsync(InstanceName instance, CancellationToken cancellationToken, string lastLinePattern = "!!THIS STRING NEVER SHOWS!!", TextWriter outStream = null)
         {
             var kudu = GetKudu(instance);
             logger.WriteVerbose($"Connecting to {instance.PlainName}...");
@@ -293,7 +293,7 @@ namespace aggregator.cli
             // Main takes care of resetting color
             Console.ForegroundColor = ConsoleColor.Green;
 
-            await kudu.StreamLogsAsync(Console.Out, cancellationToken);
+            await kudu.StreamLogsAsync(outStream ?? Console.Out, lastLinePattern, cancellationToken);
 
             return true;
         }

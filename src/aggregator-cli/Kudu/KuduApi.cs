@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -87,8 +88,10 @@ namespace aggregator.cli
             return request;
         }
 
-        internal async Task StreamLogsAsync(TextWriter output, CancellationToken cancellationToken)
+        internal async Task StreamLogsAsync(TextWriter output, string lastLinePattern, CancellationToken cancellationToken)
         {
+            var regex = new Regex(lastLinePattern);
+
             // see https://github.com/projectkudu/kudu/wiki/Diagnostic-Log-Stream
             using (var client = new HttpClient())
             using (var request = await GetRequestAsync(HttpMethod.Get, $"api/logstream/application", cancellationToken))
@@ -105,6 +108,9 @@ namespace aggregator.cli
                         {
                             //We are ready to read the stream
                             var line = await reader.ReadLineAsync();
+
+                            if (regex.IsMatch(line))
+                                break;
 
                             await output.WriteLineAsync(line);
                         }
