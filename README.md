@@ -20,7 +20,7 @@ The main scenario for Aggregator (3.x) is supporting Azure DevOps and cloud scen
 
 - use of new Azure DevOps REST API
 - simple deployment via CLI tool
-- Rule object model similar to v2
+- Rule object model similar to Aggregator v2
 
 
 
@@ -48,7 +48,7 @@ If you specify the Resource Group, you can have more than one Instance in the Re
 After creating the Instance, you upload the code of Aggregator **Rules**.
 A Rule is code that reacts to one or more Azure DevOps event.
 Each Aggregator Rule becomes an Azure Function in the Aggregator instance i.e. the Azure Function Application.
-The Rule language is C# (hopefully more in the future) and uses Aggregator Runtime and [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 2.0
+The Rule language is C# (hopefully more in the future) and uses Aggregator Runtime and [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 3.0
 to do its work.
 When you create an Instance, a Rule or update them, CLI checks GitHub Releases
 to ensure that Aggregator Runtime is up-to-date or match the specified version.

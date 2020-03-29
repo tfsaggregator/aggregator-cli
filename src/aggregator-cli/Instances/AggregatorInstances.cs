@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -296,6 +297,55 @@ namespace aggregator.cli
             await kudu.StreamLogsAsync(outStream ?? Console.Out, lastLinePattern, cancellationToken);
 
             return true;
+        }
+
+        internal async Task<bool> UpdateAsync(InstanceName instance, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        {
+            // update runtime package
+            var package = new FunctionRuntimePackage(_logger);
+            bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
+
+            {
+                // Change V2 to V3 FUNCTIONS_EXTENSION_VERSION ~3
+                var webFunctionApp = await GetWebApp(instance, cancellationToken);
+                var currentAzureRuntimeVersion = webFunctionApp.GetAppSettings()
+                                                               .GetValueOrDefault("FUNCTIONS_EXTENSION_VERSION");
+                webFunctionApp.Update()
+                              .WithAppSetting("FUNCTIONS_EXTENSION_VERSION", "~3")
+                              .Apply(); ;
+            }
+
+            {
+                var uploadFiles = new Dictionary<string, string>();
+                using (var archive = System.IO.Compression.ZipFile.OpenRead(package.RuntimePackageFile))
+                {
+                    var entry = archive.Entries
+                                       .Single(e => string.Equals("aggregator-function.dll", e.Name, StringComparison.OrdinalIgnoreCase));
+
+                    using (var assemblyStream = entry.Open())
+                    {
+                        await uploadFiles.AddFunctionDefaultFiles(assemblyStream);
+                    }
+                }
+                //TODO handle FileNotFound Exception when trying to get resource content, and resource not found
+
+                var rules = new AggregatorRules(_azure, _logger);
+                var allRules = await rules.ListAsync(instance, cancellationToken);
+
+                foreach (var ruleName in allRules.Select(r => r.RuleName))
+                {
+                    _logger.WriteInfo($"Updating Rule '{ruleName}'");
+                    await rules.UploadRuleFilesAsync(instance, ruleName, uploadFiles, cancellationToken);
+                }
+            }
+
+            return false;
+        }
+
+
+        private void DomainOnAssemblyLoad(object sender, AssemblyLoadEventArgs args)
+        {
+            //throw new NotImplementedException();
         }
     }
 }

@@ -7,24 +7,24 @@ namespace aggregator.cli
 {
     internal class RuleOutputData : ILogDataObject
     {
-        private readonly string instanceName;
-        private readonly string ruleName;
-        private readonly string ruleLanguage;
-        private readonly bool isDisabled;
-        private readonly bool isImpersonated;
+        public string InstanceName { get; }
+        public string RuleName { get; }
+        public string RuleLanguage { get; }
+        public bool IsDisabled { get; }
+        public bool IsImpersonated { get; }
 
         internal RuleOutputData(InstanceName instance, IRuleConfiguration ruleConfiguration, string ruleLanguage)
         {
-            this.instanceName = instance.PlainName;
-            this.ruleName = ruleConfiguration.RuleName;
-            this.isDisabled = ruleConfiguration.IsDisabled;
-            this.isImpersonated = ruleConfiguration.Impersonate;
-            this.ruleLanguage = ruleLanguage;
+            this.InstanceName = instance.PlainName;
+            this.RuleName = ruleConfiguration.RuleName;
+            this.IsDisabled = ruleConfiguration.IsDisabled;
+            this.IsImpersonated = ruleConfiguration.Impersonate;
+            this.RuleLanguage = ruleLanguage;
         }
 
         public string AsHumanReadable()
         {
-            return $"Rule {instanceName}/{ruleName} {(isImpersonated ? "*execute impersonated*" : string.Empty)} {(isDisabled ? "(disabled)" : string.Empty)}";
+            return $"Rule {InstanceName}/{RuleName} {(IsImpersonated ? "*execute impersonated*" : string.Empty)} {(IsDisabled ? "(disabled)" : string.Empty)}";
         }
     }
 }

@@ -153,6 +153,8 @@ namespace aggregator.cli
                     { "commentPattern", null },
                     */
                 },
+                // Resource Version 1.0 currently needed for WorkItems, newer Version send EMPTY Relation Information.
+                ResourceVersion = "1.0",
             };
             if (!string.IsNullOrWhiteSpace(filters.AreaPath))
             {

@@ -3,6 +3,9 @@ using CommandLine.Text;
 using System;
 using System.Threading;
 
+using aggregator.cli.Instances;
+
+
 namespace aggregator.cli
 {
     /*
@@ -60,8 +63,8 @@ namespace aggregator.cli
                 {
                     typeof(TestCommand),
                     typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
-                    typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UninstallInstanceCommand),
-                    typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
+                    typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UpdateInstanceCommand),
+                    typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
                     typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
                     typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
                     typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
@@ -75,6 +78,7 @@ namespace aggregator.cli
                     .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<UpdateInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<ConfigureInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<ListRulesCommand>(cmd => rc = cmd.Run(cancellationToken))

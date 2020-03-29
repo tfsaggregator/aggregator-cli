@@ -21,14 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Rules\function.json" />
-    <None Remove="Rules\run.csx" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Instances\instance-template.json" />
-    <EmbeddedResource Include="Rules\function.json" />
-    <EmbeddedResource Include="Rules\run.csx" />
   </ItemGroup>
 
   <ItemGroup>

@@ -15,8 +15,9 @@ namespace aggregator.Engine
             if (!string.IsNullOrWhiteSpace(relationUrl))
             {
                 var relationUri = new Uri(relationUrl);
-                var id = int.Parse(relationUri.Segments.Last());
-                LinkedId = new PermanentWorkItemId(id);
+                var idName = relationUri.Segments.Last();
+                var id = int.TryParse(idName, out var i) ? i : (int?)null;
+                LinkedId = id == null ? null : new PermanentWorkItemId(id.Value);
             }
         }
 
