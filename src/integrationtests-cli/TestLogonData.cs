@@ -45,10 +45,12 @@ namespace integrationtests.cli
         // Azure Resources
         public string Location { get; }
         public string ResourceGroup { get; }
+        public string UniqueSuffix { get; }
         // Azure DevOps
         public string DevOpsUrl { get; }
         public string ProjectName { get; }
         public string PAT { get; }
-        public string UniqueSuffix { get; }
+        // Local data
+        public string RuntimeSourceUrl { get; }
     }
 }

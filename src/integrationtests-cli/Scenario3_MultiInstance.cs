@@ -40,7 +40,10 @@ namespace integrationtests.cli
         void InstallInstances(string instancePrefix)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}");
+            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
+                + (string.IsNullOrWhiteSpace(TestLogonData.RuntimeSourceUrl)
+                ? string.Empty
+                : $" --sourceUrl {TestLogonData.RuntimeSourceUrl}"));
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -106,7 +109,21 @@ namespace integrationtests.cli
             Assert.DoesNotContain("] Failed!", output);
         }
 
-        [Theory, Order(8)]
+        [Theory, Order(101)]
+        [InlineData("my45", "test4")]
+        void CreateWorkItemAndCheckTrigger(string instancePrefix, string rule)
+        {
+            string instance = instancePrefix + TestLogonData.UniqueSuffix;
+            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instance} --project \"{TestLogonData.ProjectName}\" ");
+            Assert.Equal(0, rc);
+            // Sample output from rule:
+            //  Returning 'Hello Task #118 from Rule 5!' from 'test5'
+            Assert.Contains($"Returning 'Hello Task #", output);
+            Assert.Contains($"!' from '{rule}'", output);
+            Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Theory, Order(901)]
         [InlineData("my45")]
         void UninstallInstances(string instancePrefix)
         {
@@ -117,7 +134,7 @@ namespace integrationtests.cli
             Assert.DoesNotContain("] Failed!", output);
         }
 
-        [Fact, Order(9)]
+        [Fact, Order(902)]
         void ListInstancesAfterUninstall()
         {
             (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {TestLogonData.ResourceGroup}");
@@ -127,7 +144,7 @@ namespace integrationtests.cli
             Assert.Contains("Instance my54", output);
         }
 
-        [Theory, Order(10)]
+        [Theory, Order(903)]
         [InlineData("my54", "test5")]
         void UnmapRules(string instancePrefix, string rule)
         {

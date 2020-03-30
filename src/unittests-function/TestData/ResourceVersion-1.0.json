@@ -1,0 +1,143 @@
+{
+  "subscriptionId": "98bd70de-8422-4fb4-a4fb-d2f8d9e50ee9",
+  "notificationId": 4,
+  "id": "5497320c-a2d3-4a44-9cf8-94bae49a821d",
+  "eventType": "workitem.updated",
+  "publisherId": "tfs",
+  "message": null,
+  "detailedMessage": null,
+  "resource": {
+    "id": 18,
+    "workItemId": 30,
+    "rev": 5,
+    "revisedBy": {
+      "id": "968df890-725c-49a7-807c-37a98a6ab1f1",
+      "name": "Bob Silent (Its Me) <bob@zzz.com>",
+      "displayName": "Bob Silent (Its Me)",
+      "url": "https://dev.azure.com/",
+      "_links": {
+        "avatar": {
+          "href": "https://dev.azure.com/"
+        }
+      },
+      "uniqueName": "bob@zzz.com",
+      "imageUrl": "https://dev.azure.com/",
+      "descriptor": "msa.NzA3MGYyMmQtNjM5Ni03ZTA2LWI4ZTAtMTM4YzMwOWI1YzUw"
+    },
+    "revisedDate": "9999-01-01T00:00:00Z",
+    "fields": {
+      "System.Rev": {
+        "oldValue": 4,
+        "newValue": 5
+      },
+      "System.AuthorizedDate": {
+        "oldValue": "2020-01-07T13:14:28.067Z",
+        "newValue": "2020-01-07T13:16:04.837Z"
+      },
+      "System.RevisedDate": {
+        "oldValue": "2020-01-07T13:16:04.837Z",
+        "newValue": "9999-01-01T00:00:00Z"
+      },
+      "System.ChangedDate": {
+        "oldValue": "2020-01-07T13:14:28.067Z",
+        "newValue": "2020-01-07T13:16:04.837Z"
+      },
+      "System.Watermark": {
+        "oldValue": 10734,
+        "newValue": 10735
+      },
+      "System.Description": {
+        "oldValue": "<div>add description</div>",
+        "newValue": "<div>added description</div>"
+      }
+    },
+    "_links": {
+      "self": {
+        "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions/5"
+      },
+      "workItemUpdates": {
+        "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/updates"
+      },
+      "html": {
+        "href": "https://dev.azure.com/web/wi.aspx?pcguid=478ee4b3-565c-4216-92b9-f220c8704e79&id=30"
+      }
+    },
+    "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/updates/5",
+    "revision": {
+      "id": 30,
+      "rev": 5,
+      "fields": {
+        "System.AreaPath": "ExampleProject\\Area 1",
+        "System.TeamProject": "ExampleProject",
+        "System.IterationPath": "ExampleProject\\Path 1",
+        "System.WorkItemType": "User Story",
+        "System.State": "Active",
+        "System.Reason": "Implementation started",
+        "System.AssignedTo": "Bob Silent (Its Me) <bob@zzz.com>",
+        "System.CreatedDate": "2019-07-09T12:48:37.253Z",
+        "System.CreatedBy": "Alice Silent (Its Someone Else) <alice@zzz.com>",
+        "System.ChangedDate": "2020-01-07T13:16:04.837Z",
+        "System.ChangedBy": "Carol Silent (Its Another one) <carol@zzz.com>",
+        "System.CommentCount": 0,
+        "System.Title": "Implement a framework that migrates legacy to portable frameworks",
+        "System.BoardColumn": "Active",
+        "System.BoardColumnDone": false,
+        "Microsoft.VSTS.Common.ActivatedDate": "2019-07-22T09:18:03.733Z",
+        "Microsoft.VSTS.Common.ActivatedBy": "Bob Silent (Its Me) <bob@zzz.com>",
+        "Microsoft.VSTS.Common.Priority": 2,
+        "Microsoft.VSTS.Common.StateChangeDate": "2016-12-18T20:41:39.98Z",
+        "Microsoft.VSTS.Common.ValueArea": "Architectural",
+        "WEF_EA18760EB7614A508782E4DBFFBAF4E9_Kanban.Column": "Active",
+        "WEF_EA18760EB7614A508782E4DBFFBAF4E9_Kanban.Column.Done": false,
+        "System.Description": "<div>add description&nbsp;</div>",
+        "System.Tags": "universal applications",
+      },
+      "relations": [
+        {
+          "rel": "System.LinkTypes.Hierarchy-Reverse",
+          "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/160",
+          "attributes": {
+            "isLocked": false,
+            "name": "Parent"
+          }
+        },
+        {
+          "rel": "System.LinkTypes.Hierarchy-Forward",
+          "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/184",
+          "attributes": {
+            "isLocked": false,
+            "name": "Child"
+          }
+        }
+      ],
+      "_links": {
+        "self": {
+          "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions/5"
+        },
+        "workItemRevisions": {
+          "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions"
+        },
+        "parent": {
+          "href": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30"
+        }
+      },
+      "url": "https://dev.azure.com/fake-organization/_apis/wit/workItems/30/revisions/5"
+    }
+  },
+  "resourceVersion": "1.0",
+  "resourceContainers": {
+    "collection": {
+      "id": "478ee4b3-565c-4216-92b9-f220c8704e79",
+      "baseUrl": "https://dev.azure.com/"
+    },
+    "account": {
+      "id": "85eb50cc-a440-4c4f-b535-26e419e03044",
+      "baseUrl": "https://dev.azure.com/"
+    },
+    "project": {
+      "id": "4cfab79e-7973-4d9d-b9df-253531404bba",
+      "baseUrl": "https://dev.azure.com/"
+    }
+  },
+  "createdDate": "2020-01-07T13:18:27.1073456Z"
+}

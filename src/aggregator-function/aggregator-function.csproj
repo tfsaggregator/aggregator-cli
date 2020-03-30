@@ -13,6 +13,14 @@
     <CodeAnalysisRuleSet>aggregator-function.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="FunctionTemplate\function.json" />
+    <None Remove="FunctionTemplate\run.csx" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FunctionTemplate\function.json" />
+    <EmbeddedResource Include="FunctionTemplate\run.csx" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.WebApiCompatShim" Version="2.2.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.14" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.0" />

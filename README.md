@@ -1,7 +1,7 @@
 # aggregator-cli
 
-[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg)](https://github.com/tfsaggregator/aggregator-cli/actions)
-[![Release Status](https://github.com/tfsaggregator/aggregator-cli/workflows/release-to-GitHub/badge.svg)](https://github.com/tfsaggregator/aggregator-cli/actions)
+[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg?branch=master)](https://github.com/tfsaggregator/aggregator-cli/actions)
+[![Release Status](https://github.com/tfsaggregator/aggregator-cli/workflows/release-to-GitHub/badge.svg?branch=master)](https://github.com/tfsaggregator/aggregator-cli/actions)
 
 This is the successor to renowned TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
@@ -20,7 +20,7 @@ The main scenario for Aggregator (3.x) is supporting Azure DevOps and cloud scen
 
 - use of new Azure DevOps REST API
 - simple deployment via CLI tool
-- Rule object model similar to v2
+- Rule object model similar to Aggregator v2
 
 
 
@@ -48,7 +48,7 @@ If you specify the Resource Group, you can have more than one Instance in the Re
 After creating the Instance, you upload the code of Aggregator **Rules**.
 A Rule is code that reacts to one or more Azure DevOps event.
 Each Aggregator Rule becomes an Azure Function in the Aggregator instance i.e. the Azure Function Application.
-The Rule language is C# (hopefully more in the future) and uses Aggregator Runtime and [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 2.0
+The Rule language is C# (hopefully more in the future) and uses Aggregator Runtime and [Azure Functions Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) 3.0
 to do its work.
 When you create an Instance, a Rule or update them, CLI checks GitHub Releases
 to ensure that Aggregator Runtime is up-to-date or match the specified version.
@@ -85,7 +85,7 @@ If you go this route, remember add the `--resourceGroup` to all commands requiri
 
 Download and unzip the latest CLI.zip file from [Releases](https://github.com/tfsaggregator/aggregator-cli/releases).
 It requires [.Net Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1) installed on the machine.
-To run Aggregator run `aggregator-cli` or `dotnet aggregator-cli.dll` followed by a verb and its options.
+To run Aggregator run `aggregator-cli.exe` (Windows), `aggregator-cli` (Linux) or `dotnet aggregator-cli.dll` followed by a verb and its options.
 
 ### Verbs
 

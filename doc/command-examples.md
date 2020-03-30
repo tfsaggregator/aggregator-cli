@@ -1,6 +1,6 @@
 # Sample Aggregator CLI usage
 
-Run `aggregator-cli` or `dotnet aggregator-cli.dll` followed by the command and any option.
+run `aggregator-cli.exe` (Windows), `aggregator-cli` (Linux) or `dotnet aggregator-cli.dll` followed by the command and any option.
 All commands accept the `--verbose` option to print additional messages for troubleshooting.
 
 
