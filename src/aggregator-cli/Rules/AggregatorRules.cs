@@ -198,7 +198,9 @@ namespace aggregator.cli
             return preprocessedRule;
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private static async Task<IDictionary<string, string>> PackagingFilesAsync(string ruleName, IPreprocessedRule preprocessedRule)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             var inMemoryFiles = new Dictionary<string, string>
             {
