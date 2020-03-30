@@ -40,7 +40,10 @@ namespace integrationtests.cli
         void InstallInstances(string instancePrefix)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}");
+            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
+                + (string.IsNullOrWhiteSpace(TestLogonData.RuntimeSourceUrl)
+                ? string.Empty
+                : $" --sourceUrl {TestLogonData.RuntimeSourceUrl}"));
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -106,11 +109,18 @@ namespace integrationtests.cli
             Assert.DoesNotContain("] Failed!", output);
         }
 
-        [Fact, Order(101)]
-        void CreateWorkItemAndCheckTrigger()
+        [Theory, Order(101)]
+        [InlineData("my45", "test4")]
+        void CreateWorkItemAndCheckTrigger(string instancePrefix, string rule)
         {
-            // TODO
-            Assert.True(true);
+            string instance = instancePrefix + TestLogonData.UniqueSuffix;
+            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instance} --project \"{TestLogonData.ProjectName}\" ");
+            Assert.Equal(0, rc);
+            // Sample output from rule:
+            //  Returning 'Hello Task #118 from Rule 5!' from 'test5'
+            Assert.Contains($"Returning 'Hello Task #", output);
+            Assert.Contains($"!' from '{rule}'", output);
+            Assert.DoesNotContain("] Failed!", output);
         }
 
         [Theory, Order(901)]
