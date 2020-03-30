@@ -1,7 +1,7 @@
 # aggregator-cli
 
-[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg)](https://github.com/tfsaggregator/aggregator-cli/actions)
-[![Release Status](https://github.com/tfsaggregator/aggregator-cli/workflows/release-to-GitHub/badge.svg)](https://github.com/tfsaggregator/aggregator-cli/actions)
+[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg?branch=master)](https://github.com/tfsaggregator/aggregator-cli/actions)
+[![Release Status](https://github.com/tfsaggregator/aggregator-cli/workflows/release-to-GitHub/badge.svg?branch=master)](https://github.com/tfsaggregator/aggregator-cli/actions)
 
 This is the successor to renowned TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
@@ -85,7 +85,7 @@ If you go this route, remember add the `--resourceGroup` to all commands requiri
 
 Download and unzip the latest CLI.zip file from [Releases](https://github.com/tfsaggregator/aggregator-cli/releases).
 It requires [.Net Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1) installed on the machine.
-To run Aggregator run `aggregator-cli` or `dotnet aggregator-cli.dll` followed by a verb and its options.
+To run Aggregator run `aggregator-cli.exe` (Windows), `aggregator-cli` (Linux) or `dotnet aggregator-cli.dll` followed by a verb and its options.
 
 ### Verbs
 
