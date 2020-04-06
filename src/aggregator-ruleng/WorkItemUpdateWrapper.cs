@@ -19,9 +19,9 @@ namespace aggregator.Engine
 
             Relations = new WorkItemRelationUpdatesWrapper()
                         {
-                            Added   = _workItemUpdate.Relations?.Added?.Select(relation => new WorkItemRelationWrapper(relation)).ToList()   ?? new List<WorkItemRelationWrapper>(),
-                            Removed = _workItemUpdate.Relations?.Removed?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
-                            Updated = _workItemUpdate.Relations?.Updated?.Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                            Added   = _workItemUpdate.Relations?.Added?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList()   ?? new List<WorkItemRelationWrapper>(),
+                            Removed = _workItemUpdate.Relations?.Removed?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                            Updated = _workItemUpdate.Relations?.Updated?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
                         };
 
             Fields = _workItemUpdate.Fields?
@@ -33,7 +33,6 @@ namespace aggregator.Engine
                                                   })
                                     ?? new Dictionary<string, WorkItemFieldUpdateWrapper>();
         }
-
 
         /// <summary>ID of update.</summary>
         public int Id => _workItemUpdate.Id;
