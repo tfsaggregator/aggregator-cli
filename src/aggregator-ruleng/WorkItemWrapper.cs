@@ -394,13 +394,17 @@ namespace aggregator.Engine
             switch (value)
             {
                 case IdentityRef id:
-                    {
-                        return id.DisplayName;
-                    }
+                {
+                    return id.DisplayName;
+                }
+                case WorkItemId id:
+                {
+                    return id.Value;
+                }
                 default:
-                    {
-                        return value;
-                    }
+                {
+                    return value;
+                }
             }
         }
 
