@@ -64,14 +64,6 @@ namespace aggregator.cli
             return result;
         }
 
-        internal class EventFilters
-        {
-            public string AreaPath { get; set; }
-            public string Type { get; set; }
-            public string Tag { get; set; }
-            public IEnumerable<string> Fields { get; set; }
-        }
-
         internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
@@ -91,7 +83,7 @@ namespace aggregator.cli
                 PublisherId = DevOpsEvents.PublisherId,
                 PublisherInputFilters= new InputFilter[] {
                     new InputFilter {
-                        Conditions = new List<InputFilterCondition> {
+                        Conditions = new List<InputFilterCondition> (filters.ToFilterConditions()) {
                             new InputFilterCondition
                             {
                                 InputId = "projectId",
@@ -143,7 +135,7 @@ namespace aggregator.cli
                 },
                 EventType = @event,
                 PublisherId = DevOpsEvents.PublisherId,
-                PublisherInputs = new Dictionary<string, string>
+                PublisherInputs = new Dictionary<string, string> (filters.ToInputs())
                 {
                     { "projectId", project.Id.ToString() },
                     /* TODO consider offering additional filters using the following
@@ -156,26 +148,6 @@ namespace aggregator.cli
                 // Resource Version 1.0 currently needed for WorkItems, newer Version send EMPTY Relation Information.
                 ResourceVersion = "1.0",
             };
-            if (!string.IsNullOrWhiteSpace(filters.AreaPath))
-            {
-                // Filter events to include only work items under the specified area path.
-                subscriptionParameters.PublisherInputs.Add("areaPath", filters.AreaPath);
-            }
-            if (!string.IsNullOrWhiteSpace(filters.Type))
-            {
-                // Filter events to include only work items of the specified type.
-                subscriptionParameters.PublisherInputs.Add("workItemType", filters.Type);
-            }
-            if (!string.IsNullOrWhiteSpace(filters.Tag))
-            {
-                // Filter events to include only work items containing the specified tag.
-                subscriptionParameters.PublisherInputs.Add("tag", filters.Tag);
-            }
-            if (filters.Fields.Any())
-            {
-                // Filter events to include only work items with the specified field(s) changed
-                subscriptionParameters.PublisherInputs.Add("changedFields", string.Join(',', filters.Fields));
-            }
 
             logger.WriteVerbose($"Adding mapping for {@event}...");
             var newSubscription = await serviceHooksClient.CreateSubscriptionAsync(subscriptionParameters);
@@ -234,6 +206,57 @@ namespace aggregator.cli
             }
 
             return true;
+        }
+    }
+
+    internal class EventFilters
+    {
+        public string AreaPath { get; set; }
+        public string Type { get; set; }
+        public string Tag { get; set; }
+        public IEnumerable<string> Fields { get; set; }
+    }
+
+    internal static class EventFiltersExtension
+    {
+        public static IEnumerable<KeyValuePair<string, string>> ToInputs(this EventFilters filters)
+        {
+            if (!string.IsNullOrWhiteSpace(filters.AreaPath))
+            {
+                var areaPath = filters.AreaPath.First() == '\\' ? filters.AreaPath : $@"\{filters.AreaPath}";
+                areaPath = filters.AreaPath.Last() == '\\' ? areaPath : $@"{areaPath}\";
+
+                // Filter events to include only work items under the specified area path.
+                yield return new KeyValuePair<string, string>("areaPath", areaPath);
+            }
+            if (!string.IsNullOrWhiteSpace(filters.Type))
+            {
+                // Filter events to include only work items of the specified type.
+                yield return new KeyValuePair<string, string>("workItemType", filters.Type);
+            }
+            if (!string.IsNullOrWhiteSpace(filters.Tag))
+            {
+                // Filter events to include only work items containing the specified tag.
+                yield return new KeyValuePair<string, string>("tag", filters.Tag);
+            }
+            if (filters.Fields?.Any() ?? false)
+            {
+                // Filter events to include only work items with the specified field(s) changed
+                yield return new KeyValuePair<string, string>("changedFields", string.Join(',', filters.Fields));
+            }
+        }
+
+
+        public static IEnumerable<InputFilterCondition> ToFilterConditions(this EventFilters filters)
+        {
+            return filters.ToInputs()
+                          .Select(input => new InputFilterCondition
+                                           {
+                                               InputId = input.Key,
+                                               InputValue = input.Value,
+                                               Operator = InputFilterOperator.Equals,
+                                               CaseSensitive = false
+                                           });
         }
     }
 }
