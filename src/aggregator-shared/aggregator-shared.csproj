@@ -3,8 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>aggregator</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>aggregator-shared</AssemblyName>
+    <!-- AssemblyInfo -->
+    <Title>Aggregator Shared</Title>
+    <Company>TFS Aggregator Team</Company>
+    <Product>Aggregator CLI</Product>
+    <Copyright>Copyright © TFS Aggregator Team</Copyright>
+    <Description>Azure DevOps Aggregator Shared Types</Description>  
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

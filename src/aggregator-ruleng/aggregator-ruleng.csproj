@@ -3,8 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>aggregator.Engine</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
+    <!-- AssemblyInfo -->
+    <Title>Aggregator Rule Engine</Title>
+    <Company>TFS Aggregator Team</Company>
+    <Product>Aggregator CLI</Product>
+    <Copyright>Copyright © TFS Aggregator Team</Copyright>
+    <Description>Azure DevOps Aggregator Rule Engine</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

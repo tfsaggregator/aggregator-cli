@@ -40,7 +40,7 @@ namespace integrationtests.cli
         void InstallInstances(string instancePrefix)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"install.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
+            (int rc, string output) = RunAggregatorCommand($"install.instance --verbose --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
                 + (string.IsNullOrWhiteSpace(TestLogonData.RuntimeSourceUrl)
                 ? string.Empty
                 : $" --sourceUrl {TestLogonData.RuntimeSourceUrl}"));
@@ -65,7 +65,7 @@ namespace integrationtests.cli
         void AddRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"add.rule --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --name {rule} --file {rule}.rule");
+            (int rc, string output) = RunAggregatorCommand($"add.rule --verbose --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --name {rule} --file {rule}.rule");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -90,7 +90,7 @@ namespace integrationtests.cli
         void MapRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"map.rule --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
+            (int rc, string output) = RunAggregatorCommand($"map.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -128,7 +128,7 @@ namespace integrationtests.cli
         void UninstallInstances(string instancePrefix)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"uninstall.instance --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}");
+            (int rc, string output) = RunAggregatorCommand($"uninstall.instance --verbose --name {instance} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -149,7 +149,7 @@ namespace integrationtests.cli
         void UnmapRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"unmap.rule --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
+            (int rc, string output) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);

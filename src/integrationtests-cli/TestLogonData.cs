@@ -25,6 +25,8 @@ namespace integrationtests.cli
             string uniqueSuffix = data.uniqueSuffix;
 
             UniqueSuffix = string.IsNullOrEmpty(uniqueSuffix) ? GetRandomString(8) : uniqueSuffix;
+
+            RuntimeSourceUrl = data.runtimeSourceUrl;
         }
 
         private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")

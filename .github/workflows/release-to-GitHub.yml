@@ -5,43 +5,61 @@ on:
     tags:
     - 'v[0-9].[0-9]*'
     paths:
-    - 'src/*'
+    - 'src/**'
 
 jobs:
   build:
-
-    # crossing fingers
     runs-on: ubuntu-latest
+    env:
+      DOTNETSDK_VERSION: '3.1.101' # SDK Version to use.
+      CONFIGURATION: Release
+      # to test various phases of build
+      RUN_INTEGRATION_TESTS: true
+      CREATE_GITHUB_RELEASE: true
 
     steps:
     - uses: actions/checkout@v1
-    # HACK required for GitVersion
-    - run: |
-        git fetch --tags
-        git branch --create-reflog master origin/master
+
+
+    # versioning
+    - name: Fetch all history for all tags and branches
+      run: git fetch --prune
     - name: Install GitVersion
-      uses: gittools/actions/setup-gitversion@v0.3
+      uses: gittools/actions/gitversion/setup@v0.9.2
       with:
-          versionSpec: '5.1.x'
-    - name: Update AssemblyInfo files
+          versionSpec: '5.2.x'
+    - name: Use GitVersion
       id: gitversion # step id used as reference for output values
-      uses: gittools/actions/execute-gitversion@v0.3
-      with:
-        updateAssemblyInfo: true
+      uses: gittools/actions/gitversion/execute@v0.9.2
     - name: 'Set version in aggregator-manifest.ini'
       run: 'sed -E -i "s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/" ${GITHUB_WORKSPACE}/src/aggregator-function/aggregator-manifest.ini'
+      shell: bash
+
 
     # compile and test
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.1.101' # SDK Version to use.
+        dotnet-version: '${{ env.DOTNETSDK_VERSION }}'
     - name: 'Delete Directory.Build.targets from src/aggregator-function'
       run: rm src/aggregator-function/Directory.Build.targets
     - run: 'dotnet restore src/aggregator-cli.sln'
-    - run: 'dotnet build --configuration Release src/aggregator-cli.sln'
-    - run: 'dotnet test --configuration Release src/unittests-core/unittests-core.csproj'
-    - run: 'dotnet test --configuration Release src/unittests-ruleng/unittests-ruleng.csproj'
-    - run: 'dotnet test src/unittests-function/unittests-function.csproj'
+    - run: 'dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} /p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}'
+    - run: 'dotnet test --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj'
+    - run: 'dotnet test --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj'
+    - run: 'dotnet test --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj'
+
+
+    # Prepare Artifacts
+    - name: 'Package FunctionRuntime'
+      run: |
+        mkdir -p outputs/function
+        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
+        pushd outputs/function && \
+        7z a -bd -r FunctionRuntime.zip && \
+        popd
+
+
+    # Heavy weight integration tests
     # logon-data.json is stored in project Secrets
     - name: 'Get integration tests secrets'
       run: |
@@ -49,61 +67,107 @@ jobs:
         export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
         INTEGRATIONTEST_SUBSCRIPTIONID=$(jq -r '.subscription?' $LOGONDATA_FNAME)
         echo "Azure subscription for testing: $INTEGRATIONTEST_SUBSCRIPTIONID"
-    
       env:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
-    # heavy weight integration tests
-    ### - run: 'dotnet test --configuration Release src/integrationtests-cli/integrationtests-cli.csproj'
+      shell: bash
+    - run: 'echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json'
+    - run: 'dotnet test --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj'
+      if: env.RUN_INTEGRATION_TESTS == 'true'
     - name: 'Scrap secrets'
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
       if: always()
 
+
     # Prepare Artifacts
-    - name: 'Publish FunctionRuntime'
-      run: |
-        mkdir -p outputs/function
-        dotnet publish --configuration Release --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
-        pushd outputs/function && \
-        7z a -bd -r FunctionRuntime.zip && \
-        popd    
-    - name: 'Publish aggregator-cli Windows'
+    - name: 'Package aggregator-cli Windows'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         7z a -bd -r aggregator-cli-win-x64.zip && \
         popd
-
       env:
         RUNTIME: win-x64
-    - name: 'Publish aggregator-cli Linux'
+    - name: 'Package aggregator-cli Linux'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         7z a -bd -r aggregator-cli-linux-x64.zip && \
         popd
-
       env:
         RUNTIME: linux-x64
-    - name: 'Publish aggregator-cli OS/X'
+    - name: 'Package aggregator-cli OS/X'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration Release --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
         pushd outputs/$RUNTIME && \
         7z a -bd -r aggregator-cli-osx-x64.zip && \
         popd
-
       env:
         RUNTIME: osx-x64
 
-    # Create Release in GitHub as Draft
+
+    # Release notes (maybe one day we will use https://gittools.github.io/GitReleaseManager)
     - name: 'Dump commit messages since last tag as draft release notes'
       run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > release.log
-    - name: Create GitHub Release
-      uses: ncipollo/release-action@v1
+    - name: Read package.json
+      id: git_log_dump
+      uses: juliangruber/read-file-action@v1
       with:
-        bodyFile: release.log
-        artifacts: "outputs/function/FunctionRuntime.zip,outputs/win-x64/aggregator-cli-win-x64.zip,outputs/linux-x64/aggregator-cli-linux-x64.zip,outputs/osx-x64/aggregator-cli-osx-x64.zip"
-        token: ${{ secrets.GITHUB_TOKEN }}
+        path: ./release.log
+
+
+    # Create Release in GitHub as Draft
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+        body: ${{ steps.git_log_dump.outputs.content }}
         draft: true
+        prerelease: true
+      if: env.CREATE_GITHUB_RELEASE == 'true'
+    - name: Upload FunctionRuntime
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/function/FunctionRuntime.zip
+        asset_name: FunctionRuntime.zip
+        asset_content_type: application/zip
+      if: env.CREATE_GITHUB_RELEASE == 'true'
+    - name: 'Upload aggregator-cli Windows'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/win-x64/aggregator-cli-win-x64.zip
+        asset_name: aggregator-cli-win-x64.zip
+        asset_content_type: application/zip
+      if: env.CREATE_GITHUB_RELEASE == 'true'
+    - name: 'Upload aggregator-cli Linux'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/linux-x64/aggregator-cli-linux-x64.zip
+        asset_name: aggregator-cli-linux-x64.zip
+        asset_content_type: application/zip
+      if: env.CREATE_GITHUB_RELEASE == 'true'
+    - name: 'Upload aggregator-cli OS/X'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/osx-x64/aggregator-cli-osx-x64.zip
+        asset_name: aggregator-cli-osx-x64.zip
+        asset_content_type: application/zip
+      if: env.CREATE_GITHUB_RELEASE == 'true'

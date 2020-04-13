@@ -119,6 +119,7 @@ The date and time when a work item was created.
 
 `string Description`
 Use this field to provide indepth information about a work item.
+Caveat: It may contains HTML!
 
 `string History`
 The record of changes that were made to the work item after it was created.
