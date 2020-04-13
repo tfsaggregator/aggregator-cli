@@ -177,6 +177,16 @@ var customField1 = self.GetFieldValue<string>("MyOrg.StringCustomField1", "MyDef
 var customField2 = self.GetFieldValue<decimal>("MyOrg.NumericCustomField2", 3.0m);
 ```
 
+## Custom Fields
+When the Azure DevOps process has a custom fields, for example one named "Created In", the field gets created as "Custom.CreatedIn".
+
+How to get its value:
+
+`string createdIn = (string)self["Custom.CreatedIn"];`
+
+How to update its value:
+
+`self["Custom.CreatedIn"] = "New Value";`
 
 ## Status properties
 `bool IsDeleted` Read-only, returns `true` if the work item is currently located
