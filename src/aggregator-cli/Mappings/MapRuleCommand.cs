@@ -52,7 +52,7 @@ namespace aggregator.cli
                 return 2;
             }
 
-            var filters = new AggregatorMappings.EventFilters
+            var filters = new EventFilters
             {
                 AreaPath = FilterAreaPath,
                 Type = FilterType,

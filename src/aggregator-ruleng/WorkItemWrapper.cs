@@ -361,7 +361,7 @@ namespace aggregator.Engine
 
             if (_item.Fields.ContainsKey(field))
             {
-                if (_item.Fields[field].Equals(value))
+                if (_item.Fields[field]?.Equals(value) ?? false)
                 {
                     // if new value does not differ from existing value, just ignore change
                     return;
