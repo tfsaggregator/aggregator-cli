@@ -394,13 +394,17 @@ namespace aggregator.Engine
             switch (value)
             {
                 case IdentityRef id:
-                    {
-                        return id.DisplayName;
-                    }
+                {
+                    return id.DisplayName;
+                }
+                case WorkItemId id:
+                {
+                    return id.Value;
+                }
                 default:
-                    {
-                        return value;
-                    }
+                {
+                    return value;
+                }
             }
         }
 
@@ -425,15 +429,16 @@ namespace aggregator.Engine
             Id = new PermanentWorkItemId(newId);
 
             var candidates = Changes.Where(op => op.Path == "/relations/-");
-            foreach (var op in candidates)
+            foreach (var patch in candidates.Select(op => op.Value as RelationPatch).Where(WorkItemRelationWrapper.IsWorkItemRelation))
             {
-                var patch = op.Value as RelationPatch;
-                string url = patch.url;
-                int pos = url.LastIndexOf('/') + 1;
-                int relId = int.Parse(url.Substring(pos));
-                if (relId == oldId)
+                var url = new Uri(patch.url);
+                var idName = url.Segments.Last();
+                var relId = int.TryParse(idName, out var i) ? i : (int?)null;
+                if (relId.HasValue && relId.Value == oldId)
                 {
-                    patch.url = url.Substring(0, pos) + newId.ToString();
+                    //last element is Id
+                    var newUrl = new Uri(url, $"../{newId}");
+                    patch.url = newUrl.ToString();
                     break;
                 }
             }
@@ -444,16 +449,16 @@ namespace aggregator.Engine
         internal void RemapIdReferences(IDictionary<int, int> realIds)
         {
             var candidates = Changes.Where(op => op.Path == "/relations/-");
-            foreach (var op in candidates)
+            foreach (var patch in candidates.Select(op => op.Value as RelationPatch).Where(WorkItemRelationWrapper.IsWorkItemRelation))
             {
-                var patch = op.Value as RelationPatch;
-                string url = patch.url;
-                int pos = url.LastIndexOf('/') + 1;
-                int relId = int.Parse(url.Substring(pos));
-                if (realIds.TryGetValue(relId, out var newId))
+                var url = new Uri(patch.url);
+                var idName = url.Segments.Last();
+                var relId = int.TryParse(idName, out var i) ? i : (int?)null;
+                if (relId.HasValue && realIds.TryGetValue(relId.Value, out var newId))
                 {
-                    string newUrl = url.Substring(0, pos) + newId.ToString();
-                    patch.url = newUrl;
+                    //last element is Id
+                    var newUrl = new Uri(url, $"../{newId}");
+                    patch.url = newUrl.ToString();
                 }
             }
         }
