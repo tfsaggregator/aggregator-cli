@@ -46,5 +46,11 @@ namespace aggregator.Engine
         public WorkItemId LinkedId { get; }
 
         public IDictionary<string, object> Attributes => _relation.Attributes;
+
+
+        //TODO: quick filter for work item relations only
+        internal static bool IsWorkItemRelation(WorkItemRelation relation) => IsWorkItemRelation(relation.Url);
+        internal static bool IsWorkItemRelation(RelationPatch relationPatch) => IsWorkItemRelation(relationPatch.url);
+        private static bool IsWorkItemRelation(string url) => url?.Contains("/_apis/wit/workItems/", StringComparison.OrdinalIgnoreCase) ?? false;
     }
 }
