@@ -2,6 +2,8 @@ name: release-to-GitHub
 
 on:
   push:
+    branches:
+      - 'release/**'
     tags:
     - 'v[0-9].[0-9]*'
     paths:
@@ -125,8 +127,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
+        tag_name: 'v${{ steps.gitversion.outputs.fullSemVer }}'
+        release_name: 'v${{ steps.gitversion.outputs.majorMinorPatch }}'
         body: ${{ steps.git_log_dump.outputs.content }}
         draft: true
         prerelease: true
