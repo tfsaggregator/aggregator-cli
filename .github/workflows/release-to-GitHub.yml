@@ -8,6 +8,7 @@ on:
     - 'v[0-9].[0-9]*'
     paths:
     - 'src/**'
+    - '.github/workflows/**'
 
 jobs:
   build:
@@ -55,7 +56,7 @@ jobs:
     - name: 'Package FunctionRuntime'
       run: |
         mkdir -p outputs/function
-        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
+        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
         pushd outputs/function && \
         7z a -bd -r FunctionRuntime.zip && \
         popd
@@ -84,7 +85,7 @@ jobs:
     - name: 'Package aggregator-cli Windows'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
         pushd outputs/$RUNTIME && \
         7z a -bd -r aggregator-cli-win-x64.zip && \
         popd
@@ -93,7 +94,7 @@ jobs:
     - name: 'Package aggregator-cli Linux'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
         pushd outputs/$RUNTIME && \
         7z a -bd -r aggregator-cli-linux-x64.zip && \
         popd
@@ -102,7 +103,7 @@ jobs:
     - name: 'Package aggregator-cli OS/X'
       run: |
         mkdir -p outputs/$RUNTIME
-        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
         pushd outputs/$RUNTIME && \
         7z a -bd -r aggregator-cli-osx-x64.zip && \
         popd
