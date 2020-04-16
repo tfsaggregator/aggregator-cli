@@ -282,8 +282,32 @@ namespace aggregator.cli
 
                     _logger.WriteInfo($"{fileName} successfully uploaded to {instance.PlainName}.");
                 }//for
+
+                return await TriggerSyncing(client, instance, cancellationToken);
             }
 
+            return true;
+        }
+
+        // see https://docs.microsoft.com/en-us/azure/azure-functions/functions-deployment-technologies#trigger-syncing
+        private async Task<bool> TriggerSyncing(HttpClient client, InstanceName instance, CancellationToken cancellationToken)
+        {
+            var webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(instance.ResourceGroupName, instance.FunctionAppName, cancellationToken);
+            string masterKey = await webFunctionApp.GetMasterKeyAsync(cancellationToken);
+
+            using (var content = new StringContent(string.Empty))
+            {
+                string triggerSyncingUrl = $"{instance.FunctionAppUrl}/admin/host/synctriggers?code={masterKey}";
+                using (var response = await client.PostAsync(triggerSyncingUrl, content, cancellationToken))
+                {
+                    bool ok = response.IsSuccessStatusCode;
+                    if (!ok)
+                    {
+                        _logger.WriteError($"Failed syncing triggers with {response.ReasonPhrase}");
+                        return false;
+                    }
+                }
+            }
             return true;
         }
 
@@ -293,19 +317,23 @@ namespace aggregator.cli
             // undocumented but works, see https://github.com/projectkudu/kudu/wiki/Functions-API
             _logger.WriteInfo($"Removing Function {name} in {instance.PlainName}...");
             using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}", cancellationToken))
-            using (var response = await client.SendAsync(request, cancellationToken))
             {
-                bool ok = response.IsSuccessStatusCode;
-                if (!ok)
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Delete, $"api/functions/{name}", cancellationToken))
+                using (var response = await client.SendAsync(request, cancellationToken))
                 {
-                    _logger.WriteError($"Failed removing Function {name} from {instance.PlainName} with {response.ReasonPhrase}");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.WriteError($"Failed removing Function {name} from {instance.PlainName} with {response.ReasonPhrase}");
+                        return false;
+                    }
                 }
-
-                return ok;
+                if (!await TriggerSyncing(client, instance, cancellationToken))
+                    return false;
             }
 
             //TODO BobSilent remove configuration (Enable/Disable or Impersonate)
+
+            return true;
         }
 
         internal async Task<bool> ConfigureAsync(InstanceName instance, string name, bool? disable = null, bool? impersonate = null, CancellationToken cancellationToken = default)

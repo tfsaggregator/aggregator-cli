@@ -1,9 +1,0 @@
-﻿.language=Csharp
-
-if (self.Description.EndsWith(".")) {
-	self.Description = self.Description.TrimEnd('.');
-	return ".";
-} else {
-	return "no .";
-}
-

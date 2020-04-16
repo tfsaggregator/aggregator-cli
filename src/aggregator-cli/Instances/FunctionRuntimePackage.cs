@@ -26,9 +26,10 @@ namespace aggregator.cli
             cliVersion = here
                 .GetCustomAttribute<AssemblyFileVersionAttribute>()
                 .Version;
+            RuntimePackageFile = "FunctionRuntime.zip";
         }
 
-        public string RuntimePackageFile => "FunctionRuntime.zip";
+        public string RuntimePackageFile { get; private set; }
 
         internal async Task<bool> UpdateVersionAsync(string requiredVersion, string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
@@ -77,6 +78,31 @@ namespace aggregator.cli
         }
 
         private async Task RefreshLocalPackageFromUrl(string sourceUrl, CancellationToken cancellationToken)
+        {
+            var sourceUri = new Uri(sourceUrl);
+            if (sourceUri.Scheme == Uri.UriSchemeHttp
+                || sourceUri.Scheme == Uri.UriSchemeHttps)
+            {
+                await RefreshLocalPackageFromHttpUrl(sourceUrl, cancellationToken);
+            }
+            else if (sourceUri.Scheme == Uri.UriSchemeFile)
+            {
+                RefreshLocalPackageFromFileUrl(sourceUri);
+            }
+            else
+            {
+                logger.WriteError($"Unsupported URI scheme {sourceUri.Scheme}.");
+            }
+
+        }
+
+        private void RefreshLocalPackageFromFileUrl(Uri sourceUri)
+        {
+            RuntimePackageFile = sourceUri.AbsolutePath;
+            logger.WriteInfo($"Runtime package source will be {RuntimePackageFile}");
+        }
+
+        private async Task RefreshLocalPackageFromHttpUrl(string sourceUrl, CancellationToken cancellationToken)
         {
             DateTimeOffset? cachedLastWrite = GetLastWriteAtCachedRuntime();
 

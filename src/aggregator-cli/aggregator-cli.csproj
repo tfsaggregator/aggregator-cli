@@ -6,7 +6,12 @@
     <RootNamespace>aggregator.cli</RootNamespace>
     <StartupObject>aggregator.cli.Program</StartupObject>
     <ApplicationIcon>../../art/Aggregator.ico</ApplicationIcon>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- AssemblyInfo -->
+    <Title>Aggregator CLI</Title>
+    <Company>TFS Aggregator Team</Company>
+    <Product>Aggregator CLI</Product>
+    <Copyright>Copyright © TFS Aggregator Team</Copyright>
+    <Description>Aggregator CLI manages Rules for Azure DevOps</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
