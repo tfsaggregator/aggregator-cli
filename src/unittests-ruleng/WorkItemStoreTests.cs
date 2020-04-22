@@ -94,7 +94,6 @@ namespace unittests_ruleng
                         "OR [System.Id] = 99",
             };
 
-
             witClient.QueryByWiqlAsync(wiql, clientsContext.ProjectName)
                 .ReturnsForAnyArgs(new WorkItemQueryResult
                 {
@@ -110,7 +109,6 @@ namespace unittests_ruleng
                             }
                         }
                 });
-
 
             witClient.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
                 .ReturnsForAnyArgs(new List<WorkItem>
