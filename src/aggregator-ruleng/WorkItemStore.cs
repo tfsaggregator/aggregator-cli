@@ -75,6 +75,26 @@ namespace aggregator.Engine
             return GetWorkItems(ids);
         }
 
+        public IList<WorkItemWrapper> QueryWorkItems(string swiql)
+        {
+            _context.Logger.WriteVerbose($"Querying work items {swiql}");
+            Wiql wiql = new Wiql
+            {
+                Query = swiql,
+            };
+
+            var qResults = _clients.WitClient.QueryByWiqlAsync(wiql, _context.ProjectName).Result;
+            IEnumerable<int> ids = qResults.WorkItems.Select(item => item.Id).ToArray();
+
+            _context.Logger.WriteVerbose($"Getting workitems {ids.ToSeparatedString()}");
+            return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
+            {
+                _context.Logger.WriteInfo($"Loading workitems {workItemIds.ToSeparatedString()}");
+                var items = _clients.WitClient.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
+                return items.ConvertAll(i => new WorkItemWrapper(_context, i));
+            });
+        }
+
         public WorkItemWrapper NewWorkItem(string workItemType, string projectName = null)
         {
             // TODO check workItemType and projectName values by querying AzDO
