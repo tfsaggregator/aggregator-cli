@@ -82,6 +82,63 @@ namespace unittests_ruleng
         }
 
         [Fact]
+        public void QueryWorkItems_ByIds_Succeeds()
+        {
+            var ids = new[] { 42, 99 };
+            Wiql wiql = new Wiql
+            {
+                Query = "Select [System.Id], " +
+                        "[System.Title] " +
+                        "From WorkItem " +
+                        "Where [System.Id] = 42 " +
+                        "OR [System.Id] = 99",
+            };
+
+
+            witClient.QueryByWiqlAsync(wiql, clientsContext.ProjectName)
+                .ReturnsForAnyArgs(new WorkItemQueryResult
+                {
+                    WorkItems = new List<WorkItemReference>
+                        {
+                            new WorkItemReference
+                            {
+                                Id = ids[0]
+                            },
+                            new WorkItemReference
+                            {
+                                Id = ids[1]
+                            }
+                        }
+                });
+
+
+            witClient.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
+                .ReturnsForAnyArgs(new List<WorkItem>
+                {
+                    new WorkItem
+                    {
+                        Id = ids[0],
+                        Fields = new Dictionary<string, object>()
+                    },
+                    new WorkItem
+                    {
+                        Id = ids[1],
+                        Fields = new Dictionary<string, object>()
+                    }
+                });
+
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var sut = new WorkItemStore(context);
+
+            var wis = sut.QueryWorkItems(wiql.ToString());
+
+            Assert.NotEmpty(wis);
+            Assert.Equal(2, wis.Count);
+            Assert.Contains(wis, (x) => x.Id.Value == 42);
+            Assert.Contains(wis, (x) => x.Id.Value == 99);
+        }
+
+        [Fact]
         public async Task NewWorkItem_Succeeds()
         {
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
