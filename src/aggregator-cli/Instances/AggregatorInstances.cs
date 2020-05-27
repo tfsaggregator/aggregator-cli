@@ -28,7 +28,7 @@ namespace aggregator.cli
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
             var filter = rgs
-                .Where(rg => rg.Name.StartsWith(naming.ResourceGroupInstancePrefix));
+                .Where(rg => naming.ResourceGroupMatches(rg));
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
@@ -46,9 +46,9 @@ namespace aggregator.cli
         {
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
-            var filter = rgs.Where(rg =>
-                    rg.Name.StartsWith(naming.ResourceGroupInstancePrefix)
-                    && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
+            var filter = rgs.Where(
+                rg => naming.ResourceGroupMatches(rg)
+                && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {

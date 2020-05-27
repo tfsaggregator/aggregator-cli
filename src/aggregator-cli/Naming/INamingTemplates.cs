@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
+using System;
 
 namespace aggregator.cli
 {
@@ -7,7 +8,7 @@ namespace aggregator.cli
         InstanceName Instance(string name, string resourceGroup);
 
         // used only in ListInstances
-        string ResourceGroupInstancePrefix { get; }
+        bool ResourceGroupMatches(IResourceGroup rg);
 
         // used only in ListInstances
         InstanceName FromResourceGroupName(string rgName);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
+using System;
 
 namespace aggregator.cli
 {
@@ -12,18 +13,18 @@ namespace aggregator.cli
                 : base(name, resourceGroup, resourceGroupPrefix, functionAppSuffix) {}
         }
 
-        // used only in ListInstances
-        public string ResourceGroupInstancePrefix => resourceGroupPrefix;
-
         public InstanceName Instance(string name, string resourceGroup)
         {
             return new InstanceName_(name, resourceGroup);
         }
 
         // used only in ListInstances
+        public bool ResourceGroupMatches(IResourceGroup rg) => rg.Name.StartsWith(resourceGroupPrefix);
+
+        // used only in ListInstances
         public InstanceName FromResourceGroupName(string rgName)
         {
-            return new InstanceName_(rgName.Remove(0, ResourceGroupInstancePrefix.Length), null);
+            return new InstanceName_(rgName.Remove(0, resourceGroupPrefix.Length), null);
         }
 
         // used only in ListInstances

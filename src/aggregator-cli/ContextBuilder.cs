@@ -91,6 +91,7 @@ namespace aggregator.cli
                     naming = new BuiltInNamingTemplates();
                     break;
                 default:
+                    // TODO implement custom Naming Templates, e.g. reading from a file
                     throw new NotImplementedException($"TODO: implement Naming Template '{namingTemplate}'");
             }
 
