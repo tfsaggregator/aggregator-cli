@@ -25,8 +25,8 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            var instance = new InstanceName(Instance, ResourceGroup);
-            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
+            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
             bool ok = await mappings.RemoveRuleAsync(instance, Name);
 
             var rules = new AggregatorRules(context.Azure, context.Logger);

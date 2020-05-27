@@ -31,9 +31,9 @@ namespace aggregator.cli
                 context.Logger.WriteError("Specify at least one filtering parameter.");
                 return 2;
             }
-            var instance = string.IsNullOrEmpty(Instance) ? null : new InstanceName(Instance, ResourceGroup);
+            var instance = string.IsNullOrEmpty(Instance) ? null : context.Naming.Instance(Instance, ResourceGroup);
             // HACK we pass null as the next calls do not use the Azure connection
-            var mappings = new AggregatorMappings(context.Devops, null, context.Logger);
+            var mappings = new AggregatorMappings(context.Devops, null, context.Logger, context.Naming);
             bool any = false;
             cancellationToken.ThrowIfCancellationRequested();
             foreach (var item in await mappings.ListAsync(instance, Project))

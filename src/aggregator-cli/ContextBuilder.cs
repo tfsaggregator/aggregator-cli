@@ -14,21 +14,28 @@ namespace aggregator.cli
         internal ILogger Logger { get; }
         internal IAzure Azure { get; }
         internal VssConnection Devops { get; }
-        internal CommandContext(ILogger logger, IAzure azure, VssConnection devops)
+        internal INamingTemplates Naming { get; }
+        internal CommandContext(ILogger logger, IAzure azure, VssConnection devops, INamingTemplates naming)
         {
             Logger = logger;
             Azure = azure;
             Devops = devops;
+            Naming = naming;
         }
     }
 
     internal class ContextBuilder
     {
+        private readonly string namingTemplate;
         private readonly ILogger logger;
         private bool azureLogon;
         private bool devopsLogon;
 
-        internal ContextBuilder(ILogger logger) => this.logger = logger;
+        internal ContextBuilder(ILogger logger, string namingTemplate)
+        {
+            this.logger = logger;
+            this.namingTemplate = namingTemplate;
+        }
 
         internal ContextBuilder WithAzureLogon()
         {
@@ -75,7 +82,19 @@ namespace aggregator.cli
                 logger.WriteInfo($"Connected to {devops.Uri.Host}");
             }
 
-            return new CommandContext(logger, azure, devops);
+            INamingTemplates naming = null;
+            switch (namingTemplate.ToLower())
+            {
+                case "builtin":
+                    goto case "";
+                case "":
+                    naming = new BuiltInNamingTemplates();
+                    break;
+                default:
+                    throw new NotImplementedException($"TODO: implement Naming Template '{namingTemplate}'");
+            }
+
+            return new CommandContext(logger, azure, devops, naming);
         }
 
         private string TranslateResult(LogonResult reason)

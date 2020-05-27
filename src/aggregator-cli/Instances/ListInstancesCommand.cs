@@ -18,7 +18,7 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             if (!string.IsNullOrEmpty(Location))
             {
                 context.Logger.WriteVerbose($"Searching aggregator instances in {Location}...");

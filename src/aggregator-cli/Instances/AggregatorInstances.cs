@@ -15,20 +15,24 @@ namespace aggregator.cli
 {
     class AggregatorInstances : AzureBaseClass
     {
+        private readonly INamingTemplates naming;
 
-        public AggregatorInstances(IAzure azure, ILogger logger) : base(azure, logger)
-        { }
+        public AggregatorInstances(IAzure azure, ILogger logger, INamingTemplates naming)
+            : base(azure, logger)
+        {
+            this.naming = naming;
+        }
 
         public async Task<IEnumerable<ILogDataObject>> ListAllAsync(CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
             var filter = rgs
-                .Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix));
+                .Where(rg => rg.Name.StartsWith(naming.ResourceGroupInstancePrefix));
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
-                var name = InstanceName.FromResourceGroupName(rg.Name);
+                var name = naming.FromResourceGroupName(rg.Name);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
@@ -43,12 +47,12 @@ namespace aggregator.cli
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
             var filter = rgs.Where(rg =>
-                    rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
+                    rg.Name.StartsWith(naming.ResourceGroupInstancePrefix)
                     && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
-                var name = InstanceName.FromResourceGroupName(rg.Name);
+                var name = naming.FromResourceGroupName(rg.Name);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
@@ -67,7 +71,7 @@ namespace aggregator.cli
             foreach (var app in apps)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var name = InstanceName.FromFunctionAppName(app.Name, resourceGroup);
+                var name = naming.FromFunctionAppName(app.Name, resourceGroup);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     app.Region.Name,

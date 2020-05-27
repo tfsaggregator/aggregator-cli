@@ -32,8 +32,8 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            var instance = new InstanceName(Instance, ResourceGroup);
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var boards = new Boards(context.Devops, context.Logger);
 
             var streamTask = instances.StreamLogsAsync(instance, lastLinePattern: this.LastLinePattern, cancellationToken: cancellationToken);

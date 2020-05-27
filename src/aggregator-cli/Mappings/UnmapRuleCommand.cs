@@ -37,8 +37,8 @@ namespace aggregator.cli
                 context.Logger.WriteError($"Invalid event type.");
                 return 2;
             }
-            var instance = new InstanceName(Instance, ResourceGroup);
-            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
+            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
             ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
             return ok ? 0 : 1;
         }

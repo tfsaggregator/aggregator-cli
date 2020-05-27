@@ -34,8 +34,8 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon() // need the token, so we can save it in the app settings
                 .BuildAsync(cancellationToken);
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
-            var instance = new InstanceName(Name, ResourceGroup);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
+            var instance = context.Naming.Instance(Name, ResourceGroup);
             bool ok = false;
             if (Authentication)
             {

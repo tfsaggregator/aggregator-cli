@@ -16,9 +16,14 @@ namespace aggregator.cli
         [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
-        protected ContextBuilder Context => new ContextBuilder(Logger);
+        [Option("namingTemplate", Default = "", HelpText = "Define template-set for generating names of Azure Resources.")]
+        public string NamingTemplate { get; set; }
+
+        protected ContextBuilder Context => new ContextBuilder(Logger, this.NamingTemplate);
 
         internal ILogger Logger { get; private set; }
+
+        internal INamingTemplates NamingTemplates { get; private set; }
 
         internal abstract Task<int> RunAsync(CancellationToken cancellationToken);
 
