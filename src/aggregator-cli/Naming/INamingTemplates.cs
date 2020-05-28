@@ -7,6 +7,8 @@ namespace aggregator.cli
     {
         InstanceName Instance(string name, string resourceGroup);
 
+        InstanceNameExt InstanceExt(string name, string resourceGroup);
+
         // used only in ListInstances
         bool ResourceGroupMatches(IResourceGroup rg);
 

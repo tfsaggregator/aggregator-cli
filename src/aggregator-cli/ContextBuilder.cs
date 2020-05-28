@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.Services.WebApi;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,8 +92,9 @@ namespace aggregator.cli
                     naming = new BuiltInNamingTemplates();
                     break;
                 default:
-                    // TODO implement custom Naming Templates, e.g. reading from a file
-                    throw new NotImplementedException($"TODO: implement Naming Template '{namingTemplate}'");
+                    // implement custom Naming Templates, e.g. reading from a file
+                    naming = new FileNamingTemplates(File.ReadAllText(namingTemplate));
+                    break;
             }
 
             return new CommandContext(logger, azure, devops, naming);

@@ -6,31 +6,29 @@ namespace aggregator.cli
 {
     internal class InstanceName
     {
-        private readonly string resourceGroupPrefix;
-        private readonly string functionAppSuffix;
         private readonly string name;
         private readonly string resourceGroup;
+        private readonly bool isCustom;
+        private readonly string functionAppName;
 
-        protected InstanceName(string name, string resourceGroup, string resourceGroupPrefix, string functionAppSuffix)
+        protected InstanceName(string name, string resourceGroup, bool isCustom, string functionAppName)
         {
-            this.resourceGroupPrefix = resourceGroupPrefix;
-            this.functionAppSuffix = functionAppSuffix;
             this.name = name;
-            this.resourceGroup = string.IsNullOrEmpty(resourceGroup)
-                ? resourceGroupPrefix + name
-                : resourceGroup;
+            this.resourceGroup = resourceGroup;
+            this.isCustom = isCustom;
+            this.functionAppName = functionAppName;
         }
 
         // display to user
-        public string PlainName => name;
+        internal string PlainName => name;
 
         // name of Azure Resource Group
         internal string ResourceGroupName => resourceGroup;
 
-        internal bool IsCustom => resourceGroup != resourceGroupPrefix + name;
+        internal bool IsCustom => isCustom;
 
         // name of Azure App Service
-        internal string FunctionAppName=> name + functionAppSuffix;
+        internal string FunctionAppName=> functionAppName;
 
         internal string DnsHostName => $"{FunctionAppName}.azurewebsites.net";
 
