@@ -87,7 +87,7 @@ namespace aggregator.cli
             return Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false).FirstOrDefault() as T;
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceNameExt instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             bool ok = await MakeSureResourceGroupExistsAsync(instance.IsCustom, location, rgName, cancellationToken);
@@ -155,7 +155,7 @@ namespace aggregator.cli
             public string AppInsightLocation { get; set; }
         }
 
-        private async Task<bool> DeployArmTemplateAsync(InstanceName instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
+        private async Task<bool> DeployArmTemplateAsync(InstanceNameExt instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             // IDEA the template should create a Storage account and/or a Key Vault for Rules' use
             // TODO https://github.com/gjlumsden/AzureFunctionsSlots suggest that slots must be created in template
@@ -177,14 +177,18 @@ namespace aggregator.cli
                 return false;
             }
 
-            string appName = instance.FunctionAppName;
             var infoVersion = GetCustomAttribute<AssemblyInformationalVersionAttribute>();
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
                 // TODO give use more control by setting more parameters
                 {"webLocation", new Dictionary<string, object>{{"value", location } }},
                 {"aiLocation", new Dictionary<string, object>{{"value", tuning.AppInsightLocation } }},
                 {"storageAccountType", new Dictionary<string, object>{{"value", "Standard_LRS" } }},
-                {"appName", new Dictionary<string, object>{{"value", appName } }},
+
+                {"functionAppName", new Dictionary<string, object>{{"value", instance.FunctionAppName } }},
+                {"storageAccountName", new Dictionary<string, object>{{"value", instance.StorageAccountName } }},
+                {"hostingPlanName", new Dictionary<string, object>{{"value", instance.HostingPlanName } }},
+                {"appInsightName", new Dictionary<string, object>{{"value", instance.AppInsightName } }},
+
                 {"aggregatorVersion", new Dictionary<string, object>{{"value", infoVersion.InformationalVersion } }},
                 {"hostingPlanSkuName", new Dictionary<string, object>{{"value", tuning.HostingPlanSku } }},
                 {"hostingPlanSkuTier", new Dictionary<string, object>{{"value", tuning.HostingPlanTier } }},
