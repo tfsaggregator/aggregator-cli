@@ -4,9 +4,9 @@ using System.Text;
 
 namespace aggregator.cli
 {
-    internal class InstanceNameExt : InstanceName
+    internal class InstanceCreateNames : InstanceName
     {
-        protected InstanceNameExt(string name, string resourceGroup, bool isCustom, string functionAppName)
+        protected InstanceCreateNames(string name, string resourceGroup, bool isCustom, string functionAppName)
             :base(name, resourceGroup, isCustom, functionAppName)
         {
         }

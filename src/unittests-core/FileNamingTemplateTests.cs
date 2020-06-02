@@ -13,7 +13,7 @@ namespace unittests_core
         public void ResourceGroupName(string jsonData, string plainName, string resourceGroupName)
         {
             var templates = new FileNamingTemplates(jsonData);
-            var names = templates.InstanceExt("n", "rg");
+            var names = templates.GetInstanceCreateNames("n", "rg");
             Assert.Equal(plainName, names.PlainName);
             Assert.Equal(resourceGroupName, names.ResourceGroupName);
         }
@@ -26,7 +26,7 @@ namespace unittests_core
         public void FunctionAppName(string jsonData, string plainName, string functionAppName)
         {
             var templates = new FileNamingTemplates(jsonData);
-            var names = templates.InstanceExt("n", "rg");
+            var names = templates.GetInstanceCreateNames("n", "rg");
             Assert.Equal(plainName, names.PlainName);
             Assert.Equal(functionAppName, names.FunctionAppName);
         }
@@ -39,7 +39,7 @@ namespace unittests_core
         public void HostingPlanName(string jsonData, string plainName, string hostingPlanName)
         {
             var templates = new FileNamingTemplates(jsonData);
-            var names = templates.InstanceExt("n", "rg");
+            var names = templates.GetInstanceCreateNames("n", "rg");
             Assert.Equal(plainName, names.PlainName);
             Assert.Equal(hostingPlanName, names.HostingPlanName);
         }
@@ -52,7 +52,7 @@ namespace unittests_core
         public void AppInsightName(string jsonData, string plainName, string appInsightName)
         {
             var templates = new FileNamingTemplates(jsonData);
-            var names = templates.InstanceExt("n", "rg");
+            var names = templates.GetInstanceCreateNames("n", "rg");
             Assert.Equal(plainName, names.PlainName);
             Assert.Equal(appInsightName, names.AppInsightName);
         }
@@ -65,7 +65,7 @@ namespace unittests_core
         public void StorageAccountName(string jsonData, string plainName, string storageAccountName)
         {
             var templates = new FileNamingTemplates(jsonData);
-            var names = templates.InstanceExt("n", "rg");
+            var names = templates.GetInstanceCreateNames("n", "rg");
             Assert.Equal(plainName, names.PlainName);
             Assert.Equal(storageAccountName, names.StorageAccountName);
         }

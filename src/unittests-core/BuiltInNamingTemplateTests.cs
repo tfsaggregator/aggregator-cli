@@ -9,7 +9,7 @@ namespace unittests_core
         public void CustomResourceGroupName()
         {
             var templates = new BuiltInNamingTemplates();
-            var names = templates.InstanceExt("n", "rg");
+            var names = templates.GetInstanceCreateNames("n", "rg");
             Assert.Equal("n", names.PlainName);
             Assert.Equal("naggregator", names.FunctionAppName);
             Assert.Equal("rg", names.ResourceGroupName);
@@ -20,7 +20,7 @@ namespace unittests_core
         public void DefaultResourceGroupName()
         {
             var templates = new BuiltInNamingTemplates();
-            var names = templates.InstanceExt("n", null);
+            var names = templates.GetInstanceCreateNames("n", null);
             Assert.Equal("n", names.PlainName);
             Assert.Equal("naggregator", names.FunctionAppName);
             Assert.Equal("aggregator-n", names.ResourceGroupName);

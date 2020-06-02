@@ -87,7 +87,7 @@ namespace aggregator.cli
             return Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false).FirstOrDefault() as T;
         }
 
-        internal async Task<bool> AddAsync(InstanceNameExt instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceCreateNames instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             bool ok = await MakeSureResourceGroupExistsAsync(instance.IsCustom, location, rgName, cancellationToken);
@@ -155,7 +155,7 @@ namespace aggregator.cli
             public string AppInsightLocation { get; set; }
         }
 
-        private async Task<bool> DeployArmTemplateAsync(InstanceNameExt instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
+        private async Task<bool> DeployArmTemplateAsync(InstanceCreateNames instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             // IDEA the template should create a Storage account and/or a Key Vault for Rules' use
             // TODO https://github.com/gjlumsden/AzureFunctionsSlots suggest that slots must be created in template

@@ -24,7 +24,7 @@ namespace aggregator.cli
                 );
         }
 
-        private class InstanceName_ : InstanceNameExt
+        private class InstanceName_ : InstanceCreateNames
         {
             internal InstanceName_(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
                 : base(name, resourceGroup, isCustom, functionAppName)
@@ -47,9 +47,9 @@ namespace aggregator.cli
                 affixes);
         }
 
-        public InstanceNameExt InstanceExt(string name, string resourceGroup)
+        public InstanceCreateNames GetInstanceCreateNames(string name, string resourceGroup)
         {
-            return Instance(name, resourceGroup) as InstanceNameExt;
+            return Instance(name, resourceGroup) as InstanceCreateNames;
         }
 
         // used only in ListInstances
