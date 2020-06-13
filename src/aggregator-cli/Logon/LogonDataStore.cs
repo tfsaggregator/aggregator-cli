@@ -42,7 +42,9 @@ namespace aggregator.cli
             get
             {
                 return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.LocalApplicationData,
+                        Environment.SpecialFolderOption.Create),
                     "aggregator-cli",
                     Tag + ".dat");
             }

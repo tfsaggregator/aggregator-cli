@@ -3,13 +3,22 @@ using Microsoft.TeamFoundation.TestManagement.WebApi.Legacy;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace aggregator.cli
 {
     class GitHubVersionResponse
     {
-        public const string CacheFileName = "githubresponse.cache";
+        public static string CacheFileName =>
+            Path.Combine(
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.LocalApplicationData,
+                    Environment.SpecialFolderOption.Create),
+                    "aggregator-cli",
+                    "githubresponse.cache");
+
+
         private readonly TimeSpan _cacheExpiration = new TimeSpan(1, 0, 0, 0);
 
         public string Tag { get; set; }
