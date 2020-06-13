@@ -11,12 +11,7 @@ namespace aggregator.cli
     class GitHubVersionResponse
     {
         public static string CacheFileName =>
-            Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.LocalApplicationData,
-                    Environment.SpecialFolderOption.Create),
-                    "aggregator-cli",
-                    "githubresponse.cache");
+            LocalAppData.GetPath("githubresponse.cache");
 
 
         private readonly TimeSpan _cacheExpiration = new TimeSpan(1, 0, 0, 0);
