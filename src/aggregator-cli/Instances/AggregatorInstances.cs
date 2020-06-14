@@ -170,7 +170,7 @@ namespace aggregator.cli
 
             var parsedTemplate = JObject.Parse(armTemplateString);
             // sanity checks
-            if (parsedTemplate.SelectToken("parameters.appName") == null)
+            if (parsedTemplate.SelectToken("parameters.aggregatorVersion") == null)
             {
                 // not good, blah
                 logger.WriteWarning($"Something is wrong with the ARM template");

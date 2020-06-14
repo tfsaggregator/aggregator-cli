@@ -23,8 +23,6 @@ namespace aggregator.cli
 
         internal ILogger Logger { get; private set; }
 
-        internal INamingTemplates NamingTemplates { get; private set; }
-
         internal abstract Task<int> RunAsync(CancellationToken cancellationToken);
 
         internal int Run(CancellationToken cancellationToken)
