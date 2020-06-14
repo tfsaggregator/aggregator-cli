@@ -2,14 +2,9 @@
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
-using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
-
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
-// addset the custom test's collection orderer
-[assembly: TestCollectionOrderer(CollectionPriorityOrderer.TypeName, CollectionPriorityOrderer.AssembyName)]
 
 namespace integrationtests.cli
 {
