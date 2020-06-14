@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Management.Fluent;
+﻿using Microsoft.Azure.Management.AppService.Fluent.Models;
+using Microsoft.Azure.Management.Fluent;
 using Octokit;
 using Semver;
 using System;
@@ -162,18 +163,31 @@ namespace aggregator.cli
                         ? "v" + requiredVersion
                         : requiredVersion)
                     : requiredVersion);
-
-            logger.WriteVerbose($"Checking runtime package versions in GitHub");
-            (string rel_name, DateTimeOffset? rel_when, string rel_url) = await FindVersionInGitHubAsync(tag);
-            if (string.IsNullOrEmpty(rel_name))
+            var gitHubVersion = GitHubVersionResponse.TryReadFromCache();
+            if (gitHubVersion != null)
+                logger.WriteVerbose("located a cached GitHub vesion query response");
+            if (gitHubVersion == null || !gitHubVersion.CacheIsInDate() || tag != gitHubVersion.Tag)
             {
-                logger.WriteError($"Requested runtime {requiredVersion} version does not exists.");
+                logger.WriteVerbose($"Checking runtime package versions in GitHub");
+                gitHubVersion = await FindVersionInGitHubAsync(tag);
+                if (gitHubVersion != null && gitHubVersion.SaveCache())
+                    logger.WriteVerbose($"Saved GitHub response to disk");
+            }
+            else
+            {
+                logger.WriteVerbose($"Cached version is recent enough to not require checking GitHub");
+            }
+            
+            if (string.IsNullOrEmpty(gitHubVersion.Name))
+            {
+                logger.WriteError($"Requested runtime {requiredVersion} version does not exist.");
                 return false;
             }
-            logger.WriteVerbose($"Found {rel_name} on {rel_when} in GitHub .");
-            if (rel_name[0] == 'v') rel_name = rel_name.Substring(1);
-            var requiredRuntimeVer = SemVersion.Parse(rel_name);
-            logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {rel_when}).");
+            logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
+            
+            if (gitHubVersion.Name[0] == 'v') gitHubVersion.Name = gitHubVersion.Name.Substring(1);
+            var requiredRuntimeVer = SemVersion.Parse(gitHubVersion.Name);
+            logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {gitHubVersion.When}).");
 
             var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
             logger.WriteVerbose($"Locally cached Runtime package version is {localRuntimeVer}.");
@@ -185,8 +199,8 @@ namespace aggregator.cli
             {
                 if (requiredRuntimeVer > localRuntimeVer)
                 {
-                    logger.WriteVerbose($"Downloading runtime package {rel_name}");
-                    await DownloadAsync(rel_url, cancellationToken);
+                    logger.WriteVerbose($"Downloading runtime package {gitHubVersion.Name}");
+                    await DownloadAsync(gitHubVersion.Url, cancellationToken);
                     logger.WriteInfo($"Runtime package downloaded.");
                 }
                 else
@@ -280,7 +294,7 @@ namespace aggregator.cli
             }
         }
 
-        private async Task<(string name, DateTimeOffset? when, string url)> FindVersionInGitHubAsync(string tag = "latest")
+        private async Task<GitHubVersionResponse> FindVersionInGitHubAsync(string tag = "latest")
         {
             var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", cliVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");
@@ -295,7 +309,14 @@ namespace aggregator.cli
                 return default;
             }
             var asset = release.Assets.Where(a => a.Name == RuntimePackageFile).FirstOrDefault();
-            return (name: release.Name, when: release.PublishedAt, url: asset.BrowserDownloadUrl);
+            return new GitHubVersionResponse() 
+            { 
+                Tag = tag, 
+                Name = release.Name,
+                When = release.PublishedAt, 
+                Url = asset.BrowserDownloadUrl, 
+                ResponseDate = DateTime.Now 
+            };
         }
 
         private async Task<string> DownloadAsync(string downloadUrl, CancellationToken cancellationToken)

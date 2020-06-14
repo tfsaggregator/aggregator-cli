@@ -37,16 +37,8 @@ namespace aggregator.cli
 
         public string Tag { get; private set; }
         public char[] Magic => Tag.ToCharArray();
-        protected string LogonDataPath
-        {
-            get
-            {
-                return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "aggregator-cli",
-                    Tag + ".dat");
-            }
-        }
+        protected string LogonDataPath => 
+            LocalAppData.GetPath(Tag + ".dat");
 
         public string Save<T>(T data)
             where T : LogonDataBase
