@@ -2,3 +2,4 @@
 
 [assembly: InternalsVisibleTo("unittests-core")]
 [assembly: InternalsVisibleTo("unittests-ruleng")]
+[assembly: InternalsVisibleTo("integrationtests-cli")]

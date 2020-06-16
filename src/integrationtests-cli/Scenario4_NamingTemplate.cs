@@ -1,4 +1,6 @@
-﻿using Microsoft.Azure.Management.Fluent;
+﻿using System.IO;
+using aggregator.cli;
+using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
@@ -168,6 +170,10 @@ namespace integrationtests.cli
                 .Authenticate(credentials)
                 .WithSubscription(TestLogonData.SubscriptionId);
 
+            
+            var templates = new FileNamingTemplates(File.ReadAllText(templateFile));
+            var rgName = templates.GetResourceGroupName(resourceGroupName);
+
             // tip from https://www.wintellect.com/how-to-remove-all-resources-in-a-resource-group-without-removing-the-group-on-azure/
             string armTemplateString = @"
 {
@@ -181,7 +187,7 @@ namespace integrationtests.cli
 ";
             string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
             azure.Deployments.Define(deploymentName)
-                    .WithExistingResourceGroup(resourceGroupName)
+                    .WithExistingResourceGroup(rgName)
                     .WithTemplate(armTemplateString)
                     .WithParameters("{}")
                     .WithMode(DeploymentMode.Complete)
