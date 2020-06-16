@@ -1,0 +1,12 @@
+{
+  "ResourceGroupPrefix": "aggregator-",
+  "ResourceGroupSuffix": "-gv1",
+  "FunctionAppPrefix": "fp",
+  "FunctionAppSuffix": "gv33",
+  "HostingPlanPrefix": "fp",
+  "HostingPlanSuffix": "gv33-plan",
+  "AppInsightPrefix": "fp",
+  "AppInsightSuffix": "gv33-ai",
+  "StorageAccountPrefix": "strg",
+  "StorageAccountSuffix": "gv33"
+}

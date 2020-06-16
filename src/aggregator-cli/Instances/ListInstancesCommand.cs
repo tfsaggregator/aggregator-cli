@@ -21,18 +21,18 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             if (!string.IsNullOrEmpty(Location))
             {
-                context.Logger.WriteVerbose($"Searching aggregator instances in {Location}...");
+                context.Logger.WriteVerbose($"Searching aggregator instances in {Location} Region...");
                 return await ListByLocationAsync(context, instances, cancellationToken);
 
             }
             else if (!string.IsNullOrEmpty(ResourceGroup))
             {
-                context.Logger.WriteVerbose($"Searching aggregator instances in {ResourceGroup}...");
+                context.Logger.WriteVerbose($"Searching aggregator instances in {ResourceGroup} Resource Group...");
                 return await ListInResourceGroupAsync(context, instances, cancellationToken);
             }
             else
             {
-                context.Logger.WriteVerbose($"Searching aggregator instances in subscription...");
+                context.Logger.WriteVerbose($"Searching aggregator instances in whole subscription...");
                 return await ListAllAsync(context, instances, cancellationToken);
             }
         }
@@ -48,7 +48,7 @@ namespace aggregator.cli
             }
             if (!any)
             {
-                context.Logger.WriteInfo($"No aggregator instances found in {Location}.");
+                context.Logger.WriteInfo($"No aggregator instances found in {Location} Region.");
             }
             return 0;
         }
@@ -65,7 +65,7 @@ namespace aggregator.cli
 
             if (!any)
             {
-                context.Logger.WriteInfo("No aggregator instances found.");
+                context.Logger.WriteInfo($"No aggregator instances found in {ResourceGroup} Resource Group.");
             }
 
             return 0;

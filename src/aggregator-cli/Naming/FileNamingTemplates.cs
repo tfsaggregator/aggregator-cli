@@ -88,5 +88,10 @@ namespace aggregator.cli
             host = host.Substring(0, host.IndexOf('.'));
             return Instance(StripAffixes(affixes.FunctionAppPrefix, host, affixes.FunctionAppSuffix), null);
         }
+
+        public string GetResourceGroupName(string resourceGroup)
+        {
+            return $"{affixes.ResourceGroupPrefix}{resourceGroup}{affixes.ResourceGroupSuffix}";
+        }
     }
 }

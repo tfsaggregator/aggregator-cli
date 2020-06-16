@@ -10,6 +10,9 @@ namespace aggregator.cli
         InstanceCreateNames GetInstanceCreateNames(string name, string resourceGroup);
 
         // used only in ListInstances
+        string GetResourceGroupName(string resourceGroup);
+
+        // used only in ListInstances
         bool ResourceGroupMatches(IResourceGroup rg);
 
         // used only in ListInstances

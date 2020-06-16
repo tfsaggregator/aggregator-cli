@@ -65,7 +65,8 @@ namespace aggregator.cli
         internal async Task<IEnumerable<ILogDataObject>> ListInResourceGroupAsync(string resourceGroup, CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
-            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup, cancellationToken: cancellationToken);
+            string rgName = naming.GetResourceGroupName(resourceGroup);
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName, cancellationToken: cancellationToken);
 
             var result = new List<InstanceOutputData>();
             foreach (var app in apps)

@@ -74,5 +74,10 @@ namespace aggregator.cli
             host = host.Substring(0, host.IndexOf('.'));
             return Instance(host.Remove(host.Length - affixes.FunctionAppSuffix.Length), null);
         }
+
+        public string GetResourceGroupName(string resourceGroup)
+        {
+            return resourceGroup;
+        }
     }
 }

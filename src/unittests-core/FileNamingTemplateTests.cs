@@ -122,5 +122,16 @@ namespace unittests_core
             Assert.Equal(expected, actual.PlainName);
         }
 
+        [Theory]
+        [InlineData(@"{""ResourceGroupPrefix"":""a""}", "n", "an")]
+        [InlineData(@"{""ResourceGroupSuffix"":""z""}", "n", "nz")]
+        [InlineData(@"{""ResourceGroupPrefix"":""p"",""ResourceGroupSuffix"":""s""}", "n", "pns")]
+        public void GetResourceGroupName_Succeeds(string jsonData, string rgInput, string expected)
+        {
+            var templates = new FileNamingTemplates(jsonData);
+            var rgOut = templates.GetResourceGroupName(rgInput);
+            Assert.Equal(expected, rgOut);
+        }
+
     }
 }
