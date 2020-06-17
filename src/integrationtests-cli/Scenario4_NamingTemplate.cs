@@ -158,42 +158,8 @@ namespace integrationtests.cli
         [Fact, Order(999)]
         void FinalCleanUp()
         {
-            var credentials = SdkContext.AzureCredentialsFactory
-                .FromServicePrincipal(
-                    TestLogonData.ClientId,
-                    TestLogonData.ClientSecret,
-                    TestLogonData.TenantId,
-                    AzureEnvironment.AzureGlobalCloud);
-            var azure = Azure
-                .Configure()
-                .WithLogLevel(HttpLoggingDelegatingHandler.Level.None)
-                .Authenticate(credentials)
-                .WithSubscription(TestLogonData.SubscriptionId);
-
-            
-            var templates = new FileNamingTemplates(File.ReadAllText(templateFile));
-            var rgName = templates.GetResourceGroupName(resourceGroupName);
-
-            // tip from https://www.wintellect.com/how-to-remove-all-resources-in-a-resource-group-without-removing-the-group-on-azure/
-            string armTemplateString = @"
-{
-  ""$schema"": ""https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#"",
-  ""contentVersion"": ""1.0.0.0"",
-  ""parameters"": {},
-  ""variables"": {},
-  ""resources"": [],
-  ""outputs"": {}
-}
-";
-            string deploymentName = SdkContext.RandomResourceName("aggregator", 24);
-            azure.Deployments.Define(deploymentName)
-                    .WithExistingResourceGroup(rgName)
-                    .WithTemplate(armTemplateString)
-                    .WithParameters("{}")
-                    .WithMode(DeploymentMode.Complete)
-                    .Create();
-
-            Assert.True(true);
+            (int rc, string output) = RunAggregatorCommand($"test.cleanup --verbose --namingTemplate {templateFile} --resourceGroup {resourceGroupName} ");
+            Assert.Equal(0, rc);
         }
     }
 }

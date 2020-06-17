@@ -5,7 +5,7 @@ using CommandLine;
 namespace aggregator.cli
 {
     [Verb("test.create", HelpText = "Creates a work item and capture the log.", Hidden = true)]
-    class TestCommand : CommandBase
+    class CreateTestCommand : CommandBase
     {
         [Option('p', "project", Required = true, HelpText = "Azure DevOps project name.")]
         public string Project { get; set; }
