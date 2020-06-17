@@ -61,7 +61,7 @@ namespace aggregator.cli
                 });
                 var types = new Type[]
                 {
-                    typeof(TestCommand),
+                    typeof(CreateTestCommand), typeof(CleanupTestCommand),
                     typeof(LogonAzureCommand), typeof(LogonDevOpsCommand),
                     typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UpdateInstanceCommand),
                     typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
@@ -73,7 +73,8 @@ namespace aggregator.cli
                 int rc = -1;
                 var cancellationToken = cancellationTokenSource.Token;
                 parserResult
-                    .WithParsed<TestCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<CreateTestCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<CleanupTestCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run(cancellationToken))

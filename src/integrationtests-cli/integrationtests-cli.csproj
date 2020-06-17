@@ -26,6 +26,9 @@
     <None Update="logon-data.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="scenario4-namingtemplate.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="test5.rule">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

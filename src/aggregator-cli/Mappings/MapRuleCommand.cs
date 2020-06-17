@@ -44,7 +44,7 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
+            var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
             bool ok = DevOpsEvents.IsValidEvent(Event);
             if (!ok)
             {
@@ -60,7 +60,7 @@ namespace aggregator.cli
                 Fields = FilterFields
             };
 
-            var instance = new InstanceName(Instance, ResourceGroup);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
             var id = await mappings.AddAsync(Project, Event, filters, instance, Rule, ImpersonateExecution, cancellationToken);
             return id.Equals(Guid.Empty) ? 1 : 0;
         }

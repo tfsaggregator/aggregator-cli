@@ -29,15 +29,15 @@ namespace aggregator.cli
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
 
-            var instance = new InstanceName(Name, ResourceGroup);
+            var instance = context.Naming.Instance(Name, ResourceGroup);
 
             if (!Mappings)
             {
-                var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger);
+                var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
                 _ = await mappings.RemoveInstanceAsync(instance);
             }
 
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var ok = await instances.RemoveAsync(instance, Location);
             return ok ? 0 : 1;
         }

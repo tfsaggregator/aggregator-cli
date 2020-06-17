@@ -1,10 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.TeamFoundation.TestManagement.WebApi.Legacy;
+﻿using System;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace aggregator.cli
 {

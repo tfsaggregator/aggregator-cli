@@ -1,15 +1,11 @@
-﻿using CommandLine;
-using Octokit;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
 
 namespace aggregator.cli
 {
     [Verb("test.create", HelpText = "Creates a work item and capture the log.", Hidden = true)]
-    class TestCommand : CommandBase
+    class CreateTestCommand : CommandBase
     {
         [Option('p', "project", Required = true, HelpText = "Azure DevOps project name.")]
         public string Project { get; set; }
@@ -32,8 +28,8 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            var instance = new InstanceName(Instance, ResourceGroup);
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var boards = new Boards(context.Devops, context.Logger);
 
             var streamTask = instances.StreamLogsAsync(instance, lastLinePattern: this.LastLinePattern, cancellationToken: cancellationToken);

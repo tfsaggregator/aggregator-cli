@@ -1,7 +1,30 @@
 # Sample Aggregator CLI usage
 
 run `aggregator-cli.exe` (Windows), `aggregator-cli` (Linux) or `dotnet aggregator-cli.dll` followed by the command and any option.
+
+
+### Options valid for all command
 All commands accept the `--verbose` option to print additional messages for troubleshooting.
+
+With `--namingTemplate`, you can specify affixes for all Azure resource that will be created or used.
+ follows
+
+```json
+{
+  "ResourceGroupPrefix": "aggregator-",
+  "ResourceGroupSuffix": "-sfx",
+  "FunctionAppPrefix": "fp",
+  "FunctionAppSuffix": "fs",
+  "HostingPlanPrefix": "hp",
+  "HostingPlanSuffix": "hs",
+  "AppInsightPrefix": "aip",
+  "AppInsightSuffix": "ais",
+  "StorageAccountPrefix": "strg",
+  "StorageAccountSuffix": "31415"
+}
+```
+
+If you use this, the `--resourceGroup` option is mandatory.
 
 
 ### Logon

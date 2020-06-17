@@ -28,8 +28,8 @@ namespace aggregator.cli.Instances
                                 .WithAzureLogon()
                                 .BuildAsync(cancellationToken);
 
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
-            var instance = new InstanceName(Instance, ResourceGroup);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
 
             bool ok = await instances.UpdateAsync(instance, RequiredVersion, SourceUrl, cancellationToken);
             return ok ? 0 : 1;
