@@ -32,6 +32,13 @@ specify
 **Attention:** To use this the identify accessing Azure DevOps needs special permissions, 
 see [Rule Examples](setup.md#azure-devops-personal-access-token--PAT-).
 
+## check directives
+The check directives allow a fine control on a rule's behaviour.
+
+### check revision directive
+This directive disable the safety check which forbids concurrent updates (see [Parallelism](parallelism.md)).
+If you set `.check revision false`, and the work item was updated after the rule was triggered but before any change made by the rule are saved, the rule changes 
+With `.check revision true` (assumed by default), you will receive a **VS403351** error, in case the work item changed in between the rule reading and writing.
 
 # WorkItem Object
 The initial WorkItem object, the one which triggered the rule, is contained in the `self` variable.
