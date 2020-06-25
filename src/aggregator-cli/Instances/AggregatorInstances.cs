@@ -15,20 +15,24 @@ namespace aggregator.cli
 {
     class AggregatorInstances : AzureBaseClass
     {
+        private readonly INamingTemplates naming;
 
-        public AggregatorInstances(IAzure azure, ILogger logger) : base(azure, logger)
-        { }
+        public AggregatorInstances(IAzure azure, ILogger logger, INamingTemplates naming)
+            : base(azure, logger)
+        {
+            this.naming = naming;
+        }
 
         public async Task<IEnumerable<ILogDataObject>> ListAllAsync(CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
             var filter = rgs
-                .Where(rg => rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix));
+                .Where(rg => naming.ResourceGroupMatches(rg));
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
-                var name = InstanceName.FromResourceGroupName(rg.Name);
+                var name = naming.FromResourceGroupName(rg.Name);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
@@ -42,13 +46,13 @@ namespace aggregator.cli
         {
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
-            var filter = rgs.Where(rg =>
-                    rg.Name.StartsWith(InstanceName.ResourceGroupInstancePrefix)
-                    && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
+            var filter = rgs.Where(
+                rg => naming.ResourceGroupMatches(rg)
+                && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
-                var name = InstanceName.FromResourceGroupName(rg.Name);
+                var name = naming.FromResourceGroupName(rg.Name);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
@@ -61,13 +65,14 @@ namespace aggregator.cli
         internal async Task<IEnumerable<ILogDataObject>> ListInResourceGroupAsync(string resourceGroup, CancellationToken cancellationToken)
         {
             var runtime = new FunctionRuntimePackage(logger);
-            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(resourceGroup, cancellationToken: cancellationToken);
+            string rgName = naming.GetResourceGroupName(resourceGroup);
+            var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName, cancellationToken: cancellationToken);
 
             var result = new List<InstanceOutputData>();
             foreach (var app in apps)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var name = InstanceName.FromFunctionAppName(app.Name, resourceGroup);
+                var name = naming.FromFunctionAppName(app.Name, resourceGroup);
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     app.Region.Name,
@@ -83,7 +88,7 @@ namespace aggregator.cli
             return Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false).FirstOrDefault() as T;
         }
 
-        internal async Task<bool> AddAsync(InstanceName instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
+        internal async Task<bool> AddAsync(InstanceCreateNames instance, string location, string requiredVersion, string sourceUrl, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             string rgName = instance.ResourceGroupName;
             bool ok = await MakeSureResourceGroupExistsAsync(instance.IsCustom, location, rgName, cancellationToken);
@@ -151,7 +156,7 @@ namespace aggregator.cli
             public string AppInsightLocation { get; set; }
         }
 
-        private async Task<bool> DeployArmTemplateAsync(InstanceName instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
+        private async Task<bool> DeployArmTemplateAsync(InstanceCreateNames instance, string location, string rgName, InstanceFineTuning tuning, CancellationToken cancellationToken)
         {
             // IDEA the template should create a Storage account and/or a Key Vault for Rules' use
             // TODO https://github.com/gjlumsden/AzureFunctionsSlots suggest that slots must be created in template
@@ -166,21 +171,25 @@ namespace aggregator.cli
 
             var parsedTemplate = JObject.Parse(armTemplateString);
             // sanity checks
-            if (parsedTemplate.SelectToken("parameters.appName") == null)
+            if (parsedTemplate.SelectToken("parameters.aggregatorVersion") == null)
             {
                 // not good, blah
                 logger.WriteWarning($"Something is wrong with the ARM template");
                 return false;
             }
 
-            string appName = instance.FunctionAppName;
             var infoVersion = GetCustomAttribute<AssemblyInformationalVersionAttribute>();
             var templateParams = new Dictionary<string, Dictionary<string, object>>{
                 // TODO give use more control by setting more parameters
                 {"webLocation", new Dictionary<string, object>{{"value", location } }},
                 {"aiLocation", new Dictionary<string, object>{{"value", tuning.AppInsightLocation } }},
                 {"storageAccountType", new Dictionary<string, object>{{"value", "Standard_LRS" } }},
-                {"appName", new Dictionary<string, object>{{"value", appName } }},
+
+                {"functionAppName", new Dictionary<string, object>{{"value", instance.FunctionAppName } }},
+                {"storageAccountName", new Dictionary<string, object>{{"value", instance.StorageAccountName } }},
+                {"hostingPlanName", new Dictionary<string, object>{{"value", instance.HostingPlanName } }},
+                {"appInsightName", new Dictionary<string, object>{{"value", instance.AppInsightName } }},
+
                 {"aggregatorVersion", new Dictionary<string, object>{{"value", infoVersion.InformationalVersion } }},
                 {"hostingPlanSkuName", new Dictionary<string, object>{{"value", tuning.HostingPlanSku } }},
                 {"hostingPlanSkuTier", new Dictionary<string, object>{{"value", tuning.HostingPlanTier } }},

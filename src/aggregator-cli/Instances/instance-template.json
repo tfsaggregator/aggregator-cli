@@ -2,10 +2,31 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "appName": {
+    "functionAppName": {
       "type": "string",
       "metadata": {
-        "description": "The name of the function app that you wish to create."
+        "description": "The name of the Function App that you wish to create."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[concat('aggregator', uniquestring(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the Storage Account associated with the Function App."
+      }
+    },
+    "hostingPlanName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('functionAppName'),'-plan')]",
+      "metadata": {
+        "description": "The name of the Hosting Plan associated with the Function App."
+      }
+    },
+    "appInsightName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('functionAppName'),'-ai')]",
+      "metadata": {
+        "description": "The name of the AppInsight instance associated with the Function App."
       }
     },
     "aggregatorVersion": {
@@ -57,16 +78,12 @@
 
   },
   "variables": {
-    "functionAppName": "[parameters('appName')]",
-    "hostingPlanName": "[concat(parameters('appName'),'-plan')]",
-    "appInsightName": "[concat(parameters('appName'),'-ai')]",
-    "storageAccountName": "[concat('aggregator', uniquestring(resourceGroup().id))]",
-    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
-      "name": "[variables('storageAccountName')]",
+      "name": "[parameters('storageAccountName')]",
       "apiVersion": "2016-12-01",
       "location": "[parameters('webLocation')]",
       "kind": "Storage",
@@ -80,22 +97,22 @@
     {
       "type": "microsoft.insights/components",
       "kind": "web",
-      "name": "[variables('appInsightName')]",
+      "name": "[parameters('appInsightName')]",
       "apiVersion": "2015-05-01",
       "location": "[parameters('aiLocation')]",
       "tags": {
-        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('functionAppName'))]": "Resource",
+        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('functionAppName'))]": "Resource",
         "aggregatorVersion": "[parameters('aggregatorVersion')]"
       },
       "properties": {
         "Application_Type": "web",
-        "applicationId": "[variables('appInsightName')]"
+        "applicationId": "[parameters('appInsightName')]"
       }
     },
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2016-09-01",
-      "name": "[variables('hostingPlanName')]",
+      "name": "[parameters('hostingPlanName')]",
       "location": "[parameters('webLocation')]",
       "properties": {
       },
@@ -110,36 +127,36 @@
     {
       "apiVersion": "2015-08-01",
       "type": "Microsoft.Web/sites",
-      "name": "[variables('functionAppName')]",
+      "name": "[parameters('functionAppName')]",
       "location": "[parameters('webLocation')]",
       "kind": "functionapp",
       "dependsOn": [
-        "[resourceId('microsoft.insights/components', variables('appInsightName'))]",
-        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('microsoft.insights/components', parameters('appInsightName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
       ],
       "tags": {
         "aggregatorVersion": "[parameters('aggregatorVersion')]"
       },
       "properties": {
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
         "siteConfig": {
           "appSettings": [
             {
               "name": "AzureWebJobsDashboard",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower(variables('functionAppName'))]"
+              "value": "[toLower(parameters('functionAppName'))]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -163,7 +180,7 @@
             },
             {
               "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-              "value": "[reference(concat('microsoft.insights/components/', variables('appInsightName'))).InstrumentationKey]"
+              "value": "[reference(concat('microsoft.insights/components/', parameters('appInsightName'))).InstrumentationKey]"
             },
             {
               "name": "Aggregator_VstsTokenType",

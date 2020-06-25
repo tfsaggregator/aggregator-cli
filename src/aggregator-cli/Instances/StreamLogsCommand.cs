@@ -21,8 +21,8 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
-            var instance = new InstanceName(Instance, ResourceGroup);
-            var instances = new AggregatorInstances(context.Azure, context.Logger);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
+            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             bool ok = await instances.StreamLogsAsync(instance, cancellationToken);
             return ok ? 0 : 1;
         }

@@ -33,7 +33,7 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
-            var instance = new InstanceName(Instance, ResourceGroup);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool ok = await rules.UpdateAsync(instance, Name, File, RequiredVersion, SourceUrl, cancellationToken);
             return ok ? 0 : 1;

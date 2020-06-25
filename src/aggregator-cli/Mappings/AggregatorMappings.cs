@@ -17,12 +17,14 @@ namespace aggregator.cli
         private readonly VssConnection devops;
         private readonly IAzure azure;
         private readonly ILogger logger;
+        private readonly INamingTemplates naming;
 
-        public AggregatorMappings(VssConnection devops, IAzure azure, ILogger logger)
+        public AggregatorMappings(VssConnection devops, IAzure azure, ILogger logger, INamingTemplates naming)
         {
             this.devops = devops;
             this.azure = azure;
             this.logger = logger;
+            this.naming = naming;
         }
 
         internal async Task<IEnumerable<MappingOutputData>> ListAsync(InstanceName instance, string projectName)
@@ -56,7 +58,7 @@ namespace aggregator.cli
                 // HACK need to factor the URL<->rule_name
                 Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url","https://example.com"));
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
-                string ruleFullName = $"{InstanceName.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
+                string ruleFullName = $"{naming.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(
                     new MappingOutputData(instance, ruleFullName, ruleUrl.IsImpersonationEnabled(), foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );

@@ -21,7 +21,7 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
-            var instance = new InstanceName(Instance, ResourceGroup);
+            var instance = context.Naming.Instance(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;
             foreach (var ruleInformation in await rules.ListAsync(instance, cancellationToken))

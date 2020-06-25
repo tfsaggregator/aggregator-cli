@@ -285,8 +285,6 @@ namespace aggregator.cli
 
                 return await TriggerSyncing(client, instance, cancellationToken);
             }
-
-            return true;
         }
 
         // see https://docs.microsoft.com/en-us/azure/azure-functions/functions-deployment-technologies#trigger-syncing
