@@ -22,12 +22,7 @@ namespace aggregator.Engine
             if (item.Id.HasValue)
             {
                 Id = new PermanentWorkItemId(item.Id.Value);
-                Changes.Add(new JsonPatchOperation()
-                {
-                    Operation = Operation.Test,
-                    Path = "/rev",
-                    Value = item.Rev
-                });
+                AddRevisionCheck(item, context);
                 //for simplify testing: item.Url can be null
                 IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id.Value}", StringComparison.OrdinalIgnoreCase) ?? false;
 
@@ -48,7 +43,6 @@ namespace aggregator.Engine
             }
         }
 
-
         internal WorkItemWrapper(EngineContext context, WorkItem item, bool isReadOnly)
         // we cannot reuse the code, because tracking is different
         //: this(context, item)
@@ -58,16 +52,24 @@ namespace aggregator.Engine
             Relations = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             Id = new PermanentWorkItemId(item.Id.Value);
-            Changes.Add(new JsonPatchOperation()
-            {
-                Operation = Operation.Test,
-                Path = "/rev",
-                Value = item.Rev
-            });
+            AddRevisionCheck(item, context);
             IsDeleted = item.Url?.EndsWith($"/recyclebin/{item.Id}", StringComparison.OrdinalIgnoreCase) ?? false;
 
             IsReadOnly = isReadOnly;
             _context.Tracker.TrackRevision(this);
+        }
+
+        private void AddRevisionCheck(WorkItem item, EngineContext context)
+        {
+            if (context.RuleSettings.EnableRevisionCheck)
+            {
+                Changes.Add(new JsonPatchOperation()
+                {
+                    Operation = Operation.Test,
+                    Path = "/rev",
+                    Value = item.Rev
+                });
+            }
         }
 
         public WorkItemWrapper PreviousRevision

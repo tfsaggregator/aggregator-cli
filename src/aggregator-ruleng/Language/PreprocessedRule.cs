@@ -8,6 +8,7 @@ namespace aggregator.Engine.Language {
         public PreprocessedRule()
         {
             Impersonate = false;
+            Settings = new RuleSettings();
             Language = RuleLanguage.Unknown;
             References = new List<string>();
             Imports = new List<string>();
@@ -16,6 +17,8 @@ namespace aggregator.Engine.Language {
         }
 
         public bool Impersonate { get; set; }
+
+        public IRuleSettings Settings { get; private set; }
 
         public RuleLanguage Language { get; internal set; }
 

@@ -28,7 +28,9 @@ namespace aggregator.Engine
         /// <inheritdoc />
         public bool ImpersonateExecution { get; set; }
 
-        internal IPreprocessedRule RuleDirectives { get; set; }
+        internal IPreprocessedRule RuleDirectives { get; private set; }
+
+        public IRuleSettings Settings { get; private set; }
 
         private ScriptedRuleWrapper(string ruleName, IAggregatorLogger logger)
         {
@@ -57,6 +59,7 @@ namespace aggregator.Engine
         {
             RuleDirectives = preprocessedRule;
             ImpersonateExecution = RuleDirectives.Impersonate;
+            Settings = preprocessedRule.Settings;
 
             var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(RuleDirectives.LoadAssemblyReferences()));
             var imports = new HashSet<string>(DefaultImports().Concat(RuleDirectives.Imports));

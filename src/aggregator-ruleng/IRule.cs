@@ -14,7 +14,13 @@ namespace aggregator.Engine {
         /// The history will show the changes made by person who triggered the event
         /// Assumes PAT or Account Permission is high enough
         /// </summary>
+        /// <remarks>Setter public for CLI</remarks>
         bool ImpersonateExecution { get; set; }
+
+        ///<summary>
+        /// Configuration data picked by the directive parser that may influence a rule behaviour.
+        ///</summary>
+        IRuleSettings Settings { get; }
 
         /// <summary>
         /// Apply the rule to executionContext

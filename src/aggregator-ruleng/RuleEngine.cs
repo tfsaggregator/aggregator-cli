@@ -36,7 +36,7 @@ namespace aggregator.Engine
 
         public async Task<string> RunAsync(IRule rule, Guid projectId, WorkItemData workItemPayload, IClientsContext clients, CancellationToken cancellationToken = default)
         {
-            var executionContext = CreateRuleExecutionContext(projectId, workItemPayload, clients);
+            var executionContext = CreateRuleExecutionContext(projectId, workItemPayload, clients, rule.Settings);
 
             var result = await ExecuteRuleAsync(rule, executionContext, cancellationToken);
 
@@ -45,10 +45,10 @@ namespace aggregator.Engine
 
         protected abstract Task<string> ExecuteRuleAsync(IRule rule, RuleExecutionContext executionContext, CancellationToken cancellationToken = default);
 
-        protected RuleExecutionContext CreateRuleExecutionContext(Guid projectId, WorkItemData workItemPayload, IClientsContext clients)
+        protected RuleExecutionContext CreateRuleExecutionContext(Guid projectId, WorkItemData workItemPayload, IClientsContext clients, IRuleSettings ruleSettings)
         {
             var workItem = workItemPayload.WorkItem;
-            var context = new EngineContext(clients, projectId, workItem.GetTeamProject(), logger);
+            var context = new EngineContext(clients, projectId, workItem.GetTeamProject(), logger, ruleSettings);
             var store = new WorkItemStore(context, workItem);
             var self = store.GetWorkItem(workItem.Id.Value);
             var selfChanges = new WorkItemUpdateWrapper(workItemPayload.WorkItemUpdate);
