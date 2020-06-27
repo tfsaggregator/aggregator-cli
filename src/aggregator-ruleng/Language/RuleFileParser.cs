@@ -49,19 +49,26 @@ namespace aggregator.Engine.Language
                 && ruleCode[directiveLineIndex][0] == '.')
             {
                 string directive = ruleCode[directiveLineIndex].Substring(1);
-                var parts = directive.Split('=');
+                // stop at first '=' or ' '
+                int endVerb = directive.IndexOfAny(new char[] { '=', ' ' });
+                if (endVerb < 1)
+                {
+                    FailParsingWithMessage($"Invalid language directive {directive}");
+                }
+                string verb = directive.Substring(0, endVerb);
+                string arguments = directive.Substring(endVerb + 1);
 
-                switch (parts[0].ToLowerInvariant())
+                switch (verb.ToLowerInvariant())
                 {
                     case "lang":
                     case "language":
-                        if (parts.Length < 2)
+                        if (string.IsNullOrWhiteSpace(arguments))
                         {
                             FailParsingWithMessage($"Invalid language directive {directive}");
                         }
                         else
                         {
-                            switch (parts[1].ToUpperInvariant())
+                            switch (arguments.ToUpperInvariant())
                             {
                                 case "C#":
                                 case "CS":
@@ -70,7 +77,7 @@ namespace aggregator.Engine.Language
                                     break;
                                 default:
                                 {
-                                    FailParsingWithMessage($"Unrecognized language {parts[1]}");
+                                    FailParsingWithMessage($"Unrecognized language {arguments}");
                                     preprocessedRule.Language = RuleLanguage.Unknown;
                                     break;
                                 }
@@ -81,37 +88,72 @@ namespace aggregator.Engine.Language
                     case "r":
                     case "ref":
                     case "reference":
-                        if (parts.Length < 2)
+                        if (string.IsNullOrWhiteSpace(arguments))
                         {
                             FailParsingWithMessage($"Invalid reference directive {directive}");
                         }
                         else
                         {
-                            preprocessedRule.References.Add(parts[1]);
+                            preprocessedRule.References.Add(arguments);
                         }
                         break;
 
                     case "import":
                     case "imports":
                     case "namespace":
-                        if (parts.Length < 2)
+                        if (string.IsNullOrWhiteSpace(arguments))
                         {
                             FailParsingWithMessage($"Invalid import directive {directive}");
                         }
                         else
                         {
-                            preprocessedRule.Imports.Add(parts[1]);
+                            preprocessedRule.Imports.Add(arguments);
                         }
                         break;
 
                     case "impersonate":
-                        if (parts.Length < 2)
+                        if (string.IsNullOrWhiteSpace(arguments))
                         {
                             FailParsingWithMessage($"Invalid impersonate directive {directive}");
                         }
                         else
                         {
-                            preprocessedRule.Impersonate = string.Equals("onBehalfOfInitiator", parts[1].TrimEnd(), StringComparison.OrdinalIgnoreCase);
+                            preprocessedRule.Impersonate = string.Equals("onBehalfOfInitiator", arguments.TrimEnd(), StringComparison.OrdinalIgnoreCase);
+                        }
+                        break;
+
+                    case "check":
+                        if (string.IsNullOrWhiteSpace(arguments))
+                        {
+                            FailParsingWithMessage($"Invalid check directive {directive}");
+                        }
+                        else
+                        {
+                            var elements = arguments.Trim().Split(' ');
+                            if (elements.Length < 2)
+                            {
+                                FailParsingWithMessage($"Invalid check directive {directive}");
+                            }
+                            else
+                            {
+                                string checkName = elements[0].Trim();
+                                if (!bool.TryParse(elements[1].Trim(), out bool checkValue))
+                                {
+                                    FailParsingWithMessage($"Invalid check directive {directive}");
+                                }
+                                else
+                                {
+                                    switch (checkName)
+                                    {
+                                        case "revision":
+                                            preprocessedRule.Settings.EnableRevisionCheck = checkValue;
+                                            break;
+                                        default:
+                                            FailParsingWithMessage($"Invalid check directive {directive}");
+                                            break;
+                                    }
+                                }
+                            }
                         }
                         break;
 

@@ -43,7 +43,7 @@ namespace aggregator.Engine
                 {
                     var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
 
-                    var ruleResult = await engine.RunAsync(rule, eventContext.ProjectId, eventContext.WorkItemPayload, clientsContext, cancellationToken);
+                    var ruleResult = await engine.RunAsync(rule, eventContext.ProjectId, eventContext.WorkItemPayload, eventContext.EventType, clientsContext, cancellationToken);
                     logger.WriteInfo(ruleResult);
                     return ruleResult;
                 }

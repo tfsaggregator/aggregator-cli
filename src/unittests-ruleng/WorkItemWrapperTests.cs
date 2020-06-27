@@ -5,7 +5,8 @@ using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
-
+using Microsoft.VisualStudio.Services.WebApi.Patch;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using NSubstitute;
 using Xunit;
 
@@ -26,7 +27,7 @@ namespace unittests_ruleng
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
 
-            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
         }
 
         [Fact]
@@ -133,6 +134,71 @@ namespace unittests_ruleng
 
             wrapper[testKey] = testValue;
             Assert.False(wrapper.IsDirty);
+        }
+
+
+        [Fact]
+        public void ChangingAFieldWithEnableRevisionCheckOnAddsTestOperation()
+        {
+            var logger = Substitute.For<IAggregatorLogger>();
+            var ruleSettings = new RuleSettings { EnableRevisionCheck = true };
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                             },
+                Rev = 3,
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+            wrapper.Title = "Replaced title";
+
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Test,
+                Path = "/rev",
+                Value = 3
+            };
+            Assert.Equal(2, wrapper.Changes.Count);
+            var actual = wrapper.Changes[0];
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value.ToString() == actual.Value.ToString() && expected.From == actual.From );
+        }
+
+        [Fact]
+        public void ChangingAFieldWithEnableRevisionCheckOffHasNoTestOperation()
+        {
+            var logger = Substitute.For<IAggregatorLogger>();
+            var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                             },
+                Rev = 3,
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+            wrapper.Title = "Replaced title";
+
+            Assert.Single(wrapper.Changes);
+            var actual = wrapper.Changes[0];
+            Assert.Equal(Operation.Replace, actual.Operation);
+            Assert.Equal("/fields/System.Title", actual.Path);
+            Assert.Equal("Replaced title", actual.Value);
         }
     }
 }

@@ -431,7 +431,7 @@ namespace aggregator.cli
                     var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);
 
                     var workItem = await clientsContext.WitClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
-                    string result = await engine.RunAsync(rule, teamProjectId, workItem, clientsContext, cancellationToken);
+                    string result = await engine.RunAsync(rule, teamProjectId, workItem, @event, clientsContext, cancellationToken);
                     _logger.WriteInfo($"Rule returned '{result}'");
 
                     return true;

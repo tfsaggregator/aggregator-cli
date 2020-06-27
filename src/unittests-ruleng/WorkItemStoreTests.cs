@@ -7,6 +7,8 @@ using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using NSubstitute;
 
 using unittests_ruleng.TestData;
@@ -42,7 +44,7 @@ namespace unittests_ruleng
                 Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -70,7 +72,7 @@ namespace unittests_ruleng
                     }
                 });
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -85,7 +87,7 @@ namespace unittests_ruleng
         public async Task NewWorkItem_Succeeds()
         {
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -102,7 +104,7 @@ namespace unittests_ruleng
         [Fact]
         public void AddChild_Succeeds()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             int workItemId = 1;
             witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
@@ -141,7 +143,7 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteWorkItem_Succeeds()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -165,7 +167,7 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteAlreadyDeletedWorkItem_NoChange()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             var workItem = ExampleTestData.DeltedWorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -189,7 +191,7 @@ namespace unittests_ruleng
         [Fact]
         public void RestoreNotDeletedWorkItem_NoChange()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -208,6 +210,96 @@ namespace unittests_ruleng
             Assert.Empty(changedWorkItems.Created);
             Assert.Empty(changedWorkItems.Updated);
             Assert.Empty(changedWorkItems.Restored);
+        }
+
+        [Fact]
+        async public void UpdateWorkItem_WithRevisionCheck_Enabled_Succeeds()
+        {
+            var logger = Substitute.For<IAggregatorLogger>();
+            var clientsContext = new TestClientsContext();
+            var witClient = clientsContext.WitClient;
+            witClient
+                .When(x => x.CreateWorkItemBatchRequest(
+                    Arg.Any<int>(), Arg.Any<JsonPatchDocument>(), Arg.Any<bool>(), Arg.Any<bool>()))
+                .CallBase();
+            witClient
+                .ExecuteBatchRequest(default)
+                .ReturnsForAnyArgs(
+                    info => {
+                        var requests = info.Arg<IEnumerable<WitBatchRequest>>();
+                        return requests.Aggregate(
+                            new List<WitBatchResponse>(),
+                            (acc,req) =>
+                            {
+                                acc.Add(new WitBatchResponse { Body = req.Body });
+                                return acc;
+                            }
+                        );
+                    });
+            var ruleSettings = new RuleSettings { EnableRevisionCheck = true };
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var workItem = ExampleTestData.WorkItem;
+            int workItemId = workItem.Id.Value;
+
+            var sut = new WorkItemStore(context, workItem);
+
+            var wrapper = sut.GetWorkItem(workItemId);
+            wrapper.Title = "Replaced title";
+
+            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, default);
+
+            Assert.Equal(0, result.created);
+            Assert.Equal(1, result.updated);
+            logger.Received().WriteVerbose(@"[
+  {
+    ""Body"": ""[{\""op\"":5,\""path\"":\""/rev\"",\""from\"":null,\""value\"":2},{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""
+  }
+]");
+        }
+
+        [Fact]
+        async public void UpdateWorkItem_WithRevisionCheck_Disabled_Succeeds()
+        {
+            var logger = Substitute.For<IAggregatorLogger>();
+            var clientsContext = new TestClientsContext();
+            var witClient = clientsContext.WitClient;
+            witClient
+                .When(x => x.CreateWorkItemBatchRequest(
+                    Arg.Any<int>(), Arg.Any<JsonPatchDocument>(), Arg.Any<bool>(), Arg.Any<bool>()))
+                .CallBase();
+            witClient
+                .ExecuteBatchRequest(default)
+                .ReturnsForAnyArgs(
+                    info => {
+                        var requests = info.Arg<IEnumerable<WitBatchRequest>>();
+                        return requests.Aggregate(
+                            new List<WitBatchResponse>(),
+                            (acc,req) =>
+                            {
+                                acc.Add(new WitBatchResponse { Body = req.Body });
+                                return acc;
+                            }
+                        );
+                    });
+            var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var workItem = ExampleTestData.WorkItem;
+            int workItemId = workItem.Id.Value;
+
+            var sut = new WorkItemStore(context, workItem);
+
+            var wrapper = sut.GetWorkItem(workItemId);
+            wrapper.Title = "Replaced title";
+
+            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, default);
+
+            Assert.Equal(0, result.created);
+            Assert.Equal(1, result.updated);
+            logger.Received().WriteVerbose(@"[
+  {
+    ""Body"": ""[{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""
+  }
+]");
         }
     }
 }
