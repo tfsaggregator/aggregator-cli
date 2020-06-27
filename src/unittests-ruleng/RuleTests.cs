@@ -10,6 +10,7 @@ using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using NSubstitute;
 using NSubstitute.Core.Arguments;
 
@@ -51,6 +52,7 @@ namespace unittests_ruleng
         [Fact]
         public async Task HelloWorldRule_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -68,7 +70,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello Bug #42 - Hello!", result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -77,6 +79,7 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         [Fact]
         public async Task LanguageDirective_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -94,7 +97,7 @@ return string.Empty;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal(string.Empty, result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -128,6 +131,7 @@ return string.Empty;
         [Fact]
         public async Task Parent_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             int workItemId2 = 2;
             WorkItem workItem = new WorkItem
             {
@@ -177,7 +181,7 @@ return message;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Parent is 1", result);
             await witClient.Received(1).GetWorkItemAsync(Arg.Is(workItemId1), expand: Arg.Is(WorkItemExpand.All));
@@ -186,6 +190,7 @@ return message;
         [Fact]
         public async Task New_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 1;
             WorkItem workItem = new WorkItem
             {
@@ -204,7 +209,7 @@ wi.Title = ""Brand new"";
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
@@ -215,6 +220,7 @@ wi.Title = ""Brand new"";
         [Fact]
         public async Task AddChild_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             int workItemId = 1;
             WorkItem workItem = new WorkItem
             {
@@ -235,7 +241,7 @@ parent.Relations.AddChild(newChild);
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 			
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
@@ -247,6 +253,7 @@ parent.Relations.AddChild(newChild);
         [Fact]
         public async Task TouchDescription_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -264,7 +271,7 @@ return self.Description;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello.", result);
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
@@ -275,6 +282,7 @@ return self.Description;
         [Fact]
         public async Task ReferenceDirective_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -293,7 +301,7 @@ return string.Empty;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal(string.Empty, result);
         }
@@ -301,6 +309,7 @@ return string.Empty;
         [Fact]
         public async Task ImportDirective_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -319,7 +328,7 @@ return string.Empty;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal(string.Empty, result);
         }
@@ -327,6 +336,7 @@ return string.Empty;
         [Fact]
         public async Task ImportDirective_Fail()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -346,7 +356,7 @@ return string.Empty;
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
+                () => engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None)
             );
         }
 
@@ -370,6 +380,7 @@ return string.Empty
         [Fact]
         public async Task DeleteWorkItem()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemDeleted;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -389,13 +400,14 @@ return string.Empty;
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
             await Assert.ThrowsAsync<Microsoft.CodeAnalysis.Scripting.CompilationErrorException>(
-                () => engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None)
+                () => engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None)
             );
         }
 
         [Fact]
         public async Task HelloWorldRuleOnUpdate_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             var workItem = ExampleTestData.WorkItem;
             var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
@@ -404,7 +416,7 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Hello #22 - Update 3 changed Title from Initial Title to Hello!", result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -413,6 +425,7 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
         [Fact]
         public async Task DocumentationRule_OnUpdateExample_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             var workItem = ExampleTestData.WorkItem;
             var workItemUpdate = ExampleTestData.WorkItemUpdateFields;
 
@@ -430,7 +443,7 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
             ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItem, workItemUpdate), eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Title was changed from 'Initial Title' to 'Hello'", result);
             await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
@@ -439,6 +452,7 @@ return $""Hello #{ selfChanges.WorkItemId } - Update { selfChanges.Id } changed 
         [Fact]
         public async Task CustomStringField_HasValue_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -458,13 +472,14 @@ return customField;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
             Assert.Equal("some value", result);
         }
 
         [Fact]
         public async Task CustomStringField_NoValue_ReturnsDefault()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -483,13 +498,14 @@ return customField;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
             Assert.Equal("MyDefault", result);
         }
 
         [Fact]
         public async Task CustomNumericField_HasValue_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -509,13 +525,14 @@ return customField.ToString(""N"", System.Globalization.CultureInfo.InvariantCul
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
             Assert.Equal("42.00", result);
         }
 
         [Fact]
         public async Task CustomNumericField_NoValue_ReturnsDefault()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             int workItemId = 42;
             WorkItem workItem = new WorkItem
             {
@@ -534,14 +551,15 @@ return customField.ToString(""N"", System.Globalization.CultureInfo.InvariantCul
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
             Assert.Equal("3.00", result);
         }
 
 
         [Fact]
-        public async Task SuccesorLink_Test()
+        public async Task SuccessorLink_Test()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
             int predecessorId = 42;
             WorkItem predecessor = new WorkItem
             {
@@ -577,7 +595,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, predecessor, clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, predecessor, eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Successor", result);
         }
@@ -585,6 +603,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
         [Fact]
         public async Task DocumentationRule_BacklogWorkItemsActivateParent_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             var workItemUS = ExampleTestData.BacklogUserStoryActive;
             var workItemFeature = ExampleTestData.BacklogFeatureOneChild;
 
@@ -595,7 +614,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
             witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
 
             var rule = new ScriptedRuleWrapper("Test", ExampleRuleCode.ActivateParent);
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("updated Parent Feature #1 to State='Active'", result);
         }
@@ -603,6 +622,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
         [Fact]
         public async Task DocumentationRule_BacklogWorkItemsResolveParent_Succeeds()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             var workItemFeature = ExampleTestData.BacklogFeatureOneChild;
             var workItemUS = ExampleTestData.BacklogUserStoryClosed;
 
@@ -613,7 +633,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
             witClient.GetWorkItemAsync(workItemFeature.Id.Value, expand: WorkItemExpand.All).Returns(workItemFeature);
 
             var rule = new ScriptedRuleWrapper("Test", ExampleRuleCode.ResolveParent);
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS, workItemUpdate), eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("updated Parent #1 to State='Resolved'", result);
         }
@@ -621,6 +641,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
         [Fact]
         public async Task DocumentationRule_BacklogWorkItemsResolveParent_FailsDueToChildren()
         {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             var workItemFeature = ExampleTestData.BacklogFeatureTwoChildren;
             var workItemUS2 = ExampleTestData.BacklogUserStoryClosed;
             var workItemUS3= ExampleTestData.BacklogUserStoryActive;
@@ -634,9 +655,30 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
             witClient.GetWorkItemsAsync(Arg.Is<IEnumerable<int>>(ints => ints.Single() == workItemUS3.Id.Value), expand: WorkItemExpand.All).Returns(new List<WorkItem>() { workItemUS3 });
 
             var rule = new ScriptedRuleWrapper("Test", ExampleRuleCode.ResolveParent);
-            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS2, workItemUpdate), clientsContext, CancellationToken.None);
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, new WorkItemData(workItemUS2, workItemUpdate), eventType, clientsContext, CancellationToken.None);
 
             Assert.Equal("Not all child work items <Removed> or <Completed>: #2=Closed,#3=Active", result);
+        }
+
+        [Fact]
+        public async Task TestEventType_Succeeds()
+        {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+            };
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+return (eventType == ""workitem.created"").ToString();
+";
+
+            var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
+
+            Assert.Equal("True", result);
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
         }
     }
 }

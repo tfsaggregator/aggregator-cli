@@ -13,5 +13,6 @@ namespace aggregator.Engine
         public WorkItemUpdateWrapper selfChanges;
         public WorkItemStore store;
         public IAggregatorLogger logger;
+        public string eventType;
     }
 }

@@ -6,16 +6,18 @@ namespace aggregator.Engine
 
     public class WorkItemEventContext
     {
-        public WorkItemEventContext(Guid projectId, Uri collectionUri, WorkItem workItem, WorkItemUpdate workItemUpdate = null)
+        public WorkItemEventContext(Guid projectId, Uri collectionUri, WorkItem workItem, string eventType, WorkItemUpdate workItemUpdate = null)
         {
             ProjectId = projectId;
             CollectionUri = collectionUri;
             WorkItemPayload = new WorkItemData(workItem, workItemUpdate);
+            EventType = eventType;
         }
 
         public WorkItemData WorkItemPayload { get; }
         public Guid ProjectId { get; }
         public Uri CollectionUri { get; }
+        public string EventType { get; }
     }
 
     public static class WorkItemEventContextExtension

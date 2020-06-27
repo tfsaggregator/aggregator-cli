@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -132,13 +132,13 @@ namespace aggregator
                 var workItem = resourceObject.GetValue("revision").ToObject<WorkItem>();
                 MigrateIdentityInformation(eventData.ResourceVersion, workItem);
                 var workItemUpdate = resourceObject.ToObject<WorkItemUpdate>();
-                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem, workItemUpdate);
+                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem, eventData.EventType, workItemUpdate);
             }
             else
             {
                 var workItem = resourceObject.ToObject<WorkItem>();
                 MigrateIdentityInformation(eventData.ResourceVersion, workItem);
-                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem);
+                return new WorkItemEventContext(teamProjectId, new Uri(collectionUrl), workItem, eventData.EventType);
             }
         }
 
