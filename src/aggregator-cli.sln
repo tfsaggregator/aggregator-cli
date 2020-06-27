@@ -13,18 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "integrationtests-cli", "int
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-function", "aggregator-function\aggregator-function.csproj", "{6ADD44D3-3B38-4D2F-BBFF-242E5F2E787C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1A84F5C1-ADA4-4DD1-A0D9-03635DF9FC56}"
-	ProjectSection(SolutionItems) = preProject
-		..\doc\build-and-test.md = ..\doc\build-and-test.md
-		..\doc\command-examples.md = ..\doc\command-examples.md
-		..\doc\production.md = ..\doc\production.md
-		..\README.md = ..\README.md
-		..\doc\rule-examples-advanced.md = ..\doc\rule-examples-advanced.md
-		..\doc\rule-examples-basic.md = ..\doc\rule-examples-basic.md
-		..\doc\rule-language.md = ..\doc\rule-language.md
-		..\doc\setup.md = ..\doc\setup.md
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-ruleng", "unittests-ruleng\unittests-ruleng.csproj", "{19AE3176-D15F-4A2B-AB49-1B9DE6EA3EE4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{020591FD-B34A-49E6-98E5-D8DD2A838997}"
