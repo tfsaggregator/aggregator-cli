@@ -343,3 +343,4 @@ src/aggregator-function/test*/*
 .vscode
 .DS_Store
 build.sh
+*.vsix

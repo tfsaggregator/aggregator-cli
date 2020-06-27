@@ -1,0 +1,57 @@
+{
+  "manifestVersion": 2,
+  "id": "aggregator-cli",
+  "version": "0.0.1",
+  "name": "Aggregator CLI",
+  "description": "This is the successor to TFS Aggregator to support Azure DevOps Services and Azure.",
+  "publisher": "tfsaggregatorteam",
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services.Cloud.Integration"
+    }
+  ],
+  "icons": {
+    "default": "images/logo-v3.png"
+  },
+  "contributions": [
+  ],
+  "galleryFlags": [
+    "Public"
+  ],
+  "scopes": [
+    "vso.entitlements",
+    "vso.notification_manage",
+    "vso.project",
+    "vso.work_write"
+  ],
+  "categories": [
+    "Azure Boards"
+  ],
+  "branding": {
+    "color": "rgb(0, 120, 212)",
+    "theme": "light"
+  },
+  "content": {
+    "details": {
+      "path": "readme.md"
+    }
+  },
+  "links": {
+    "getstarted": {
+      "uri": "https://tfsaggregator.github.io/docs/v3/"
+    },
+    "support": {
+      "uri": "https://github.com/tfsaggregator/aggregator-cli/issues"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "uri": "https://github.com/tfsaggregator/aggregator-cli/"
+  },
+  "files": [
+    {
+      "path": "images/logo-v3.png",
+      "addressable": true
+    }
+  ]
+}
