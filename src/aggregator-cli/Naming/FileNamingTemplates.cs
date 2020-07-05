@@ -11,10 +11,6 @@ namespace aggregator.cli
         internal FileNamingTemplates(string jsonData)
         {
             affixes = JsonConvert.DeserializeObject<NamingAffixes>(jsonData);
-            // validate
-            if (string.IsNullOrWhiteSpace(affixes.ResourceGroupPrefix)
-                && string.IsNullOrWhiteSpace(affixes.ResourceGroupSuffix))
-                throw new ArgumentException("Must specify at least one affix for ResourceGroup");
         }
 
         private class InstanceName_ : InstanceCreateNames
