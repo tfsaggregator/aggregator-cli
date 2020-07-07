@@ -344,3 +344,4 @@ src/aggregator-function/test*/*
 .DS_Store
 build.sh
 *.vsix
+outputs

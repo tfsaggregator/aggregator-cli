@@ -83,6 +83,81 @@ namespace unittests_ruleng
             Assert.Contains(wis, (x) => x.Id.Value == 99);
         }
 
+        List<WorkItem> GenerateWorkItems(int startId, int count = 200)
+        {
+            return Enumerable
+                .Range(startId, count)
+                .Select(i => new WorkItem
+                {
+                    Id = i,
+                    Fields = new Dictionary<string, object>()
+                }).ToList();
+        }
+
+        [Fact]
+        public void GetWorkItems_ByIds_LessThan200_Succeeds()
+        {
+            witClient.GetWorkItemsAsync(Arg.Any<IEnumerable<int>>(), expand: WorkItemExpand.All)
+                .Returns(
+                    GenerateWorkItems(1, 199)
+                    );
+            var ids = Enumerable.Range(1, 199).ToArray();
+
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var sut = new WorkItemStore(context);
+
+            var wis = sut.GetWorkItems(ids);
+
+            Assert.NotEmpty(wis);
+            Assert.Equal(ids.Length, wis.Count);
+            Assert.Contains(wis, (x) => x.Id.Value == 42);
+            Assert.Contains(wis, (x) => x.Id.Value == 199);
+        }
+
+        [Fact]
+        public void GetWorkItems_ByIds_MoreThan200_Succeeds()
+        {
+            witClient.GetWorkItemsAsync(Arg.Any<IEnumerable<int>>(), expand: WorkItemExpand.All)
+                .Returns(
+                    GenerateWorkItems(1, 200),
+                    GenerateWorkItems(201, 150)
+                    );
+            var ids = Enumerable.Range(1, 350).ToArray();
+
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var sut = new WorkItemStore(context);
+
+            var wis = sut.GetWorkItems(ids);
+
+            Assert.NotEmpty(wis);
+            Assert.Equal(ids.Length, wis.Count);
+            Assert.Contains(wis, (x) => x.Id.Value == 42);
+            Assert.Contains(wis, (x) => x.Id.Value == 299);
+        }
+
+        [Fact]
+        public void GetWorkItems_ByIds_MoreThan400_Succeeds()
+        {
+            witClient.GetWorkItemsAsync(Arg.Any<IEnumerable<int>>(), expand: WorkItemExpand.All)
+                .Returns(
+                    GenerateWorkItems(1, 200),
+                    GenerateWorkItems(201, 200),
+                    GenerateWorkItems(401, 33)
+                    );
+            var ids = Enumerable.Range(1, 433).ToArray();
+
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var sut = new WorkItemStore(context);
+
+            var wis = sut.GetWorkItems(ids);
+
+            Assert.NotEmpty(wis);
+            Assert.Equal(ids.Length, wis.Count);
+            Assert.Contains(wis, (x) => x.Id.Value == 42);
+            Assert.Contains(wis, (x) => x.Id.Value == 299);
+            Assert.Contains(wis, (x) => x.Id.Value == 410);
+        }
+
         [Fact]
         public async Task NewWorkItem_Succeeds()
         {
