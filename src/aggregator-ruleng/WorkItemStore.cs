@@ -16,6 +16,8 @@ namespace aggregator.Engine
 {
     public class WorkItemStore
     {
+        private const int VS403474_LIMIT = 200;
+
         private readonly EngineContext _context;
         private readonly IClientsContext _clients;
         private readonly Lazy<Task<IEnumerable<WorkItemTypeCategory>>> _lazyGetWorkItemCategories;
@@ -59,13 +61,23 @@ namespace aggregator.Engine
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<int> ids)
         {
-            _context.Logger.WriteVerbose($"Getting workitems {ids.ToSeparatedString()}");
-            return _context.Tracker.LoadWorkItems(ids, (workItemIds) =>
+            var accumulator = new List<WorkItemWrapper>();
+
+            // prevent VS403474: You requested nnn work items which exceeds the limit of 200
+            foreach (var idBlock in ids.Paginate(VS403474_LIMIT))
             {
-                _context.Logger.WriteInfo($"Loading workitems {workItemIds.ToSeparatedString()}");
-                var items = _clients.WitClient.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
-                return items.ConvertAll(i => new WorkItemWrapper(_context, i));
-            });
+                _context.Logger.WriteVerbose($"Getting workitems {idBlock.ToSeparatedString()}");
+                var workItemBlock = _context.Tracker.LoadWorkItems(idBlock, (workItemIds) =>
+                {
+                    _context.Logger.WriteInfo($"Loading workitems {workItemIds.ToSeparatedString()}");
+                    var items = _clients.WitClient.GetWorkItemsAsync(workItemIds, expand: WorkItemExpand.All).Result;
+                    return items.ConvertAll(i => new WorkItemWrapper(_context, i));
+                });
+
+                accumulator.AddRange(workItemBlock);
+            }
+
+            return accumulator;
         }
 
         public IList<WorkItemWrapper> GetWorkItems(IEnumerable<WorkItemRelationWrapper> collection)

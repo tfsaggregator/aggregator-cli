@@ -344,3 +344,9 @@ src/aggregator-function/test*/*
 .DS_Store
 build.sh
 *.vsix
+outputs
+## Terraform stuff
+*.tfvars
+.terraform
+*.tfstate*
+src/integrationtests-setup/_plan
