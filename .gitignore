@@ -345,3 +345,8 @@ src/aggregator-function/test*/*
 build.sh
 *.vsix
 outputs
+## Terraform stuff
+*.tfvars
+.terraform
+*.tfstate*
+src/integrationtests-setup/_plan

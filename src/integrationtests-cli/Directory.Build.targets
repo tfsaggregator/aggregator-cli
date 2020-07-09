@@ -1,9 +1,0 @@
-<!-- I forget to copy the right file, so... -->
-<Project>
-  <Target Name="GrabSecrets" BeforeTargets="Build" Condition="Exists('$(SolutionDir)\..\secrets\logon-data.json')">
-    <Copy
-      SourceFiles="$(SolutionDir)\..\secrets\logon-data.json"
-      DestinationFiles="$(ProjectDir)\logon-data.json" 
-      />
-  </Target>
-</Project>
