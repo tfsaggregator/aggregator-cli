@@ -88,7 +88,7 @@ namespace unittests_core
         }
 
         [Theory]
-        [InlineData(@"{}", "rg", "n")]
+        [InlineData(@"{}", "n", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""a""}", "an", "n")]
         [InlineData(@"{""ResourceGroupSuffix"":""z""}", "nz", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""p"",""ResourceGroupSuffix"":""s""}", "pns", "n")]
