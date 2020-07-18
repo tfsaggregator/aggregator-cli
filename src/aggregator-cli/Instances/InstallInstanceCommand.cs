@@ -44,12 +44,12 @@ namespace aggregator.cli
             if (!validHostingPlanSkus.Contains(HostingPlanSku))
             {
                 Logger.WriteError($"Invalid value for hostingPlanSku: must be one of {String.Join(",", validHostingPlanSkus)}");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
             if (!validHostingPlanTiers.Contains(HostingPlanTier))
             {
                 Logger.WriteError($"Invalid value for hostingPlanTier: must be one of {String.Join(",", validHostingPlanTiers)}");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
             var tuning = new AggregatorInstances.InstanceFineTuning
             {
@@ -65,7 +65,7 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var instance = context.Naming.GetInstanceCreateNames(Name, ResourceGroup);
             bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, tuning, cancellationToken);
-            return ok ? 0 : 1;
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
     }
 }

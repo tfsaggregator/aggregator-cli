@@ -36,7 +36,7 @@ namespace aggregator.cli
             if (azure == null)
             {
                 context.Logger.WriteError("Invalid azure credentials");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
             // FIX #60: call some read API to validate parameters
             try
@@ -48,9 +48,9 @@ namespace aggregator.cli
                 int nl = ex.Message.IndexOf(Environment.NewLine);
                 string m = nl != -1 ? ex.Message.Remove(nl) : ex.Message;
                 context.Logger.WriteError("Invalid azure credentials: " + m);
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
-            return 0;
+            return ExitCodes.Success;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace aggregator.cli
                 && string.IsNullOrEmpty(Project))
             {
                 context.Logger.WriteError("Specify at least one filtering parameter.");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
             var instance = string.IsNullOrEmpty(Instance) ? null : context.Naming.Instance(Instance, ResourceGroup);
             // HACK we pass null as the next calls do not use the Azure connection
@@ -44,8 +44,12 @@ namespace aggregator.cli
             if (!any)
             {
                 context.Logger.WriteInfo("No rule mappings found.");
+                return ExitCodes.NotFound;
             }
-            return 0;
+            else
+            {
+                return ExitCodes.Success;
+            }
         }
     }
 }

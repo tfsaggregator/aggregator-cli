@@ -49,7 +49,7 @@ namespace aggregator.cli
             if (!ok)
             {
                 context.Logger.WriteError($"Invalid event type.");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
 
             var filters = new EventFilters
@@ -62,7 +62,7 @@ namespace aggregator.cli
 
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var id = await mappings.AddAsync(Project, Event, filters, instance, Rule, ImpersonateExecution, cancellationToken);
-            return id.Equals(Guid.Empty) ? 1 : 0;
+            return id.Equals(Guid.Empty) ? ExitCodes.Failure : ExitCodes.Success;
         }
     }
 }

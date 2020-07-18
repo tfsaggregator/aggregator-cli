@@ -35,16 +35,23 @@ namespace aggregator.cli
             if (!ok)
             {
                 context.Logger.WriteError($"Invalid event type.");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
             var outcome = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
-            if (outcome == RemoveOutcome.NotFound)
+            switch (outcome)
             {
-                context.Logger.WriteWarning($"No mapping(s) found for rule(s) {instance.PlainName}/{Rule}");
+                case RemoveOutcome.Succeeded:
+                    return ExitCodes.Success;
+                case RemoveOutcome.NotFound:
+                    context.Logger.WriteWarning($"No mapping(s) found for rule(s) {instance.PlainName}/{Rule}");
+                    return ExitCodes.NotFound;
+                case RemoveOutcome.Failed:
+                    return ExitCodes.Failure;
+                default:
+                    return ExitCodes.Unexpected;
             }
-            return (int)outcome;
         }
     }
 }

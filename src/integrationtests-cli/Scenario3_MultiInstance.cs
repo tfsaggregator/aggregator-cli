@@ -1,8 +1,4 @@
-﻿using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
 
@@ -157,7 +153,7 @@ namespace integrationtests.cli
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
             (int rc, string output) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
 
-            Assert.Equal(2, rc);
+            Assert.Equal(3, rc);
             Assert.Contains("No mapping(s) found for rule(s)", output);
         }
 

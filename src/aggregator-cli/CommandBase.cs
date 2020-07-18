@@ -43,15 +43,18 @@ namespace aggregator.cli
                 t.Wait(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 int rc = t.Result;
-                if (rc != 0)
-                {
-                    Logger.WriteError("Failed!");
-                }
-                else
+                if (rc == ExitCodes.Success)
                 {
                     Logger.WriteSuccess("Succeeded");
                 }
-
+                else if (rc == ExitCodes.NotFound)
+                {
+                    Logger.WriteWarning("Not found");
+                }
+                else
+                {
+                    Logger.WriteError("Failed!");
+                }
                 return rc;
             }
             catch (Exception ex)
@@ -61,7 +64,7 @@ namespace aggregator.cli
                     ? ex.Message
                     : ex.InnerException.Message
                     );
-                return 99;
+                return ExitCodes.Unexpected;
             }
         }
 

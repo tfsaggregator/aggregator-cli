@@ -44,7 +44,7 @@ namespace aggregator.cli
 
             Logger.WriteInfo($"Resources deleted.");
 
-            return 0;
+            return ExitCodes.Success;
         }
     }
 }

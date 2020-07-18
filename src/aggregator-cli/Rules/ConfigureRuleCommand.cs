@@ -42,7 +42,7 @@ namespace aggregator.cli
             var impersonate = GetEnableStatus(DisableImpersonateExecution, EnableImpersonateExecution);
 
             var ok = await rules.ConfigureAsync(instance, Name, disable, impersonate, cancellationToken);
-            return ok ? 0 : 1;
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
 
 

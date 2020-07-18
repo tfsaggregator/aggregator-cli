@@ -29,12 +29,12 @@ namespace aggregator.cli
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
             var outcome = await mappings.RemoveRuleAsync(instance, Name);
             if (outcome == RemoveOutcome.Failed)
-                return 2;
+                return ExitCodes.Failure;
 
             var rules = new AggregatorRules(context.Azure, context.Logger);
             //rules.Progress += Instances_Progress;
             bool ok = await rules.RemoveAsync(instance, Name, cancellationToken);
-            return ok ? 0 : 1;
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
     }
 }
