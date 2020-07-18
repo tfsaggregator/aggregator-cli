@@ -31,7 +31,7 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            bool ok = DevOpsEvents.IsValidEvent(Event);
+            bool ok = DevOpsEvents.IsValidEvent(Event) || Event == "*";
             if (!ok)
             {
                 context.Logger.WriteError($"Invalid event type.");
@@ -39,8 +39,12 @@ namespace aggregator.cli
             }
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
-            ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
-            return ok ? 0 : 1;
+            var outcome = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
+            if (outcome == RemoveOutcome.NotFound)
+            {
+                context.Logger.WriteWarning($"No mapping(s) found for rule(s) {instance.PlainName}/{Rule}");
+            }
+            return (int)outcome;
         }
     }
 }

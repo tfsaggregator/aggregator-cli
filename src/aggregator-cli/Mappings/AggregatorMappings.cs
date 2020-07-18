@@ -12,6 +12,13 @@ using aggregator;
 
 namespace aggregator.cli
 {
+    internal enum RemoveOutcome
+    {
+        Succeeded   = 0,
+        NotFound    = 2,
+        Failed      = 1
+    }
+
     internal class AggregatorMappings
     {
         private readonly VssConnection devops;
@@ -157,17 +164,17 @@ namespace aggregator.cli
             return newSubscription.Id;
         }
 
-        internal async Task<bool> RemoveInstanceAsync(InstanceName instance)
+        internal async Task<RemoveOutcome> RemoveInstanceAsync(InstanceName instance)
         {
             return await RemoveRuleEventAsync("*", instance, "*", "*");
         }
 
-        internal async Task<bool> RemoveRuleAsync(InstanceName instance, string rule)
+        internal async Task<RemoveOutcome> RemoveRuleAsync(InstanceName instance, string rule)
         {
             return await RemoveRuleEventAsync("*", instance, "*", rule);
         }
 
-        internal async Task<bool> RemoveRuleEventAsync(string @event, InstanceName instance, string projectName, string rule)
+        internal async Task<RemoveOutcome> RemoveRuleEventAsync(string @event, InstanceName instance, string projectName, string rule)
         {
             logger.WriteInfo($"Querying the Azure DevOps subscriptions for rule(s) {instance.PlainName}/{rule}");
             var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
@@ -200,14 +207,16 @@ namespace aggregator.cli
                                                 .StartsWith(invocationUrl, StringComparison.OrdinalIgnoreCase));
             }
 
+            uint count = 0;
             foreach (var ruleSub in ruleSubs)
             {
                 logger.WriteVerbose($"Deleting subscription {ruleSub.EventDescription} {ruleSub.EventType}...");
                 await serviceHooksClient.DeleteSubscriptionAsync(ruleSub.Id);
                 logger.WriteInfo($"Subscription {ruleSub.EventDescription} {ruleSub.EventType} deleted.");
+                count++;
             }
 
-            return true;
+            return count > 0 ? RemoveOutcome.Succeeded : RemoveOutcome.NotFound;
         }
     }
 

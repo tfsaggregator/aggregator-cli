@@ -150,9 +150,25 @@ namespace integrationtests.cli
             Assert.DoesNotContain("] Failed!", output);
         }
 
+        [Theory, Order(904)]
+        [InlineData("my54", "test5")]
+        void UnmapUnmappedRule(string instancePrefix, string rule)
+        {
+            string instance = instancePrefix + TestLogonData.UniqueSuffix;
+            (int rc, string output) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --rule {rule}");
+
+            Assert.Equal(2, rc);
+            Assert.Contains("No mapping(s) found for rule(s)", output);
+        }
+
         [Fact, Order(999)]
         void FinalCleanUp()
         {
+            string instance = "my45" + TestLogonData.UniqueSuffix;
+            (int _, string _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
+            instance = "my54" + TestLogonData.UniqueSuffix;
+            (int _, string _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
+
             (int rc, string output) = RunAggregatorCommand($"test.cleanup --verbose --resourceGroup {TestLogonData.ResourceGroup} ");
             Assert.Equal(0, rc);
         }
