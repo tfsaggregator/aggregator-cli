@@ -58,14 +58,14 @@ namespace aggregator.cli
             if (Local)
             {
                 bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
-                return ok ? 0 : 1;
+                return ok ? ExitCodes.Success : ExitCodes.Failure;
             }
             else
             {
                 var instance = context.Naming.Instance(Instance, ResourceGroup);
                 context.Logger.WriteWarning("Untested feature!");
                 bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
-                return ok ? 0 : 1;
+                return ok ? ExitCodes.Success : ExitCodes.Failure;
             }
         }
     }

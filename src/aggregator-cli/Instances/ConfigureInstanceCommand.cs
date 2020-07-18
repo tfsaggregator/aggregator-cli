@@ -36,16 +36,16 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var instance = context.Naming.Instance(Name, ResourceGroup);
-            bool ok = false;
             if (Authentication)
             {
-                ok = await instances.ChangeAppSettingsAsync(instance, Location, SaveMode, cancellationToken);
-            } else
+                bool ok = await instances.ChangeAppSettingsAsync(instance, Location, SaveMode, cancellationToken);
+                return ok ? ExitCodes.Success : ExitCodes.Failure;
+            }
+            else
             {
                 context.Logger.WriteError($"Unsupported command option(s)");
+                return ExitCodes.InvalidArguments;
             }
-
-            return ok ? 0 : 1;
         }
     }
 }

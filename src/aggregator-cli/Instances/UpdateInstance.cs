@@ -32,7 +32,7 @@ namespace aggregator.cli.Instances
             var instance = context.Naming.Instance(Instance, ResourceGroup);
 
             bool ok = await instances.UpdateAsync(instance, RequiredVersion, SourceUrl, cancellationToken);
-            return ok ? 0 : 1;
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
     }
 }

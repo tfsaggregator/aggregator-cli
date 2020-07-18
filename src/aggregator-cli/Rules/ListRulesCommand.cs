@@ -34,9 +34,12 @@ namespace aggregator.cli
             if (!any)
             {
                 context.Logger.WriteInfo($"No rules found in aggregator instance {instance.PlainName}.");
+                return ExitCodes.NotFound;
             }
-
-            return 0;
+            else
+            {
+                return ExitCodes.Success;
+            }
         }
     }
 }

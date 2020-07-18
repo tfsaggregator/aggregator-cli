@@ -39,7 +39,7 @@ namespace aggregator.cli
 
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var ok = await instances.RemoveAsync(instance, Location);
-            return ok ? 0 : 1;
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
     }
 }

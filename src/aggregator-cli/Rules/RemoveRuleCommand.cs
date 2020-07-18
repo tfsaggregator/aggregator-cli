@@ -27,12 +27,14 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
-            bool ok = await mappings.RemoveRuleAsync(instance, Name);
+            var outcome = await mappings.RemoveRuleAsync(instance, Name);
+            if (outcome == RemoveOutcome.Failed)
+                return ExitCodes.Failure;
 
             var rules = new AggregatorRules(context.Azure, context.Logger);
             //rules.Progress += Instances_Progress;
-            ok = ok && await rules.RemoveAsync(instance, Name, cancellationToken);
-            return ok ? 0 : 1;
+            bool ok = await rules.RemoveAsync(instance, Name, cancellationToken);
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
     }
 }

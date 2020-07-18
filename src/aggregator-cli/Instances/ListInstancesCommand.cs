@@ -50,7 +50,7 @@ namespace aggregator.cli
             {
                 context.Logger.WriteInfo($"No aggregator instances found in {Location} Region.");
             }
-            return 0;
+            return ExitCodes.Success;
         }
 
         private async Task<int> ListInResourceGroupAsync(CommandContext context, AggregatorInstances instances, CancellationToken cancellationToken)
@@ -68,7 +68,7 @@ namespace aggregator.cli
                 context.Logger.WriteInfo($"No aggregator instances found in {ResourceGroup} Resource Group.");
             }
 
-            return 0;
+            return ExitCodes.Success;
         }
 
         private static async Task<int> ListAllAsync(CommandContext context, AggregatorInstances instances, CancellationToken cancellationToken)
@@ -80,13 +80,15 @@ namespace aggregator.cli
                 context.Logger.WriteOutput(dataObject);
                 any = true;
             }
-
             if (!any)
             {
                 context.Logger.WriteInfo("No aggregator instances found.");
+                return ExitCodes.NotFound;
             }
-
-            return 0;
+            else
+            {
+                return ExitCodes.Success;
+            }
         }
     }
 }

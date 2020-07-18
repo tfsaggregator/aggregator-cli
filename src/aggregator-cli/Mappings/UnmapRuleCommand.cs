@@ -31,16 +31,27 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            bool ok = DevOpsEvents.IsValidEvent(Event);
+            bool ok = DevOpsEvents.IsValidEvent(Event) || Event == "*";
             if (!ok)
             {
                 context.Logger.WriteError($"Invalid event type.");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
-            ok = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
-            return ok ? 0 : 1;
+            var outcome = await mappings.RemoveRuleEventAsync(Event, instance, Project, Rule);
+            switch (outcome)
+            {
+                case RemoveOutcome.Succeeded:
+                    return ExitCodes.Success;
+                case RemoveOutcome.NotFound:
+                    context.Logger.WriteWarning($"No mapping(s) found for rule(s) {instance.PlainName}/{Rule}");
+                    return ExitCodes.NotFound;
+                case RemoveOutcome.Failed:
+                    return ExitCodes.Failure;
+                default:
+                    return ExitCodes.Unexpected;
+            }
         }
     }
 }

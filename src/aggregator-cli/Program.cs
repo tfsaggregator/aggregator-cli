@@ -70,7 +70,7 @@ namespace aggregator.cli
                     typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
                 };
                 var parserResult = parser.ParseArguments(args, types);
-                int rc = -1;
+                int rc = ExitCodes.Unexpected;
                 var cancellationToken = cancellationTokenSource.Token;
                 parserResult
                     .WithParsed<CreateTestCommand>(cmd => rc = cmd.Run(cancellationToken))
@@ -96,7 +96,7 @@ namespace aggregator.cli
                     {
                         var helpText = HelpText.AutoBuild(parserResult);
                         Console.Error.Write(helpText);
-                        rc = 1;
+                        rc = ExitCodes.InvalidArguments;
                     });
 
                 Console.ForegroundColor = save;

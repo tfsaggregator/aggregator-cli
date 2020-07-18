@@ -36,10 +36,10 @@ namespace aggregator.cli
             if (devops == null)
             {
                 context.Logger.WriteError("Invalid Azure DevOps credentials");
-                return 2;
+                return ExitCodes.InvalidArguments;
             }
 
-            return 0;
+            return ExitCodes.Success;
         }
     }
 }

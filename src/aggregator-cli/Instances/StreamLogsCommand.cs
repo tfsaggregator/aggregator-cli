@@ -24,7 +24,7 @@ namespace aggregator.cli
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             bool ok = await instances.StreamLogsAsync(instance, cancellationToken);
-            return ok ? 0 : 1;
+            return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
     }
 }
