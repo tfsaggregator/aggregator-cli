@@ -10,7 +10,8 @@ namespace unittests_core
         public void CtorValidate_Fails()
         {
             //"Must specify at least one affix for ResourceGroup"
-            Assert.Throws<ArgumentException>(() => new FileNamingTemplates("{}"));
+            Assert.True(true);
+            //Assert.Throws<ArgumentException>(() => new FileNamingTemplates("{}"));
         }
 
         [Fact]
@@ -22,6 +23,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{}", "n", "rg")]
         [InlineData(@"{""ResourceGroupPrefix"":""a""}", "n", "arg")]
         [InlineData(@"{""ResourceGroupSuffix"":""z""}", "n", "rgz")]
         [InlineData(@"{""ResourceGroupPrefix"":""p"",""ResourceGroupSuffix"":""s""}", "n", "prgs")]
@@ -34,6 +36,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{""FunctionAppPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppSuffix"":""z""}", "n", "nz")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppPrefix"":""p"",""FunctionAppSuffix"":""s""}", "n", "pns")]
@@ -46,6 +49,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{""HostingPlanPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""HostingPlanPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""HostingPlanSuffix"":""z""}", "n", "nz")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""HostingPlanPrefix"":""p"",""HostingPlanSuffix"":""s""}", "n", "pns")]
@@ -58,6 +62,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{""AppInsightPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""AppInsightPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""AppInsightSuffix"":""z""}", "n", "nz")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""AppInsightPrefix"":""p"",""AppInsightSuffix"":""s""}", "n", "pns")]
@@ -70,6 +75,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{""StorageAccountPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""StorageAccountPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""StorageAccountSuffix"":""z""}", "n", "nz")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""StorageAccountPrefix"":""p"",""StorageAccountSuffix"":""s""}", "n", "pns")]
@@ -82,6 +88,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{}", "n", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""a""}", "an", "n")]
         [InlineData(@"{""ResourceGroupSuffix"":""z""}", "nz", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""p"",""ResourceGroupSuffix"":""s""}", "pns", "n")]
@@ -95,6 +102,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{}", "rg", "app", "app")]
         [InlineData(@"{""ResourceGroupPrefix"":""a""}", "arg", "app", "app")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppPrefix"":""a""}", "arg", "an", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppSuffix"":""z""}", "arg", "nz", "n")]
@@ -109,6 +117,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{}", "https://zorro.azure.net/pippo", "zorro")]
         [InlineData(@"{""ResourceGroupPrefix"":""a""}", "https://zorro.azure.net/pippo", "zorro")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppPrefix"":""a""}", "https://an.azure.net/pippo", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""a"",""FunctionAppSuffix"":""z""}", "https://nz.azure.net/pippo", "n")]
@@ -123,6 +132,7 @@ namespace unittests_core
         }
 
         [Theory]
+        [InlineData(@"{}", "n", "n")]
         [InlineData(@"{""ResourceGroupPrefix"":""a""}", "n", "an")]
         [InlineData(@"{""ResourceGroupSuffix"":""z""}", "n", "nz")]
         [InlineData(@"{""ResourceGroupPrefix"":""p"",""ResourceGroupSuffix"":""s""}", "n", "pns")]
