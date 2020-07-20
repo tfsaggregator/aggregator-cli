@@ -14,9 +14,9 @@ namespace aggregator.cli
 {
     internal enum RemoveOutcome
     {
-        Succeeded   = 0,
-        NotFound    = 2,
-        Failed      = 1
+        Succeeded = 0,
+        NotFound = 2,
+        Failed = 1
     }
 
     internal class AggregatorMappings
@@ -42,12 +42,12 @@ namespace aggregator.cli
             var filteredSubs = instance != null
                     ? subscriptions.Where(s
                         => s.PublisherId == DevOpsEvents.PublisherId
-                        && s.ConsumerInputs.GetValue("url","").StartsWith(
-                            instance.FunctionAppUrl))
+                        && s.ConsumerInputs.GetValue("url", "").StartsWith(
+                            instance.FunctionAppUrl, StringComparison.OrdinalIgnoreCase))
                     : subscriptions.Where(s
                         => s.PublisherId == DevOpsEvents.PublisherId
                         // HACK
-                        && s.ConsumerInputs.GetValue("url","").IndexOf("aggregator.azurewebsites.net") > 8);
+                        && s.ConsumerInputs.GetValue("url", "").IndexOf("aggregator.azurewebsites.net") > 8);
             var projectClient = devops.GetClient<ProjectHttpClient>();
             var projects = await projectClient.GetProjects();
             var projectsDict = projects.ToDictionary(p => p.Id);
@@ -63,7 +63,7 @@ namespace aggregator.cli
                     continue;
                 }
                 // HACK need to factor the URL<->rule_name
-                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url","https://example.com"));
+                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", "https://example.com"));
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
                 string ruleFullName = $"{naming.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(
@@ -88,9 +88,10 @@ namespace aggregator.cli
             ruleUrl = ruleUrl.AddToUrl(impersonate: impersonateExecution);
 
             // check if the subscription already exists and bail out
-            var query = new SubscriptionsQuery {
+            var query = new SubscriptionsQuery
+            {
                 PublisherId = DevOpsEvents.PublisherId,
-                PublisherInputFilters= new InputFilter[] {
+                PublisherInputFilters = new InputFilter[] {
                     new InputFilter {
                         Conditions = new List<InputFilterCondition> (filters.ToFilterConditions()) {
                             new InputFilterCondition
@@ -144,7 +145,7 @@ namespace aggregator.cli
                 },
                 EventType = @event,
                 PublisherId = DevOpsEvents.PublisherId,
-                PublisherInputs = new Dictionary<string, string> (filters.ToInputs())
+                PublisherInputs = new Dictionary<string, string>(filters.ToInputs())
                 {
                     { "projectId", project.Id.ToString() },
                     /* TODO consider offering additional filters using the following
@@ -182,8 +183,8 @@ namespace aggregator.cli
             var ruleSubs = subscriptions
                 // TODO can we trust this equality?
                 // && s.ActionDescription == $"To host {instance.DnsHostName}"
-                .Where(s => s.ConsumerInputs.GetValue("url","").StartsWith(
-                    instance.FunctionAppUrl));
+                .Where(s => s.ConsumerInputs.GetValue("url", "").StartsWith(
+                    instance.FunctionAppUrl, StringComparison.OrdinalIgnoreCase));
             if (@event != "*")
             {
                 ruleSubs = ruleSubs.Where(s => string.Equals(s.EventType, @event, StringComparison.OrdinalIgnoreCase));
@@ -262,12 +263,12 @@ namespace aggregator.cli
         {
             return filters.ToInputs()
                           .Select(input => new InputFilterCondition
-                                           {
-                                               InputId = input.Key,
-                                               InputValue = input.Value,
-                                               Operator = InputFilterOperator.Equals,
-                                               CaseSensitive = false
-                                           });
+                          {
+                              InputId = input.Key,
+                              InputValue = input.Value,
+                              Operator = InputFilterOperator.Equals,
+                              CaseSensitive = false
+                          });
         }
     }
 }
