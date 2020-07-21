@@ -1,7 +1,7 @@
 name: tweet-release
 on:
   release:
-    types: [edited,published]
+    types: [published]
 jobs:
   tweet:
     runs-on: ubuntu-latest    
