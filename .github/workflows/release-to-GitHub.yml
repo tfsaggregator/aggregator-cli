@@ -23,7 +23,6 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-
     # versioning
     - name: Fetch all history for all tags and branches
       run: git fetch --prune
@@ -110,16 +109,19 @@ jobs:
       env:
         RUNTIME: osx-x64
 
-
     # Release notes (maybe one day we will use https://gittools.github.io/GitReleaseManager)
     - name: 'Dump commit messages since last tag as draft release notes'
       run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > release.log
+    - name: 'Move artifacts and Compute Hash'
+      run: |
+        cd outputs/
+        mv */*.zip ./
+        shasum -a 256 *.zip > SHA256.txt
     - name: Read package.json
       id: git_log_dump
       uses: juliangruber/read-file-action@v1
       with:
         path: ./release.log
-
 
     # Create Release in GitHub as Draft
     - name: Create Release
@@ -140,7 +142,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./outputs/function/FunctionRuntime.zip
+        asset_path: ./outputs/FunctionRuntime.zip
         asset_name: FunctionRuntime.zip
         asset_content_type: application/zip
       if: env.CREATE_GITHUB_RELEASE == 'true'
@@ -150,7 +152,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./outputs/win-x64/aggregator-cli-win-x64.zip
+        asset_path: ./outputs/aggregator-cli-win-x64.zip
         asset_name: aggregator-cli-win-x64.zip
         asset_content_type: application/zip
       if: env.CREATE_GITHUB_RELEASE == 'true'
@@ -160,7 +162,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./outputs/linux-x64/aggregator-cli-linux-x64.zip
+        asset_path: ./outputs/aggregator-cli-linux-x64.zip
         asset_name: aggregator-cli-linux-x64.zip
         asset_content_type: application/zip
       if: env.CREATE_GITHUB_RELEASE == 'true'
@@ -170,7 +172,17 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./outputs/osx-x64/aggregator-cli-osx-x64.zip
+        asset_path: ./outputs/aggregator-cli-osx-x64.zip
         asset_name: aggregator-cli-osx-x64.zip
         asset_content_type: application/zip
+      if: env.CREATE_GITHUB_RELEASE == 'true'
+    - name: 'Upload SHA256'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/SHA256.txt
+        asset_name: SHA256.txt
+        asset_content_type: text/plain
       if: env.CREATE_GITHUB_RELEASE == 'true'

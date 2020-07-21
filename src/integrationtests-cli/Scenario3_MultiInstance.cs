@@ -27,7 +27,7 @@ namespace integrationtests.cli
 
         [Theory, Order(2)]
         [InlineData("my45")]
-        [InlineData("my54")]
+        [InlineData("MyMixedCase54")]
         void InstallInstances(string instancePrefix)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -47,16 +47,16 @@ namespace integrationtests.cli
 
             Assert.Equal(0, rc);
             Assert.Contains("Instance my45", output);
-            Assert.Contains("Instance my54", output);
+            Assert.Contains("Instance MyMixedCase54", output);
         }
 
         [Theory, Order(4)]
-        [InlineData("my45", "test4")]
-        [InlineData("my54", "test5")]
-        void AddRules(string instancePrefix, string rule)
+        [InlineData("my45", "test4", "test4.rule")]
+        [InlineData("MyMixedCase54", "TestRule5", "test5.rule")]
+        void AddRules(string instancePrefix, string ruleName, string ruleFile)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"add.rule --verbose --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --name {rule} --file {rule}.rule");
+            (int rc, string output) = RunAggregatorCommand($"add.rule --verbose --instance {instance} --resourceGroup {TestLogonData.ResourceGroup} --name {ruleName} --file {ruleFile}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
@@ -64,7 +64,7 @@ namespace integrationtests.cli
 
         [Theory, Order(5)]
         [InlineData("my45", "test4")]
-        [InlineData("my54", "test5")]
+        [InlineData("MyMixedCase54", "TestRule5")]
         void ListRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -77,7 +77,7 @@ namespace integrationtests.cli
 
         [Theory, Order(6)]
         [InlineData("my45", "test4")]
-        [InlineData("my54", "test5")]
+        [InlineData("MyMixedCase54", "TestRule5")]
         void MapRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -89,14 +89,14 @@ namespace integrationtests.cli
 
         [Theory, Order(7)]
         [InlineData("my45", "test4")]
-        [InlineData("my54", "test5")]
+        [InlineData("MyMixedCase54", "TestRule5")]
         void ListMappings(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
             (int rc, string output) = RunAggregatorCommand($"list.mappings --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(0, rc);
-            Assert.Contains($"invokes rule {instance}/{rule}", output);
+            Assert.Contains($"invokes rule {instance.ToLowerInvariant()}/{rule}", output);
             Assert.DoesNotContain("] Failed!", output);
         }
 
@@ -108,7 +108,7 @@ namespace integrationtests.cli
             (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instance} --project \"{TestLogonData.ProjectName}\" ");
             Assert.Equal(0, rc);
             // Sample output from rule:
-            //  Returning 'Hello Task #118 from Rule 5!' from 'test5'
+            //  Returning 'Hello Task #118 from Rule 5!' from 'TestRule5'
             Assert.Contains($"Returning 'Hello Task #", output);
             Assert.Contains($"!' from '{rule}'", output);
             Assert.DoesNotContain("] Failed!", output);
@@ -132,11 +132,11 @@ namespace integrationtests.cli
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("Instance my45", output);
-            Assert.Contains("Instance my54", output);
+            Assert.Contains("Instance MyMixedCase54", output);
         }
 
         [Theory, Order(903)]
-        [InlineData("my54", "test5")]
+        [InlineData("MyMixedCase54", "TestRule5")]
         void UnmapRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -147,7 +147,7 @@ namespace integrationtests.cli
         }
 
         [Theory, Order(904)]
-        [InlineData("my54", "test5")]
+        [InlineData("MyMixedCase54", "TestRule5")]
         void UnmapUnmappedRule(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -162,7 +162,7 @@ namespace integrationtests.cli
         {
             string instance = "my45" + TestLogonData.UniqueSuffix;
             (int _, string _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
-            instance = "my54" + TestLogonData.UniqueSuffix;
+            instance = "MyMixedCase54" + TestLogonData.UniqueSuffix;
             (int _, string _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
 
             (int rc, string output) = RunAggregatorCommand($"test.cleanup --verbose --resourceGroup {TestLogonData.ResourceGroup} ");
