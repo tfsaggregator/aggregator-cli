@@ -1,10 +1,10 @@
-﻿using CommandLine;
-using CommandLine.Text;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
-
 using aggregator.cli.Instances;
-
+using CommandLine;
+using CommandLine.Text;
 
 namespace aggregator.cli
 {
@@ -37,7 +37,13 @@ namespace aggregator.cli
     {
         public static int Main(string[] args)
         {
+            var mainTimer = new Stopwatch();
+            mainTimer.Start();
+
             var save = Console.ForegroundColor;
+
+            Telemetry.Current.TrackEvent("ApplicationStart");
+
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
 
@@ -100,6 +106,22 @@ namespace aggregator.cli
                         Console.Error.Write(helpText);
                         rc = ExitCodes.InvalidArguments;
                     });
+
+
+                mainTimer.Stop();
+                Telemetry.Current.TrackEvent("ApplicationEnd", null,
+                    new Dictionary<string, double> {
+                        { "ApplicationDuration", mainTimer.ElapsedMilliseconds }
+                    });
+                if (Telemetry.Current != null)
+                {
+                    // before exit, flush the remaining data
+                    Telemetry.Current.Flush();
+                    // flush is not blocking when not using InMemoryChannel so wait a bit. There is an active issue regarding the need for `Sleep`/`Delay`
+                    // which is tracked here: https://github.com/microsoft/ApplicationInsights-dotnet/issues/407
+                    System.Threading.Tasks.Task.Delay(5000).Wait();
+                }
+
 
                 Console.ForegroundColor = save;
                 Console.CancelKeyPress -= cancelEventHandler;

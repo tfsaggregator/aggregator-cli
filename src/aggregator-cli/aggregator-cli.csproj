@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.14.0" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="3.1.0" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.29.1" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.29.1" />
