@@ -200,5 +200,67 @@ namespace unittests_ruleng
             Assert.Equal("/fields/System.Title", actual.Path);
             Assert.Equal("Replaced title", actual.Value);
         }
+
+        [Fact]
+        public void ChangingAPulledFieldTwiceHasASingleReplaceOperation()
+        {
+            var logger = Substitute.For<IAggregatorLogger>();
+            var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                             },
+                Rev = 3,
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+            wrapper.Title = "Replaced title";
+            wrapper.Title = "Replaced title - again";
+
+            Assert.Single(wrapper.Changes);
+            var actual = wrapper.Changes[0];
+            Assert.Equal(Operation.Replace, actual.Operation);
+            Assert.Equal("/fields/System.Title", actual.Path);
+            Assert.Equal("Replaced title - again", actual.Value);
+        }
+
+        [Fact]
+        public void ChangingANewFieldTwiceHasASingleAddOperation()
+        {
+            var logger = Substitute.For<IAggregatorLogger>();
+            var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                             },
+                Rev = 3,
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+            wrapper.Reason = "New reason";
+            wrapper.Reason = "New reason - again";
+
+            Assert.Single(wrapper.Changes);
+            var actual = wrapper.Changes[0];
+            Assert.Equal(Operation.Add, actual.Operation);
+            Assert.Equal("/fields/System.Reason", actual.Path);
+            Assert.Equal("New reason - again", actual.Value);
+        }
     }
 }

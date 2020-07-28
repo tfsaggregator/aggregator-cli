@@ -370,12 +370,21 @@ namespace aggregator.Engine
                 }
 
                 _item.Fields[field] = value;
-                Changes.Add(new JsonPatchOperation()
+                // do we have a previous op for this field?
+                var op = Changes.Where(op => op.Path == "/fields/" + field).FirstOrDefault();
+                if (op != null)
                 {
-                    Operation = Operation.Replace,
-                    Path = "/fields/" + field,
-                    Value = TranslateValue(value)
-                });
+                    op.Value = TranslateValue(value);
+                }
+                else
+                {
+                    Changes.Add(new JsonPatchOperation()
+                    {
+                        Operation = Operation.Replace,
+                        Path = "/fields/" + field,
+                        Value = TranslateValue(value)
+                    });
+                }
             }
             else
             {
