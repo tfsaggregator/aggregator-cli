@@ -29,7 +29,7 @@ namespace aggregator.cli
                 ClientSecret = this.ClientSecret,
                 TenantId = this.TenantId
             };
-            string path = data.Save();
+            _ = data.Save();
             // now check for validity
             context.Logger.WriteInfo("Connecting to Azure...");
             var azure = data.Logon();

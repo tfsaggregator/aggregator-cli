@@ -62,7 +62,7 @@ namespace aggregator.cli
                 var types = new Type[]
                 {
                     typeof(CreateTestCommand), typeof(CleanupTestCommand),
-                    typeof(LogonAzureCommand), typeof(LogonDevOpsCommand), typeof(LogoffCommand),
+                    typeof(LogonAzureCommand), typeof(LogonDevOpsCommand), typeof(LogoffCommand), typeof(LogonEnvCommand),
                     typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UpdateInstanceCommand),
                     typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
                     typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
@@ -78,6 +78,7 @@ namespace aggregator.cli
                     .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<LogoffCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<LogonEnvCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<UpdateInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))

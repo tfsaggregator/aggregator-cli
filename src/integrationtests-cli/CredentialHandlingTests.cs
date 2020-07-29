@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using aggregator.cli;
 using Microsoft.TeamFoundation.Common;
 using Xunit;
@@ -19,11 +20,11 @@ namespace integrationtests.cli
         void Logon()
         {
             (int rc, string output) = RunAggregatorCommand(
-                $"logon.azure --subscription {TestLogonData.SubscriptionId} --client {TestLogonData.ClientId} --password {TestLogonData.ClientSecret} --tenant {TestLogonData.TenantId}");
+                $"logon.azure --verbose --subscription {TestLogonData.SubscriptionId} --client {TestLogonData.ClientId} --password {TestLogonData.ClientSecret} --tenant {TestLogonData.TenantId}");
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
             (int rc2, string output2) = RunAggregatorCommand(
-                $"logon.ado --url {TestLogonData.DevOpsUrl} --mode PAT --token {TestLogonData.PAT}");
+                $"logon.ado --verbose --url {TestLogonData.DevOpsUrl} --mode PAT --token {TestLogonData.PAT}");
             Assert.Equal(0, rc2);
             Assert.DoesNotContain("] Failed!", output2);
         }
@@ -31,7 +32,7 @@ namespace integrationtests.cli
         [Fact, Order(3)]
         void ListInstances()
         {
-            (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {TestLogonData.ResourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.instances --verbose --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(0, rc);
             Assert.Contains("No aggregator instances found", output);
@@ -42,13 +43,12 @@ namespace integrationtests.cli
         void ListMappings()
         {
             string instance = "my45" + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"list.mappings --instance {instance}--resourceGroup {TestLogonData.ResourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.mappings --verbose --instance {instance}--resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(3, rc);
             Assert.Contains("No rule mappings found", output);
             Assert.DoesNotContain("] Failed!", output);
         }
-
 
         [Fact, Order(10)]
         void Logoff()
@@ -64,7 +64,7 @@ namespace integrationtests.cli
         [Fact, Order(21)]
         void ListInstancesAfterLogoff()
         {
-            (int rc, string output) = RunAggregatorCommand($"list.instances --resourceGroup {TestLogonData.ResourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.instances --verbose --resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(99, rc);
             Assert.Contains("No cached Azure credential", output);
@@ -74,11 +74,58 @@ namespace integrationtests.cli
         void ListMappingsAfterLogoff()
         {
             string instance = "my45" + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"list.mappings --instance {instance}--resourceGroup {TestLogonData.ResourceGroup}");
+            (int rc, string output) = RunAggregatorCommand($"list.mappings --verbose --instance {instance}--resourceGroup {TestLogonData.ResourceGroup}");
 
             Assert.Equal(99, rc);
             Assert.Contains("No cached Azure DevOps credential", output);
         }
 
+        [Fact, Order(31)]
+        void LogonEnv()
+        {
+            (int rc, string output) = RunAggregatorCommand($"logon.env --verbose", new List<(string, string)> {
+                ("AGGREGATOR_SUBSCRIPTIONID",TestLogonData.SubscriptionId),
+                ("AGGREGATOR_CLIENTID",TestLogonData.ClientId),
+                ("AGGREGATOR_CLIENTSECRET",TestLogonData.ClientSecret),
+                ("AGGREGATOR_TENANTID",TestLogonData.TenantId),
+                ("AGGREGATOR_AZDO_URL",TestLogonData.DevOpsUrl),
+                ("AGGREGATOR_AZDO_MODE","PAT"),
+                ("AGGREGATOR_AZDO_TOKEN",TestLogonData.PAT),
+            });
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Fact, Order(33)]
+        void ListInstancesAfterLogonEnv()
+        {
+            (int rc, string output) = RunAggregatorCommand($"list.instances --verbose --resourceGroup {TestLogonData.ResourceGroup}");
+
+            Assert.Equal(0, rc);
+            Assert.Contains("No aggregator instances found", output);
+            Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Fact, Order(37)]
+        void ListMappingsAfterLogonEnv()
+        {
+            string instance = "my45" + TestLogonData.UniqueSuffix;
+            (int rc, string output) = RunAggregatorCommand($"list.mappings --verbose --instance {instance}--resourceGroup {TestLogonData.ResourceGroup}");
+
+            Assert.Equal(3, rc);
+            Assert.Contains("No rule mappings found", output);
+            Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Fact, Order(39)]
+        void LogoffAfterLogonEnv()
+        {
+            (int rc, string output) = RunAggregatorCommand($"logoff --verbose");
+            bool isEmpty = Directory.GetFiles(LocalAppData.GetDirectory(), "*.dat").IsNullOrEmpty();
+
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+            Assert.True(isEmpty);
+        }
     }
 }

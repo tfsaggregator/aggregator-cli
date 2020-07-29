@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.VisualStudio.Services.Common;
 using Xunit.Abstractions;
 
 namespace integrationtests.cli
@@ -21,7 +23,7 @@ namespace integrationtests.cli
             _output = output;
         }
 
-        protected (int rc, string output) RunAggregatorCommand(string commandLine)
+        protected (int rc, string output) RunAggregatorCommand(string commandLine, IEnumerable<(string,string)> env = default)
         {
             // see https://stackoverflow.com/a/14655145/100864
             var args = Regex.Matches(commandLine, @"[\""](?<a>.+?)[\""]|(?<a>[^ ]+)")
@@ -34,6 +36,14 @@ namespace integrationtests.cli
             var buffered = new StringWriter();
             Console.SetOut(buffered);
             Console.SetError(buffered);
+
+            if (env != default)
+            {
+                env.ForEach((pair) => {
+                    (string name, string value) = pair;
+                    Environment.SetEnvironmentVariable(name, value, EnvironmentVariableTarget.Process);
+                });
+            }
 
             var rc = aggregator.cli.Program.Main(args);
 
