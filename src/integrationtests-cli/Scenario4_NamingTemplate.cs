@@ -156,17 +156,6 @@ namespace integrationtests.cli
             Assert.DoesNotContain("] Failed!", output);
         }
 
-        [Fact, Order(950)]
-        void Logoff()
-        {
-            (int rc, string output) = RunAggregatorCommand($"logoff");
-            bool isEmpty = Directory.GetFiles(LocalAppData.GetDirectory(), "*.dat").IsNullOrEmpty();
-
-            Assert.Equal(0, rc);
-            Assert.DoesNotContain("] Failed!", output);
-            Assert.True(isEmpty);
-        }
-
         [Fact, Order(999)]
         void FinalCleanUp()
         {
