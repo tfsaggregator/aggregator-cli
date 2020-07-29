@@ -30,12 +30,21 @@ namespace aggregator.cli
         {
             TelemetryConfiguration configuration = TelemetryConfiguration.CreateDefault();
             configuration.InstrumentationKey = applicationInsightsKey;
+            configuration.TelemetryChannel = new Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.ServerTelemetryChannel();
+            configuration.TelemetryChannel.DeveloperMode = Debugger.IsAttached;
+#if DEBUG
+            configuration.TelemetryChannel.DeveloperMode = true;
+#endif
+
             telemetryClient = new TelemetryClient(configuration);
-            // this is WIN only
-            telemetryClient.Context.User.Id = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+            // this is portable
+            telemetryClient.Context.User.Id = Environment.UserName;
             // this is time based, cannot be a new one at each run
             telemetryClient.Context.Session.Id = Guid.NewGuid().ToString();
+            ///telemetryClient.Context.Session.IsFirst = false;
+            ///Environment.Is64BitOperatingSystem;
             telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
+            telemetryClient.Context.Device.Id = Environment.MachineName;
             telemetryClient.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             Trace.WriteLine(string.Format("SessionID: {0}", telemetryClient.Context.Session.Id));
             AddModules();

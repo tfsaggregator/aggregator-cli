@@ -20,6 +20,8 @@ namespace aggregator.cli
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
+            Telemetry.Current.TrackEvent("logon azure started");
+
             var context = await Context.BuildAsync(cancellationToken);
 
             var data = new AzureLogon()
