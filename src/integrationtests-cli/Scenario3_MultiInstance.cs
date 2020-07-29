@@ -1,4 +1,7 @@
-﻿using Xunit;
+﻿using System.IO;
+using aggregator.cli;
+using Microsoft.TeamFoundation.Common;
+using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
 
@@ -155,6 +158,17 @@ namespace integrationtests.cli
 
             Assert.Equal(3, rc);
             Assert.Contains("No mapping(s) found for rule(s)", output);
+        }
+
+        [Fact, Order(950)]
+        void Logoff()
+        {
+            (int rc, string output) = RunAggregatorCommand($"logoff");
+            bool isEmpty = Directory.GetFiles(LocalAppData.GetDirectory(), "*.dat").IsNullOrEmpty();
+
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+            Assert.True(isEmpty);
         }
 
         [Fact, Order(999)]

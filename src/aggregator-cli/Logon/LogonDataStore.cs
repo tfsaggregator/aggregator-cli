@@ -90,7 +90,12 @@ namespace aggregator.cli
             {
                 return (result, LogonResult.Succeeded);
             }
+        }
 
+        public void Clear()
+        {
+            if (File.Exists(LogonDataPath))
+                File.Delete(LogonDataPath);
         }
     }
 }

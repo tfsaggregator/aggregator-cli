@@ -4,6 +4,7 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
+using Microsoft.TeamFoundation.Common;
 using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
@@ -153,6 +154,17 @@ namespace integrationtests.cli
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Fact, Order(950)]
+        void Logoff()
+        {
+            (int rc, string output) = RunAggregatorCommand($"logoff");
+            bool isEmpty = Directory.GetFiles(LocalAppData.GetDirectory(), "*.dat").IsNullOrEmpty();
+
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+            Assert.True(isEmpty);
         }
 
         [Fact, Order(999)]

@@ -5,9 +5,9 @@ using System.Text;
 
 namespace aggregator.cli
 {
-    static class LocalAppData
+    public static class LocalAppData
     {
-        public static string GetPath(string filename)
+        public static string GetDirectory()
         {
             string dir = Path.Combine(
                 Environment.GetFolderPath(
@@ -15,7 +15,12 @@ namespace aggregator.cli
                     Environment.SpecialFolderOption.Create),
                         "aggregator-cli");
             Directory.CreateDirectory(dir);
-            return Path.Combine(dir, filename);
+            return dir;
+        }
+
+        public static string GetPath(string filename)
+        {
+            return Path.Combine(GetDirectory(), filename);
         }
     }
 }

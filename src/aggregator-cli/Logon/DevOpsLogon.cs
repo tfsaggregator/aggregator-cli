@@ -18,6 +18,11 @@ namespace aggregator.cli
         public DevOpsTokenType Mode { get; set; }
         public string Token { get; set; }
 
+        public void Clear()
+        {
+            new LogonDataStore(LogonDataTag).Clear();
+        }
+
         public string Save()
         {
             return new LogonDataStore(LogonDataTag).Save(this);
