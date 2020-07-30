@@ -3,6 +3,7 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.VisualStudio.Services.WebApi;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -27,6 +28,8 @@ namespace aggregator.cli
 
         internal int Run(CancellationToken cancellationToken)
         {
+            Telemetry.Current.TrackEvent($"{this.GetType().Name} Start");
+
             Logger = new ConsoleLogger(Verbose);
             try
             {
@@ -43,6 +46,12 @@ namespace aggregator.cli
                 t.Wait(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 int rc = t.Result;
+
+                Telemetry.Current.TrackEvent($"{this.GetType().Name} End", null,
+                    new Dictionary<string, double> {
+                        { "ExitCode", rc }
+                    });
+
                 if (rc == ExitCodes.Success)
                 {
                     Logger.WriteSuccess("Succeeded");
@@ -64,6 +73,7 @@ namespace aggregator.cli
                     ? ex.Message
                     : ex.InnerException.Message
                     );
+                Telemetry.Current.TrackException(ex);
                 return ExitCodes.Unexpected;
             }
         }

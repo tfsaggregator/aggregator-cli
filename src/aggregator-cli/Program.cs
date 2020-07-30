@@ -42,7 +42,7 @@ namespace aggregator.cli
 
             var save = Console.ForegroundColor;
 
-            Telemetry.Current.TrackEvent("ApplicationStart");
+            Telemetry.Current.TrackEvent("CLI Start");
 
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
@@ -109,9 +109,9 @@ namespace aggregator.cli
 
 
                 mainTimer.Stop();
-                Telemetry.Current.TrackEvent("ApplicationEnd", null,
+                Telemetry.Current.TrackEvent("CLI End", null,
                     new Dictionary<string, double> {
-                        { "ApplicationDuration", mainTimer.ElapsedMilliseconds }
+                        { "RunDuration", mainTimer.ElapsedMilliseconds }
                     });
                 if (Telemetry.Current != null)
                 {
