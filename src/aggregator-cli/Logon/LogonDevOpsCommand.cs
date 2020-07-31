@@ -10,9 +10,11 @@ namespace aggregator.cli
     [Verb("logon.ado", HelpText = "Logon into Azure DevOps.")]
     class LogonDevOpsCommand : CommandBase
     {
+        [ShowInTelemetry(TelemetryDisplayMode.MaskOthersUrl)]
         [Option('u', "url", Required = true, HelpText = "Account/server URL, e.g. myaccount.visualstudio.com .")]
         public string Url { get; set; }
 
+        [ShowInTelemetry]
         [Option('m', "mode", Required = true, HelpText = "Logon mode (valid modes: PAT).")]
         public DevOpsTokenType Mode { get; set; }
 

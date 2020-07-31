@@ -349,4 +349,4 @@ outputs
 *.tfvars
 .terraform
 *.tfstate*
-src/integrationtests-setup/_plan
+**/_plan

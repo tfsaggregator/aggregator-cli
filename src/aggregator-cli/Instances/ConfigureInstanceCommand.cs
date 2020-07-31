@@ -13,15 +13,19 @@ namespace aggregator.cli
         [Option('n', "name", Required = true, HelpText = "Aggregator instance name.")]
         public string Name { get; set; }
 
+        [ShowInTelemetry]
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
+        [ShowInTelemetry]
         [Option('a', "authentication", SetName = "auth", Required = true, HelpText = "Refresh authentication data.")]
         public bool Authentication { get; set; }
 
+        [ShowInTelemetry]
         [Option('m', "saveMode", SetName = "save", Required = false, HelpText = "Save behaviour.")]
         public SaveMode SaveMode { get; set; }
 

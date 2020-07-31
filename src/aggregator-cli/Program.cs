@@ -1,10 +1,10 @@
-﻿using CommandLine;
-using CommandLine.Text;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
-
 using aggregator.cli.Instances;
-
+using CommandLine;
+using CommandLine.Text;
 
 namespace aggregator.cli
 {
@@ -37,7 +37,13 @@ namespace aggregator.cli
     {
         public static int Main(string[] args)
         {
+            var mainTimer = new Stopwatch();
+            mainTimer.Start();
+
             var save = Console.ForegroundColor;
+
+            Telemetry.Current.TrackEvent("CLI Start");
+
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
 
@@ -100,6 +106,15 @@ namespace aggregator.cli
                         Console.Error.Write(helpText);
                         rc = ExitCodes.InvalidArguments;
                     });
+
+
+                mainTimer.Stop();
+                Telemetry.Current.TrackEvent("CLI End", null,
+                    new Dictionary<string, double> {
+                        { "RunDuration", mainTimer.ElapsedMilliseconds }
+                    });
+
+                Telemetry.Shutdown();
 
                 Console.ForegroundColor = save;
                 Console.CancelKeyPress -= cancelEventHandler;
