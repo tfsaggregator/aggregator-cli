@@ -10,6 +10,7 @@ namespace aggregator.cli
     [Verb("configure.rule", HelpText = "Change a rule configuration.")]
     class ConfigureRuleCommand : CommandBase
     {
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
@@ -19,14 +20,18 @@ namespace aggregator.cli
         [Option('n', "name", Required = true, HelpText = "Aggregator rule name.")]
         public string Name { get; set; }
 
+        [ShowInTelemetry]
         [Option('d', "disable", SetName = "disable", HelpText = "Disable the rule.")]
         public bool? Disable { get; set; }
+        [ShowInTelemetry]
         [Option('e', "enable", SetName = "enable", HelpText = "Enable the rule.")]
         public bool? Enable { get; set; }
 
+        [ShowInTelemetry]
         [Option("disableImpersonate", Required = false, HelpText = "Disable do rule changes impersonated.")]
         public bool? DisableImpersonateExecution { get; set; }
 
+        [ShowInTelemetry]
         [Option("enableImpersonate", Required = false, HelpText = "Enable do rule changes on behalf of the person triggered the rule execution. See wiki for details, requires special account privileges.")]
         public bool? EnableImpersonateExecution { get; set; }
 

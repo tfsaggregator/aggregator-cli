@@ -13,12 +13,15 @@ namespace aggregator.cli
         [Option('n', "name", Required = true, HelpText = "Aggregator instance name.")]
         public string Name { get; set; }
 
+        [ShowInTelemetry]
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
+        [ShowInTelemetry]
         [Option('m', "dont-remove-mappings", Required = false, HelpText = "Do not remove mappings from Azure DevOps (default is to remove them).")]
         public bool Mappings { get; set; }
 

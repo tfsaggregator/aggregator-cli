@@ -7,9 +7,11 @@ namespace aggregator.cli
     [Verb("list.instances", HelpText = "Lists Aggregator instances.")]
     class ListInstancesCommand : CommandBase
     {
+        [ShowInTelemetry]
         [Option('l', "location", Required = false, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
 

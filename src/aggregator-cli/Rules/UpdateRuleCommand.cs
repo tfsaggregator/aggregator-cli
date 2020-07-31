@@ -10,6 +10,7 @@ namespace aggregator.cli
     [Verb("update.rule", HelpText = "Update a rule code and/or runtime.")]
     class UpdateRuleCommand : CommandBase
     {
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
@@ -22,9 +23,11 @@ namespace aggregator.cli
         [Option('f', "file", Required = true, HelpText = "Aggregator rule code.")]
         public string File { get; set; }
 
+        [ShowInTelemetry]
         [Option("requiredVersion", SetName = "nourl", Required = false, HelpText = "Version of Aggregator Runtime required.")]
         public string RequiredVersion { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.MaskOthersUrl)]
         [Option("sourceUrl", SetName = "url", Required = false, HelpText = "URL of Aggregator Runtime.")]
         public string SourceUrl { get; set; }
 

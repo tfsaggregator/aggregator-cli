@@ -9,7 +9,7 @@ namespace aggregator.cli
     /// </summary>
     class TelemetrySettings
     {
-        private static string SettingsFileName => LocalAppData.GetPath("telemetry.settings");
+        private static string SettingsFileName => LocalAppData.GetPath("telemetry.settings.json");
 
         private static readonly TimeSpan MaxSessionDuration = new TimeSpan(0, 0, 15, 0);
 
@@ -48,8 +48,6 @@ namespace aggregator.cli
                     DeviceId = GetHash(Environment.MachineName),
                 };
             }
-
-            s.Save(); //HACK
 
             return s;
         }

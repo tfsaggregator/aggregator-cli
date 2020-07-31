@@ -14,26 +14,33 @@ namespace aggregator.cli
         [Option('n', "name", Required = true, HelpText = "Aggregator instance name.")]
         public string Name { get; set; }
 
+        [ShowInTelemetry]
         [Option('l', "location", Required = true, HelpText = "Aggregator instance location (Azure region).")]
         public string Location { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
 
+        [ShowInTelemetry]
         [Option("requiredVersion", SetName = "nourl", Required = false, HelpText = "Version of Aggregator Runtime required.")]
         public string RequiredVersion { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.MaskOthersUrl)]
         [Option("sourceUrl", SetName="url", Required = false, HelpText = "URL of Aggregator Runtime.")]
         public string SourceUrl { get; set; }
 
         /* next two should go together, no way to express this via CommandLine library */
 
+        [ShowInTelemetry]
         [Option('k', "hostingPlanSku", SetName = "plan", Required = false, Default = "Y1", HelpText = "Azure AppPlan SKU hosting the Aggregator instances .")]
         public string HostingPlanSku { get; set; }
 
+        [ShowInTelemetry]
         [Option('t', "hostingPlanTier", SetName = "plan", Required = false, Default = "Dynamic", HelpText = "Azure AppPlan Service tier hosting the Aggregator instances .")]
         public string HostingPlanTier { get; set; }
 
+        [ShowInTelemetry]
         [Option("appInsightLocation", Required = false, HelpText = "AppInsight location (Azure region).")]
         public string AppInsightLocation { get; set; }
 

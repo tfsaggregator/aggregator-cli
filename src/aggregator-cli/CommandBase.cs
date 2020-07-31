@@ -1,5 +1,7 @@
 ﻿using CommandLine;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure.Management.Fluent;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System;
 using System.Collections.Generic;
@@ -13,10 +15,11 @@ namespace aggregator.cli
 {
     abstract class CommandBase
     {
-        // Omitting long name, defaults to name of property, ie "--verbose"
+        [ShowInTelemetry]
         [Option('v', "verbose", Default = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option("namingTemplate", Default = "", HelpText = "Define template-set for generating names of Azure Resources.")]
         public string NamingTemplate { get; set; }
 
@@ -28,7 +31,23 @@ namespace aggregator.cli
 
         internal int Run(CancellationToken cancellationToken)
         {
-            Telemetry.Current.TrackEvent($"{this.GetType().Name} Start");
+            var eventStart = new EventTelemetry();
+            // use Reflection to capture Command and Options
+            eventStart.Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} Start";
+            this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ForEach(
+                prop =>
+                {
+                    var show = prop.GetCustomAttribute<ShowInTelemetryAttribute>();
+                    if (show != null)
+                    {
+                        var attr = prop.GetCustomAttribute<OptionAttribute>();
+                        if (attr != null)
+                        {
+                            eventStart.Properties[attr.LongName] = TelemetryFormatter.Format(show.Mode, prop.GetValue(this));
+                        }
+                    }
+                });
+            Telemetry.Current.TrackEvent(eventStart);
 
             Logger = new ConsoleLogger(Verbose);
             try
@@ -47,10 +66,10 @@ namespace aggregator.cli
                 cancellationToken.ThrowIfCancellationRequested();
                 int rc = t.Result;
 
-                Telemetry.Current.TrackEvent($"{this.GetType().Name} End", null,
-                    new Dictionary<string, double> {
-                        { "ExitCode", rc }
-                    });
+                var eventEnd = new EventTelemetry();
+                eventEnd.Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} End";
+                eventEnd.Properties["exitCode"] = rc.ToString();
+                Telemetry.Current.TrackEvent(eventEnd);
 
                 if (rc == ExitCodes.Success)
                 {

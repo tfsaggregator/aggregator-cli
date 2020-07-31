@@ -113,15 +113,8 @@ namespace aggregator.cli
                     new Dictionary<string, double> {
                         { "RunDuration", mainTimer.ElapsedMilliseconds }
                     });
-                if (Telemetry.Current != null)
-                {
-                    // before exit, flush the remaining data
-                    Telemetry.Current.Flush();
-                    // flush is not blocking when not using InMemoryChannel so wait a bit. There is an active issue regarding the need for `Sleep`/`Delay`
-                    // which is tracked here: https://github.com/microsoft/ApplicationInsights-dotnet/issues/407
-                    System.Threading.Tasks.Task.Delay(5000).Wait();
-                }
 
+                Telemetry.Shutdown();
 
                 Console.ForegroundColor = save;
                 Console.CancelKeyPress -= cancelEventHandler;

@@ -10,18 +10,22 @@ namespace aggregator.cli
     [Verb("unmap.rule", HelpText = "Unmaps an Aggregator Rule from a Azure DevOps Project.")]
     class UnmapRuleCommand : CommandBase
     {
+        [ShowInTelemetry]
         [Option('e', "event", Required = true, HelpText = "Azure DevOps event.")]
         public string Event { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
+        [ShowInTelemetry(TelemetryDisplayMode.Presence)]
         [Option('p', "project", Required = false, Default = "*", HelpText = "Azure DevOps project name.")]
         public string Project { get; set; }
 
+        [ShowInTelemetry]
         [Option('r', "rule", Required = true, HelpText = "Aggregator rule name.")]
         public string Rule { get; set; }
 
