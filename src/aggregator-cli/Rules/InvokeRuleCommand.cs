@@ -62,16 +62,22 @@ namespace aggregator.cli
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
             var rules = new AggregatorRules(context.Azure, context.Logger);
+            bool ok = DevOpsEvents.IsValidEvent(Event);
+            if (!ok)
+            {
+                context.Logger.WriteError($"Invalid event type.");
+                return ExitCodes.InvalidArguments;
+            }
             if (Local)
             {
-                bool ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
+                ok = await rules.InvokeLocalAsync(Project, Event, WorkItemId, Source, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
                 return ok ? ExitCodes.Success : ExitCodes.Failure;
             }
             else
             {
                 var instance = context.Naming.Instance(Instance, ResourceGroup);
                 context.Logger.WriteWarning("Untested feature!");
-                bool ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
+                ok = await rules.InvokeRemoteAsync(Account, Project, Event, WorkItemId, instance, Name, DryRun, SaveMode, ImpersonateExecution, cancellationToken);
                 return ok ? ExitCodes.Success : ExitCodes.Failure;
             }
         }
