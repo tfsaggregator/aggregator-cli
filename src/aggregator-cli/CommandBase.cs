@@ -47,7 +47,7 @@ namespace aggregator.cli
                         }
                     }
                 });
-            Telemetry.Current.TrackEvent(eventStart);
+            Telemetry.TrackEvent(eventStart);
 
             Logger = new ConsoleLogger(Verbose);
             try
@@ -69,7 +69,7 @@ namespace aggregator.cli
                 var eventEnd = new EventTelemetry();
                 eventEnd.Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} End";
                 eventEnd.Properties["exitCode"] = rc.ToString();
-                Telemetry.Current.TrackEvent(eventEnd);
+                Telemetry.TrackEvent(eventEnd);
 
                 if (rc == ExitCodes.Success)
                 {
@@ -92,7 +92,7 @@ namespace aggregator.cli
                     ? ex.Message
                     : ex.InnerException.Message
                     );
-                Telemetry.Current.TrackException(ex);
+                Telemetry.TrackException(ex);
                 return ExitCodes.Unexpected;
             }
         }
