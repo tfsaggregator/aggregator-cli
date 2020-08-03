@@ -146,6 +146,11 @@ namespace aggregator.cli
             var inMemoryFiles = await PackagingFilesAsync(ruleName, preprocessedRule);
             using (var assemblyStream = await FunctionRuntimePackage.GetDeployedFunctionEntrypoint(instance, _azure, _logger, cancellationToken))
             {
+                if (assemblyStream == null)
+                {
+                    _logger.WriteError("Runtime not found, please re-run the install.instance command");
+                    return false;
+                }
                 await inMemoryFiles.AddFunctionDefaultFiles(assemblyStream);
             }
             _logger.WriteInfo($"Packaging rule {ruleName} complete.");

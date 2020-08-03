@@ -178,7 +178,7 @@ namespace aggregator.cli
                 logger.WriteVerbose($"Cached version is recent enough to not require checking GitHub");
             }
             
-            if (string.IsNullOrEmpty(gitHubVersion.Name))
+            if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
             {
                 logger.WriteError($"Requested runtime {requiredVersion} version does not exist.");
                 return false;
