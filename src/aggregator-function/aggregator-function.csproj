@@ -57,5 +57,6 @@
   <ItemGroup>
     <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
     <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
+    <ProjectReference Include="..\aggregator-webshared\aggregator-webshared.csproj" />
   </ItemGroup>
 </Project>

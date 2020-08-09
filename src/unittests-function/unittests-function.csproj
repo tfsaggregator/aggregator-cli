@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aggregator-function\aggregator-function.csproj" />
+    <ProjectReference Include="..\aggregator-webshared\aggregator-webshared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
