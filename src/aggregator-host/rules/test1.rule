@@ -1,0 +1,1 @@
+﻿$"Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"

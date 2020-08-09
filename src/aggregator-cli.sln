@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-integration-tests", "
 		integrationtests-setup\variables.tf = integrationtests-setup\variables.tf
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-host", "aggregator-host\aggregator-host.csproj", "{B555061A-08DB-4646-9BEC-399BDA2DA0C2}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aggregator-webshared", "aggregator-webshared\aggregator-webshared.csproj", "{6B4DC582-C2A0-4577-9FAA-838EF2D5D20B}"
 EndProject
 Global
@@ -74,6 +76,10 @@ Global
 		{A875638A-8E95-47BE-AEDD-BAD5113692B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A875638A-8E95-47BE-AEDD-BAD5113692B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A875638A-8E95-47BE-AEDD-BAD5113692B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B555061A-08DB-4646-9BEC-399BDA2DA0C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B555061A-08DB-4646-9BEC-399BDA2DA0C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B555061A-08DB-4646-9BEC-399BDA2DA0C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B555061A-08DB-4646-9BEC-399BDA2DA0C2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B4DC582-C2A0-4577-9FAA-838EF2D5D20B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6B4DC582-C2A0-4577-9FAA-838EF2D5D20B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B4DC582-C2A0-4577-9FAA-838EF2D5D20B}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>aggregator_host</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\aggregator-ruleng\aggregator-ruleng.csproj" />
+    <ProjectReference Include="..\aggregator-shared\aggregator-shared.csproj" />
+    <ProjectReference Include="..\aggregator-webshared\aggregator-webshared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="rules\test1.rule">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
+</Project>
