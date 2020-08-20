@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using aggregator.Engine;
 using aggregator.Engine.Language;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 
 namespace aggregator
@@ -14,12 +16,12 @@ namespace aggregator
         private const string SCRIPT_RULE_NAME_PATTERN = ".rule";
 
         private readonly IAggregatorLogger _logger;
-        private readonly string _rulesPath;
+        private IConfiguration _configuration;
 
-        public AspNetRuleProvider(IAggregatorLogger logger, string applicationRoot)
+        public AspNetRuleProvider(ForwarderLogger logger, IConfiguration configuration)
         {
-            _logger = logger;
-            _rulesPath = applicationRoot;
+            this._logger = logger;
+            this._configuration = configuration;
         }
 
         /// <inheritdoc />
@@ -38,14 +40,27 @@ namespace aggregator
                 return string.Equals(ruleName, Path.GetFileNameWithoutExtension(info.Name), StringComparison.OrdinalIgnoreCase);
             }
 
-            var provider = new PhysicalFileProvider(_rulesPath);
-            var contents = provider.GetDirectoryContents(SCRIPT_RULE_DIRECTORY).Where(f=>f.Name.EndsWith(SCRIPT_RULE_NAME_PATTERN));
+            string ruleFilePath = null;
+            string rulesPath = _configuration.GetValue<string>("Aggregator_RulesPath");
+            if (string.IsNullOrEmpty(rulesPath))
+            {
+                rulesPath = _configuration.GetValue<string>(WebHostDefaults.ContentRootKey);
+                _logger.WriteVerbose($"Searching '{ruleName}' in {rulesPath}");
+                var provider = new PhysicalFileProvider(rulesPath);
+                var contents = provider.GetDirectoryContents(SCRIPT_RULE_DIRECTORY).Where(f => f.Name.EndsWith(SCRIPT_RULE_NAME_PATTERN));
 
-            var ruleFilePath = contents.First(IsRequestedRule)?.PhysicalPath;
+                ruleFilePath = contents.First(IsRequestedRule)?.PhysicalPath;
+            }
+            else
+            {
+                _logger.WriteVerbose($"Searching '{ruleName}' in {rulesPath}");
+                string ruleFullPath = Path.Combine(rulesPath, $"{ruleName}{SCRIPT_RULE_NAME_PATTERN}");
+                ruleFilePath = File.Exists(ruleFullPath) ? ruleFullPath : null;
+            }
 
             if (ruleFilePath == null)
             {
-                var errorMsg = $"Rule code file '{ruleName}.rule' not found at expected Path {_rulesPath}";
+                var errorMsg = $"Rule code file '{ruleName}{SCRIPT_RULE_NAME_PATTERN}' not found at expected Path {rulesPath}";
                 _logger.WriteError(errorMsg);
                 throw new FileNotFoundException(errorMsg);
             }

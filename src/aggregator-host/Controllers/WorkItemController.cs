@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -18,20 +16,37 @@ namespace aggregator_host.Controllers
     [Route("[controller]")]
     public class WorkItemController : ControllerBase
     {
-        private readonly ILogger<WorkItemController> _log;
+        private readonly ILogger _log;
         private readonly IConfiguration _configuration;
 
-        public WorkItemController(IConfiguration configuration, ILogger<WorkItemController> logger)
+        public WorkItemController(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             _configuration = configuration;
-            _log = logger;
+            _log = loggerFactory.CreateLogger(MagicConstants.LoggerCategoryName);
         }
 
         [HttpGet]
         public string Get(string rule)
         {
-            _log.LogInformation("Get!");
-            return "Hi from self-hosted!";
+            _log.LogDebug("Get method was called!");
+#if DEBUG
+            // mask after 6th char
+            string maskedToken = _configuration
+                .GetValue<string>("Aggregator_VstsToken")
+                ?.Substring(0, 6)
+                ?.PadRight(46, '*');
+            using (var proc = Process.GetCurrentProcess())
+            {
+                _log.LogInformation($@"
+ProcessID = {proc.Id}
+Aggregator_RulesPath = {_configuration.GetValue<string>("Aggregator_RulesPath")}
+Aggregator_VstsTokenType = {_configuration.GetValue<string>("Aggregator_VstsTokenType")}
+Aggregator_VstsToken = {maskedToken}
+");
+#endif
+            }
+            return "OK";
+
         }
 
         [HttpPost("{ruleName}")]
@@ -66,7 +81,7 @@ namespace aggregator_host.Controllers
                                                        .UpdateFromUrl(ruleName, GetRequestUri());
 
             var logger = new ForwarderLogger(_log);
-            var ruleProvider = new AspNetRuleProvider(logger, _configuration.GetValue<string>(WebHostDefaults.ContentRootKey));
+            var ruleProvider = new AspNetRuleProvider(logger, _configuration);
             var ruleExecutor = new RuleExecutor(logger, configuration);
             using (_log.BeginScope($"WorkItem #{eventContext.WorkItemPayload.WorkItem.Id}"))
             {

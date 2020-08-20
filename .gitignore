@@ -350,3 +350,4 @@ outputs
 .terraform
 *.tfstate*
 **/_plan
+docker/

@@ -1,26 +1,58 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System;
+using System.Security.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace aggregator_host
 {
     public class Program
     {
+        private static bool InDocker
+            => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            if (InDocker)
+            {
+                Console.WriteLine("Docker mode.");
+                CreatePlainHostBuilder(args).Build().Run();
+            }
+            else
+            {
+                Console.WriteLine("Unsupported run mode, exiting.");
+            }
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
+        public static IHostBuilder CreatePlainHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                    config
+                        .AddEnvironmentVariables()
+                        .AddCommandLine(args);
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
+                })
+                .ConfigureWebHost(config =>
+                {
+                    config
+                        .ConfigureKestrel(serverOptions =>
+                        {
+                            /* Sample PowerShell to generate a self-signed certificate
+                             * $cert = New-SelfSignedCertificate -KeyLength 2048 -KeyAlgorithm RSA -Type SSLServerAuthentication -FriendlyName "Aggregator" -NotAfter 2025-12-31 -Subject "localhost" -TextExtension @("2.5.29.17={text}DNS=localhost&IPAddress=127.0.0.1&IPAddress=::1")
+                             * $certPass = Read-Host -Prompt "Cert pass" -AsSecureString
+                             * Export-PfxCertificate -FilePath "aggregator-localhost.pfx" -Cert $cert -Password $certPass
+                             */
+                            serverOptions.ConfigureHttpsDefaults(listenOptions =>
+                            {
+                                listenOptions.SslProtocols = SslProtocols.Tls12;
+                            });
+                        })
+                        ;
+                })
+                ;
     }
 }
