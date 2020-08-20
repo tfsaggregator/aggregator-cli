@@ -43,8 +43,8 @@ Aggregator_RulesPath = {_configuration.GetValue<string>("Aggregator_RulesPath")}
 Aggregator_VstsTokenType = {_configuration.GetValue<string>("Aggregator_VstsTokenType")}
 Aggregator_VstsToken = {maskedToken}
 ");
-#endif
             }
+#endif
             return "OK";
 
         }
