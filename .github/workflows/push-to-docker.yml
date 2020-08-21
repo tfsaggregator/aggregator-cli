@@ -41,16 +41,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image
-      uses: docker/build-push-action@v1
+      uses: mr-smithers-excellent/docker-build-push@v4
       with:
-        path: src/.
+        image: ${{ env.docker_repo }}
+        tag:  ${{ needs.versioning.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
+        registry: docker.io
         dockerfile: src/${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.Dockerfile
+        directory: src/.
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: ${{ env.docker_repo }}
-        cache_froms: mcr.microsoft.com/dotnet/core/sdk:3.1,mcr.microsoft.com/dotnet/core/aspnet:3.1
-        add_git_labels: true
-        tags:  ${{ needs.versioning.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
 
   push_manifest_to_registry:
     runs-on: ubuntu-latest
