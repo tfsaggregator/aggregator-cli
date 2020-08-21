@@ -31,6 +31,7 @@ ENV ASPNETCORE_URLS=https://*:5320
 
 EXPOSE 5320/tcp
 
+# https://github.com/dotnet/dotnet-docker/issues/915
 USER ContainerAdministrator
 
 ENTRYPOINT [ "dotnet", "c:\\app\\aggregator-host.dll" ]
