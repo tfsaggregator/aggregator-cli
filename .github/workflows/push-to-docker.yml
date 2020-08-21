@@ -19,6 +19,8 @@ jobs:
     outputs:
       fullSemVer: ${{ steps.gitversion.outputs.fullSemVer  }}
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
     - name: Fetch all history for all tags and branches
       run: git fetch --prune --unshallow
     - name: Install GitVersion
