@@ -1,4 +1,4 @@
-# docker build . -f Dockerfile.linux -t aggregator:linux-x64
+# docker build . -f linux-x64.Dockerfile -t aggregator:linux-x64
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 WORKDIR /src
@@ -10,24 +10,24 @@ RUN dotnet build --version-suffix beta -f netcoreapp3.1 -c Release -o build aggr
 
 
 FROM build AS publish
-RUN dotnet publish --version-suffix beta -f netcoreapp3.1 -r linux-x64 -c Release -o out aggregator-host/aggregator-host.csproj
+RUN dotnet publish --version-suffix beta -f netcoreapp3.1 -r linux-musl-x64 -c Release -o out aggregator-host/aggregator-host.csproj
 
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS final
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine3.12 AS final
 
-WORKDIR /rules
-WORKDIR /secrets
 WORKDIR /app
 
 COPY --from=publish /src/out .
+
+VOLUME /rules
+VOLUME /secrets
 
 ENV Aggregator_VstsTokenType=PAT
 ENV Aggregator_VstsToken=
 ENV Aggregator_RulesPath=/rules
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/secrets/aggregator-localhost.pfx
-
-VOLUME /rules
-VOLUME /secrets
+ENV Logging__LogLevel__Aggregator=Debug
+ENV ASPNETCORE_URLS=https://*:5320
 
 EXPOSE 5320/tcp
 

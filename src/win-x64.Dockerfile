@@ -1,4 +1,4 @@
-# docker build . -f Dockerfile.win -t aggregator:win-x64
+# docker build . -f win-x64.Dockerfile -t aggregator:win-x64
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 WORKDIR /src
@@ -13,7 +13,9 @@ FROM build AS publish
 RUN dotnet publish --version-suffix beta -f netcoreapp3.1 -r win-x64 -c Release -o out aggregator-host/aggregator-host.csproj
 
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS final
+# 1809 should guarantee compatibility from Server 2019 up
+# note that Server 2016 is unsupported https://github.com/dotnet/dotnet-docker/issues/1469
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-nanoserver-1809 AS final
 
 WORKDIR /app
 
