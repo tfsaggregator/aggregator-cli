@@ -1,3 +1,5 @@
+name: push-to-dockerhub
+
 on:
   push:
     paths:
@@ -10,7 +12,7 @@ on:
 
 env:
   map_os_to_rid: '{"ubuntu-latest":"linux-x64", "windows-latest":"win-x64"}'
-  docker_repo: giuliov/aggregator
+  docker_repo: tfsaggregator/aggregator3
 
 jobs:
 
@@ -40,6 +42,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    # the official docker/build-push-action@v1 does not support Windows!!!
     - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image
       uses: mr-smithers-excellent/docker-build-push@v4
       with:
