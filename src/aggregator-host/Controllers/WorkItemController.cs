@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,7 @@ namespace aggregator_host.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationScheme.DefaultScheme)]
     public class WorkItemController : ControllerBase
     {
         private readonly ILogger _log;
@@ -26,6 +28,7 @@ namespace aggregator_host.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous] // setup/health check
         public string Get(string rule)
         {
             _log.LogDebug("Get method was called!");

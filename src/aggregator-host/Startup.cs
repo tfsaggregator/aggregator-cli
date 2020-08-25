@@ -19,6 +19,12 @@ namespace aggregator_host
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddSingleton<IApiKeyRepository, ApiKeyRepository>();
+            services.AddAuthentication(o => {
+                o.DefaultScheme = ApiKeyAuthenticationScheme.DefaultScheme;
+            })
+            .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationScheme.DefaultScheme, o => { });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -33,6 +39,7 @@ namespace aggregator_host
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

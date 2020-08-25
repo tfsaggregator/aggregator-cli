@@ -11,12 +11,16 @@ namespace aggregator_host
         private static bool InDocker
             => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
 
-        public static void Main(string[] args)
+        public static async System.Threading.Tasks.Task Main(string[] args)
         {
             if (InDocker)
             {
                 Console.WriteLine("Docker mode.");
-                CreatePlainHostBuilder(args).Build().Run();
+                var host = CreatePlainHostBuilder(args).Build();
+                //HACK https://stackoverflow.com/a/56079178
+                var repo = (IApiKeyRepository)host.Services.GetService(typeof(IApiKeyRepository));
+                await repo.LoadAsync();
+                await host.RunAsync();
             }
             else
             {
