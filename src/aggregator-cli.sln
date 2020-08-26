@@ -36,7 +36,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-integration-tests", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-host", "aggregator-host\aggregator-host.csproj", "{B555061A-08DB-4646-9BEC-399BDA2DA0C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aggregator-webshared", "aggregator-webshared\aggregator-webshared.csproj", "{6B4DC582-C2A0-4577-9FAA-838EF2D5D20B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-webshared", "aggregator-webshared\aggregator-webshared.csproj", "{6B4DC582-C2A0-4577-9FAA-838EF2D5D20B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{F0E724A4-A159-4E56-849F-2FE51C9FA7DC}"
+	ProjectSection(SolutionItems) = preProject
+		linux-x64.Dockerfile = linux-x64.Dockerfile
+		win-x64.Dockerfile = win-x64.Dockerfile
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -30,7 +30,7 @@ namespace aggregator_host
 
         public async Task LoadAsync()
         {
-            string fileName = _configuration.GetValue<string>("ApiKeys_DataPath");
+            string fileName = _configuration.GetValue<string>("Aggregator_ApiKeysPath");
             _log.LogDebug($"Loading API Keys from {fileName}");
             using (var fs = File.OpenRead(fileName))
             {

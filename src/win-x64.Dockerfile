@@ -28,8 +28,10 @@ ENV Aggregator_VstsTokenType=PAT
 ENV Aggregator_VstsToken=
 ENV Aggregator_RulesPath=c:\\rules
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path=c:\\secrets\\aggregator-localhost.pfx
+ENV Aggregator_ApiKeysPath=c:\\secrets\\apikeys.json
 ENV Logging__LogLevel__Aggregator=Debug
 ENV ASPNETCORE_URLS=https://*:5320
+ENV AGGREGATOR_TELEMETRY_DISABLED=false
 
 EXPOSE 5320/tcp
 
