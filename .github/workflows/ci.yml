@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    tags:
+    - 'v[0-9].[0-9]*'
     paths:
     - '.github/workflows/**'
     - 'src/**'
@@ -10,60 +12,63 @@ on:
     - '.github/workflows/**'
     - 'src/**'
 
+env:
+  docker_repo: tfsaggregator/aggregator3
+
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
     env:
       DOTNETSDK_VERSION: '3.1.101' # SDK Version to use.
       CONFIGURATION: Release
-      # to test various phases of build
-      RUN_INTEGRATION_TESTS: true
-
+    outputs:
+      versionTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
+      releaseName: 'v${{ steps.gitversion.outputs.majorMinorPatch }}'
     steps:
     - uses: actions/checkout@v1
-
-
     # versioning
-    - name: Fetch all history for all tags and branches
+    - name: Fetch Git history for GitVersion
       run: git fetch --prune
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.2
+      uses: gittools/actions/gitversion/setup@v0.9.4
       with:
-          versionSpec: '5.2.x'
+          versionSpec: '5.3.x'
     - name: Use GitVersion
       id: gitversion # step id used as reference for output values
-      uses: gittools/actions/gitversion/execute@v0.9.2
+      uses: gittools/actions/gitversion/execute@v0.9.4
     - name: 'Set version in aggregator-manifest.ini'
       run: 'sed -E -i "s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/" ${GITHUB_WORKSPACE}/src/aggregator-function/aggregator-manifest.ini'
       shell: bash
-
-
     # compile and test
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '${{ env.DOTNETSDK_VERSION }}'
     - name: 'Delete Directory.Build.targets from src/aggregator-function'
       run: rm src/aggregator-function/Directory.Build.targets
-    - run: 'dotnet restore src/aggregator-cli.sln'
-    - run: 'dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} /p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}'
-    - run: 'dotnet test --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj'
-    - run: 'dotnet test --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj'
-    - run: 'dotnet test --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj'
-
-
-    # Prepare Artifacts
+    - name: 'NuGet Restore'
+      run: 'dotnet restore src/aggregator-cli.sln'
+    - name: 'Build solution'
+      run: 'dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} /p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}'
+    - name: 'Unit tests'
+      run: |
+        dotnet test --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj
+        dotnet test --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj
+        dotnet test --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj'
+    # Prepare Artifacts (req'd by integration tests)
     - name: 'Package FunctionRuntime'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
       run: |
         mkdir -p outputs/function
-        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj
+        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
         pushd outputs/function && \
         7z a -bd -r FunctionRuntime.zip && \
         popd
-
-
     # Heavy weight integration tests
     # logon-data.json is stored in project Secrets
     - name: 'Get integration tests secrets'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
       run: |
         echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
         export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
@@ -72,10 +77,212 @@ jobs:
       env:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
       shell: bash
-    - run: 'echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json'
-    - run: 'dotnet test --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj'
-      if: github.ref == 'ref/head/master' && env.RUN_INTEGRATION_TESTS == 'true'
+    - name: 'Prepare tests'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      run: 'echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json'
+    - name: 'Run integration tests'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      run: 'dotnet test --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj'
     - name: 'Scrap secrets'
-      run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
       if: always()
- 
+      run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+    # Prepare Artifacts
+    - name: 'Package aggregator-cli Windows'
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
+        pushd outputs/$RUNTIME && \
+        7z a -bd -r aggregator-cli-$RUNTIME.zip && \
+        popd
+      env:
+        RUNTIME: win-x64
+    - name: 'Package aggregator-cli Linux'
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
+        pushd outputs/$RUNTIME && \
+        7z a -bd -r aggregator-cli-$RUNTIME.zip && \
+        popd
+      env:
+        RUNTIME: linux-x64
+    - name: 'Package aggregator-cli OS/X'
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        mkdir -p outputs/$RUNTIME
+        dotnet publish --configuration $CONFIGURATION --runtime $RUNTIME --self-contained true --output $GITHUB_WORKSPACE/outputs/$RUNTIME/ src/aggregator-cli/aggregator-cli.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
+        pushd outputs/$RUNTIME && \
+        7z a -bd -r aggregator-cli-$RUNTIME.zip && \
+        popd
+      env:
+        RUNTIME: osx-x64
+    # Release notes (maybe one day we will use https://gittools.github.io/GitReleaseManager)
+    - name: 'Dump commit messages since last tag as draft release notes'
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > outputs/release.log
+    # everything in outputs can be used by other jobs
+    - name: Upload artifacts
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-artifact@v2
+      with:
+        name: release_packages
+        path: outputs/**
+
+  release_to_github:
+
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: release_packages
+        path: outputs/
+    - name: 'Move artifacts and Compute Hash'
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        cd outputs/
+        mv */*.zip ./
+        shasum -a 256 *.zip > SHA256.txt
+    - name: Read package.json
+      id: read_release_log
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: outputs/release.log
+    # Create Release in GitHub as Draft
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: 'v${{ needs.build.outputs.versionTag }}'
+        release_name: 'v${{ needs.build.outputs.releaseName }}'
+        body: |
+          ${{ steps.read_release_log.outputs.content }}
+        draft: true
+        prerelease: true
+    - name: Upload FunctionRuntime
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/FunctionRuntime.zip
+        asset_name: FunctionRuntime.zip
+        asset_content_type: application/zip
+    - name: 'Upload aggregator-cli Windows'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/aggregator-cli-win-x64.zip
+        asset_name: aggregator-cli-win-x64.zip
+        asset_content_type: application/zip
+    - name: 'Upload aggregator-cli Linux'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/aggregator-cli-linux-x64.zip
+        asset_name: aggregator-cli-linux-x64.zip
+        asset_content_type: application/zip
+    - name: 'Upload aggregator-cli OS/X'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/aggregator-cli-osx-x64.zip
+        asset_name: aggregator-cli-osx-x64.zip
+        asset_content_type: application/zip
+    - name: 'Upload SHA256'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./outputs/SHA256.txt
+        asset_name: SHA256.txt
+        asset_content_type: text/plain
+
+  push_to_dockerhub:
+
+    runs-on: ${{ matrix.os }}
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      map_os_to_rid: '{"ubuntu-latest":"linux-x64", "windows-latest":"win-x64"}'
+      docker_repo: tfsaggregator/aggregator3
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    # the official docker/build-push-action@v1 does not support Windows!!!
+    - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image
+      uses: mr-smithers-excellent/docker-build-push@v4
+      with:
+        image: ${{ env.docker_repo }}
+        tag: ${{ needs.build.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
+        registry: docker.io
+        dockerfile: src/${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.Dockerfile
+        directory: src/.
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - run: echo . > ${{ needs.build.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.tag
+    - name: Upload tags
+      uses: actions/upload-artifact@v2
+      with:
+        name: tags
+        path: '*.tag'
+
+  push_manifest_to_registry:
+
+    runs-on: ubuntu-latest
+    needs: [build, push_to_dockerhub]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Download tags
+      uses: actions/download-artifact@v2
+      with:
+        name: tags
+    - name: Push manifest
+      run: |
+        amends=""; for tag in *.tag; do amends=$amends" --amend ${{ env.docker_repo }}:${tag}"; done
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        docker manifest create ${{ env.docker_repo }}:latest  $amends
+        docker manifest push ${{ env.docker_repo }}:latest
+        docker manifest create ${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}  $amends
+        docker manifest push ${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}
+      env:
+        DOCKER_CLI_EXPERIMENTAL: enabled
+    ############# TODO ################################
+    # - name: Generate Docker Hub Description
+    #   uses: cuchi/jinja2-action@v1.2.0
+    #   with:
+    #     template: docker/README.md.j2
+    #     output_file: docker/README.md
+    #     strict: false
+    #     variables: |
+    #       repo=${{ env.docker_repo }}
+    #       l0=${{ env.docker_repo }}:latest
+    #       v0=${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}
+    #       w1=${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}-win-x64
+    #       x1=${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}-linux-x64
+    #     data_file: pippo.json
+    #     data_format: json
+    # - name: Update Docker Hub Description
+    #   uses: peter-evans/dockerhub-description@v2
+    #   env:
+    #     DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    #     DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    #     DOCKERHUB_REPOSITORY: ${{ env.docker_repo }}
+    #     README_FILEPATH: ./docker/README.md
