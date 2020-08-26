@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Authentication;
+using aggregator;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -16,11 +17,17 @@ namespace aggregator_host
             if (InDocker)
             {
                 Console.WriteLine("Docker mode.");
+                Telemetry.InitializeTelemetry();
+                Telemetry.TrackEvent("Docker Host Start");
+
                 var host = CreatePlainHostBuilder(args).Build();
                 //HACK https://stackoverflow.com/a/56079178
                 var repo = (IApiKeyRepository)host.Services.GetService(typeof(IApiKeyRepository));
                 await repo.LoadAsync();
                 await host.RunAsync();
+
+                Telemetry.TrackEvent("Docker Host End");
+                Telemetry.Shutdown();
             }
             else
             {

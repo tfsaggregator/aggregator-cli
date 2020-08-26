@@ -1,13 +1,14 @@
 ﻿using System;
 using System.IO;
+using aggregator.cli;
 using Newtonsoft.Json;
 
-namespace aggregator.cli
+namespace aggregator
 {
     /// <summary>
     /// Per-machine and per-user data across CLI invocation
     /// </summary>
-    class TelemetrySettings
+    class CliTelemetrySettings : ITelemetrySettings
     {
         private static string SettingsFileName => LocalAppData.GetPath("telemetry.settings.json");
 
@@ -19,12 +20,12 @@ namespace aggregator.cli
         [JsonIgnore]
         public bool Enabled { get; private set; }
 
-        public static TelemetrySettings Get()
+        public static ITelemetrySettings Get()
         {
-            TelemetrySettings s;
+            CliTelemetrySettings s;
             if (File.Exists(SettingsFileName))
             {
-                s = JsonConvert.DeserializeObject<TelemetrySettings>(
+                s = JsonConvert.DeserializeObject<CliTelemetrySettings>(
                     File.ReadAllText(SettingsFileName));
 
                 bool sessionExpired = DateTime.Now.Subtract(MaxSessionDuration) > s.LastUpdate;
@@ -40,7 +41,7 @@ namespace aggregator.cli
             }
             else
             {
-                s = new TelemetrySettings()
+                s = new CliTelemetrySettings()
                 {
                     SessionId = Guid.NewGuid().ToString(),
                     IsNewSession = true,

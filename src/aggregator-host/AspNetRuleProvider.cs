@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using aggregator.Engine;
 using aggregator.Engine.Language;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
@@ -61,6 +63,12 @@ namespace aggregator
             if (ruleFilePath == null)
             {
                 var errorMsg = $"Rule code file '{ruleName}{SCRIPT_RULE_NAME_PATTERN}' not found at expected Path {rulesPath}";
+                var ruleNotFound = new EventTelemetry()
+                {
+                    Name = "Rule code file not found",
+                };
+                ruleNotFound.Properties["rule"] = ruleName;
+                Telemetry.TrackEvent(ruleNotFound);
                 _logger.WriteError(errorMsg);
                 throw new FileNotFoundException(errorMsg);
             }

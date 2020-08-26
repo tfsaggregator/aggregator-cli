@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
@@ -9,7 +10,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models;
 using Newtonsoft.Json;
 
-namespace aggregator.cli
+namespace aggregator
 {
 
     public static class Telemetry
@@ -17,7 +18,7 @@ namespace aggregator.cli
         private const string applicationInsightsKey = "b5896615-5bbe-4cd8-bbb8-9bdeb59463ba";
 
         private static TelemetryClient telemetryClient;
-        private static TelemetrySettings telemetrySettings;
+        private static ITelemetrySettings telemetrySettings;
 
         private static TelemetryClient Current
         {
@@ -35,7 +36,18 @@ namespace aggregator.cli
 
         public static void InitializeTelemetry()
         {
-            telemetrySettings = TelemetrySettings.Get();
+            string dll = Assembly.GetEntryAssembly().GetName().Name;
+            if (dll=="aggregator-cli")
+            {
+                telemetrySettings = CliTelemetrySettings.Get();
+            } else if (dll == "aggregator-host")
+            {
+                telemetrySettings = HostTelemetrySettings.Get();
+            } else
+            {
+                //TODO another option would be to disable telemetry
+                throw new InvalidOperationException("Telemetry can be used only in CLI or Host");
+            }
 
             TelemetryConfiguration configuration = TelemetryConfiguration.CreateDefault();
             configuration.InstrumentationKey = applicationInsightsKey;

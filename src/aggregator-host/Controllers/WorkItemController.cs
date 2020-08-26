@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,15 @@ Aggregator_VstsToken = {maskedToken}
             var aggregatorVersion = RequestHelper.AggregatorVersion;
             _log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{ruleName}'");
 
+            var webHookStartEvent = new EventTelemetry()
+            {
+                Name = "WebHookEvent Start"
+            };
+            webHookStartEvent.Properties["rule"] = ruleName;
+            webHookStartEvent.Properties["eventType"] = eventData?.EventType;
+            webHookStartEvent.Properties["resourceVersion"] = eventData?.ResourceVersion;
+            Telemetry.TrackEvent(webHookStartEvent);
+
             if (eventData == null)
             {
                 return BadRequest("Request body is empty");
@@ -91,7 +101,29 @@ Aggregator_VstsToken = {maskedToken}
                 try
                 {
                     var rule = await ruleProvider.GetRule(ruleName);
+
+                    var ruleStartEvent = new EventTelemetry()
+                    {
+                        Name = "Rule Exec Start"
+                    };
+                    ruleStartEvent.Properties["rule"] = rule.Name;
+                    ruleStartEvent.Properties["ImpersonateExecution"] = rule.ImpersonateExecution.ToString();
+                    ruleStartEvent.Properties["EnableRevisionCheck"] = rule.Settings.EnableRevisionCheck.ToString();
+                    ruleStartEvent.Properties["eventType"] = eventContext.EventType;
+                    Telemetry.TrackEvent(ruleStartEvent);
+                    var ruleExecTimer = new Stopwatch();
+                    ruleExecTimer.Start();
+
                     var execResult = await ruleExecutor.ExecuteAsync(rule, eventContext, cancellationToken);
+
+                    ruleExecTimer.Stop();
+                    var ruleEndEvent = new EventTelemetry()
+                    {
+                        Name = "Rule Exec End"
+                    };
+                    ruleEndEvent.Properties["rule"] = ruleName;
+                    ruleEndEvent.Metrics["duration"] = ruleExecTimer.ElapsedMilliseconds;
+                    Telemetry.TrackEvent(ruleEndEvent);
 
                     if (string.IsNullOrEmpty(execResult))
                     {
@@ -106,6 +138,7 @@ Aggregator_VstsToken = {maskedToken}
                 catch (Exception ex)
                 {
                     _log.LogWarning($"Rule '{ruleName}' failed: {ex.Message}");
+                    Telemetry.TrackException(ex);
                     return BadRequest(ex.Message);
                 }
             }
