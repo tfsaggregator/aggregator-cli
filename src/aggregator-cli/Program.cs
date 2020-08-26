@@ -35,7 +35,7 @@ namespace aggregator.cli
     */
     public static class Program
     {
-        public static int Main(string[] args)
+        public static async System.Threading.Tasks.Task<int> Main(string[] args)
         {
             var mainTimer = new Stopwatch();
             mainTimer.Start();
@@ -46,7 +46,6 @@ namespace aggregator.cli
 
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
-
                 void cancelEventHandler(object sender, ConsoleCancelEventArgs e)
                 {
                     // call methods to clean up
@@ -56,8 +55,21 @@ namespace aggregator.cli
                         cancellationTokenSource.Cancel();
                     }
                 }
-
                 Console.CancelKeyPress += cancelEventHandler;
+                var cancellationToken = cancellationTokenSource.Token;
+
+                bool versionCheckEnabled = !EnvironmentVariables.GetAsBool("AGGREGATOR_NEW_VERSION_CHECK_DISABLED", false);
+                if (versionCheckEnabled)
+                {
+                    var tempLogger = new ConsoleLogger(true);
+                    var verChecker = new FunctionRuntimePackage(tempLogger);
+                    (bool upgrade, string newversion) = await verChecker.IsCliUpgradable(cancellationToken);
+                    if (upgrade)
+                    {
+                        // bug user
+                        tempLogger.WriteWarning($"A new version ({newversion}) of Aggregator CLI is available, please upgrade.");
+                    }
+                }
 
                 var parser = new Parser(settings =>
                 {
@@ -77,7 +89,6 @@ namespace aggregator.cli
                 };
                 var parserResult = parser.ParseArguments(args, types);
                 int rc = ExitCodes.Unexpected;
-                var cancellationToken = cancellationTokenSource.Token;
                 parserResult
                     .WithParsed<CreateTestCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<CleanupTestCommand>(cmd => rc = cmd.Run(cancellationToken))
