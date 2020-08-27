@@ -35,7 +35,7 @@ namespace aggregator.cli
     */
     public static class Program
     {
-        public static async System.Threading.Tasks.Task<int> Main(string[] args)
+        public static int Main(string[] args)
         {
             var mainTimer = new Stopwatch();
             mainTimer.Start();
@@ -63,7 +63,7 @@ namespace aggregator.cli
                 {
                     var tempLogger = new ConsoleLogger(true);
                     var verChecker = new FunctionRuntimePackage(tempLogger);
-                    (bool upgrade, string newversion) = await verChecker.IsCliUpgradable(cancellationToken);
+                    (bool upgrade, string newversion) = verChecker.IsCliUpgradable(cancellationToken).Result;
                     if (upgrade)
                     {
                         // bug user
@@ -85,7 +85,8 @@ namespace aggregator.cli
                     typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
                     typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
                     typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
-                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
+                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand),
+                    typeof(MapLocalRuleCommand)
                 };
                 var parserResult = parser.ParseArguments(args, types);
                 int rc = ExitCodes.Unexpected;
@@ -111,6 +112,7 @@ namespace aggregator.cli
                     .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<MapLocalRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithNotParsed(errs =>
                     {
                         var helpText = HelpText.AutoBuild(parserResult);

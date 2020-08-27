@@ -18,7 +18,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{020591FD-B34A-49E6-98E5-D8DD2A838997}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\ci.yml = ..\.github\workflows\ci.yml
-		..\.github\workflows\release-to-GitHub.yml = ..\.github\workflows\release-to-GitHub.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-core", "unittests-core\unittests-core.csproj", "{6AD42A49-2EA4-4659-855D-0C011D368794}"

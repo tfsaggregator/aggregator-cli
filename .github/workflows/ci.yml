@@ -53,7 +53,7 @@ jobs:
       run: |
         dotnet test --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj
         dotnet test --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj
-        dotnet test --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj'
+        dotnet test --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj
     # Prepare Artifacts (req'd by integration tests)
     - name: 'Package FunctionRuntime'
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
