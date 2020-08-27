@@ -28,7 +28,7 @@ namespace aggregator_host
             StringValues apiKey;          
             if (!headers.TryGetValue(AuthenticationHeaderName, out apiKey))
             {
-                return Task.FromResult(AuthenticateResult.Fail("Token is null"));
+                return Task.FromResult(AuthenticateResult.Fail("Api Key is null"));
             }
 
             var repo = (IApiKeyRepository)ServiceProvider.GetService(typeof(IApiKeyRepository));

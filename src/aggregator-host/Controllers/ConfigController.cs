@@ -1,4 +1,5 @@
-﻿using aggregator;
+﻿using System.Text.Json;
+using aggregator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -22,13 +23,16 @@ namespace aggregator_host.Controllers
             _apiKeyRepo = apiKeyRepo;
         }
 
-        [HttpGet(("{proof}"))]
+        [HttpPost("key")]
         [AllowAnonymous] // bootstrap
-        public string GetKey(string proof)
+        public string RetrieveKey([FromBody] JsonElement body)
         {
             _log.LogDebug("GetKey method was called!");
 
-            if (proof== MagicConstants.SharedSecret)
+            string proof = body.GetString();
+            string userManagedPassword = _configuration.GetValue<string>("Aggregator_SharedSecret");
+
+            if (proof== SharedSecret.DeriveFromPassword(userManagedPassword))
             {
                 return _apiKeyRepo.PickValidKey();
             }
