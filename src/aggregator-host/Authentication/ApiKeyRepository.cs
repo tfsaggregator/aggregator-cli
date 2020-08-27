@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using aggregator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
@@ -14,6 +13,7 @@ namespace aggregator_host
     {
         Task LoadAsync();
         bool IsValidApiKey(StringValues reqkey);
+        string PickValidKey();
     }
 
     public class ApiKeyRepository : IApiKeyRepository
@@ -48,6 +48,11 @@ namespace aggregator_host
             string reqkey = request.ToString().ToLowerInvariant();
 
             return apiKeyRecords.Where(rec => rec.Key == reqkey).Any();
+        }
+
+        public string PickValidKey()
+        {
+            return apiKeyRecords.First().Key;
         }
     }
 }

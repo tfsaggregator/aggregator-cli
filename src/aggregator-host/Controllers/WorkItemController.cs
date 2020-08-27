@@ -28,31 +28,6 @@ namespace aggregator_host.Controllers
             _log = loggerFactory.CreateLogger(MagicConstants.LoggerCategoryName);
         }
 
-        [HttpGet]
-        [AllowAnonymous] // setup/health check
-        public string Get(string rule)
-        {
-            _log.LogDebug("Get method was called!");
-#if DEBUG
-            // mask after 6th char
-            string maskedToken = _configuration
-                .GetValue<string>("Aggregator_VstsToken")
-                ?.Substring(0, 6)
-                ?.PadRight(46, '*');
-            using (var proc = Process.GetCurrentProcess())
-            {
-                _log.LogInformation($@"
-ProcessID = {proc.Id}
-Aggregator_RulesPath = {_configuration.GetValue<string>("Aggregator_RulesPath")}
-Aggregator_VstsTokenType = {_configuration.GetValue<string>("Aggregator_VstsTokenType")}
-Aggregator_VstsToken = {maskedToken}
-");
-            }
-#endif
-            return "OK";
-
-        }
-
         [HttpPost("{ruleName}")]
         public async Task<IActionResult> PostAsync(WebHookEvent eventData, string ruleName, CancellationToken cancellationToken)
         {

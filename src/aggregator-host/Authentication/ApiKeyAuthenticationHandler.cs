@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using aggregator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,7 +12,7 @@ namespace aggregator_host
 {
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
     {
-        public const string AuthenticationHeaderName = "X-Auth-ApiKey";
+        public const string AuthenticationHeaderName = MagicConstants.ApiKeyAuthenticationHeaderName;
 
         public IServiceProvider ServiceProvider { get; set; }
 
