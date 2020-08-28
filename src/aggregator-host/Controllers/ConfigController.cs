@@ -23,11 +23,20 @@ namespace aggregator_host.Controllers
             _apiKeyRepo = apiKeyRepo;
         }
 
+        [HttpGet("status")]
+        [AllowAnonymous] // bootstrap
+        public string GetStatus()
+        {
+            _log.LogInformation("GetStatus method was called!");
+            return "OK";
+
+        }
+
         [HttpPost("key")]
         [AllowAnonymous] // bootstrap
         public string RetrieveKey([FromBody] JsonElement body)
         {
-            _log.LogDebug("GetKey method was called!");
+            _log.LogDebug("RetrieveKey method was called!");
 
             string proof = body.GetString();
             string userManagedPassword = _configuration.GetValue<string>("Aggregator_SharedSecret");

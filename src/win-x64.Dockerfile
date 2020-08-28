@@ -7,6 +7,7 @@ COPY . ./
 RUN dotnet restore aggregator-host/aggregator-host.csproj
 # TODO versioning!
 RUN dotnet build --version-suffix beta -f netcoreapp3.1 -c Release -o build aggregator-host/aggregator-host.csproj
+# TODO unit tests
 
 
 FROM build AS publish
@@ -27,7 +28,7 @@ VOLUME c:/secrets
 ENV Aggregator_VstsTokenType=PAT
 ENV Aggregator_VstsToken=
 ENV Aggregator_RulesPath=c:\\rules
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path=c:\\secrets\\aggregator-localhost.pfx
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path=c:\\secrets\\aggregator.pfx
 ENV Aggregator_ApiKeysPath=c:\\secrets\\apikeys.json
 ENV Logging__LogLevel__Aggregator=Debug
 ENV ASPNETCORE_URLS=https://*:5320
