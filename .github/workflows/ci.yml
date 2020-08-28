@@ -21,8 +21,8 @@ jobs:
     env:
       DOTNETSDK_VERSION: '3.1.101' # SDK Version to use.
       CONFIGURATION: Release
-      SONAR_ORG: 'giuliov-sandbox'
-      SONAR_PROJECTKEY: 'giuliov-sandbox_aggregator-cli'
+      SONAR_ORG: 'tfsaggregator'
+      SONAR_PROJECTKEY: 'tfsaggregator_aggregator-cli'
     outputs:
       versionTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
       releaseName: 'v${{ steps.gitversion.outputs.majorMinorPatch }}'
