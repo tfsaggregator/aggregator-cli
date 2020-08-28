@@ -21,6 +21,8 @@ jobs:
     env:
       DOTNETSDK_VERSION: '3.1.101' # SDK Version to use.
       CONFIGURATION: Release
+      SONAR_ORG: 'giuliov-sandbox'
+      SONAR_PROJECTKEY: 'giuliov-sandbox_aggregator-cli'
     outputs:
       versionTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
       releaseName: 'v${{ steps.gitversion.outputs.majorMinorPatch }}'
@@ -43,6 +45,15 @@ jobs:
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '${{ env.DOTNETSDK_VERSION }}'
+    - name: Install dotnet tools
+      run: dotnet tool restore
+    - name: SonarCloud Setup
+      run: |
+        curl https://raw.githubusercontent.com/ikemtz/NRSRx/master/tools/sonarqube-create-project-guids.ps1 -o sonarqube-create-project-guids.ps1
+        pwsh -NonInteractive -ExecutionPolicy RemoteSigned -File ./sonarqube-create-project-guids.ps1
+        dotnet sonarscanner begin /o:${{ env.SONAR_ORG }} /k:${{ env.SONAR_PROJECTKEY}} /d:sonar.host.url=https://sonarcloud.io
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     - name: 'Delete Directory.Build.targets from src/aggregator-function'
       run: rm src/aggregator-function/Directory.Build.targets
     - name: 'NuGet Restore'
@@ -84,6 +95,11 @@ jobs:
     - name: 'Scrap secrets'
       if: always()
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+    - name: SonarCloud Scan
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      run: dotnet sonarscanner end
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     # Prepare Artifacts
     - name: 'Package aggregator-cli Windows'
       if: startsWith(github.ref, 'refs/tags/v')
