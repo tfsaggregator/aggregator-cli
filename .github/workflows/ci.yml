@@ -251,12 +251,14 @@ jobs:
         directory: src/.
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - run: echo . > ${{ needs.build.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.tag
+    - run: |
+        mkdir tags
+        echo . > tags/${{ needs.build.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
     - name: Upload tags
       uses: actions/upload-artifact@v2
       with:
         name: tags
-        path: '*.tag'
+        path: 'tags/*'
 
   push_manifest_to_registry:
 
@@ -270,14 +272,18 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: tags
+        path: 'tags/'
     - name: Push manifest
       run: |
-        amends=""; for tag in *.tag; do amends=$amends" --amend ${{ env.docker_repo }}:${tag}"; done
+        cd tags
+        amends=""; for tag in *; do amends=$amends" --amend ${{ env.docker_repo }}:${tag}"; done
+        cd ..
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
         docker manifest create ${{ env.docker_repo }}:latest  $amends
         docker manifest push ${{ env.docker_repo }}:latest
         docker manifest create ${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}  $amends
         docker manifest push ${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}
+        docker logout
       env:
         DOCKER_CLI_EXPERIMENTAL: enabled
     ############# TODO ################################
