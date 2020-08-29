@@ -51,7 +51,7 @@ jobs:
       run: |
         curl https://raw.githubusercontent.com/ikemtz/NRSRx/master/tools/sonarqube-create-project-guids.ps1 -o sonarqube-create-project-guids.ps1
         pwsh -NonInteractive -ExecutionPolicy RemoteSigned -File ./sonarqube-create-project-guids.ps1
-        dotnet sonarscanner begin /o:${{ env.SONAR_ORG }} /k:${{ env.SONAR_PROJECTKEY}} /d:sonar.host.url=https://sonarcloud.io
+        dotnet sonarscanner begin /o:${{ env.SONAR_ORG }} /k:${{ env.SONAR_PROJECTKEY }} /d:sonar.host.url=https://sonarcloud.io /d:sonar.cs.vstest.reportsPaths=test-results/*.trx /d:sonar.cs.opencover.reportsPaths=test-results/*/coverage.opencover.xml /d:sonar.coverage.exclusions="**Test*.cs"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -61,11 +61,11 @@ jobs:
       run: 'dotnet restore src/aggregator-cli.sln'
     - name: 'Build solution'
       run: 'dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} /p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}'
-    - name: 'Unit tests'
+    - name: 'Unit tests with Code Coverage'
       run: |
-        dotnet test --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj
-        dotnet test --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj
-        dotnet test --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj
+        dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-core.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-ruleng.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-function.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
     # Prepare Artifacts (req'd by integration tests)
     - name: 'Package FunctionRuntime'
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
@@ -92,10 +92,19 @@ jobs:
       run: 'echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json'
     - name: 'Run integration tests'
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
-      run: 'dotnet test --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj'
+      run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-build --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
     - name: 'Scrap secrets'
       if: always()
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+    - name: 'Report on Code Coverage'
+      if: always()
+      run: 'dotnet reportgenerator "-reports:test-results/*/*.xml" "-targetdir:coverage-report/" "-reporttypes:Badges;Cobertura;HtmlSummary" "-assemblyfilters:-*Tests*.*"'
+    - name: Upload Code Coverage Reports
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage_report
+        path: coverage-report/**
     - name: SonarCloud Scan
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
       run: dotnet sonarscanner end

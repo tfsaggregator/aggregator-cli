@@ -7,6 +7,18 @@
       "commands": [
         "dotnet-sonarscanner"
       ]
+    },
+    "coverlet.console": {
+      "version": "1.7.2",
+      "commands": [
+        "coverlet"
+      ]
+    },
+    "dotnet-reportgenerator-globaltool": {
+      "version": "4.6.4",
+      "commands": [
+        "reportgenerator"
+      ]
     }
   }
 }

@@ -351,3 +351,6 @@ outputs
 *.tfstate*
 **/_plan
 docker/
+/coverage-report/
+/test-results/
+.sonarqube/
