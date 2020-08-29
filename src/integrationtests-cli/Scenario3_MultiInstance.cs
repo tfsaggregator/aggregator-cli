@@ -1,7 +1,4 @@
-﻿using System.IO;
-using aggregator.cli;
-using Microsoft.TeamFoundation.Common;
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
 

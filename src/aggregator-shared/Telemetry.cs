@@ -2,13 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models;
-using Newtonsoft.Json;
 
 namespace aggregator
 {
@@ -37,13 +33,15 @@ namespace aggregator
         public static void InitializeTelemetry()
         {
             string dll = Assembly.GetEntryAssembly().GetName().Name;
-            if (dll=="aggregator-cli")
+            if (dll == "aggregator-cli")
             {
                 telemetrySettings = CliTelemetrySettings.Get();
-            } else if (dll == "aggregator-host")
+            }
+            else if (dll == "aggregator-host")
             {
                 telemetrySettings = HostTelemetrySettings.Get();
-            } else
+            }
+            else
             {
                 //TODO another option would be to disable telemetry
                 throw new InvalidOperationException("Telemetry can be used only in CLI or Host");

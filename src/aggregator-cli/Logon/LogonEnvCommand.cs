@@ -1,9 +1,7 @@
-﻿using CommandLine;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
 
 namespace aggregator.cli
 {
@@ -46,7 +44,7 @@ namespace aggregator.cli
             var data = new DevOpsLogon()
             {
                 Url = Environment.GetEnvironmentVariable("AGGREGATOR_AZDO_URL") ?? string.Empty,
-                Mode = (DevOpsTokenType) Enum.Parse(typeof(DevOpsTokenType), 
+                Mode = (DevOpsTokenType)Enum.Parse(typeof(DevOpsTokenType),
                         Environment.GetEnvironmentVariable("AGGREGATOR_AZDO_MODE") ?? "PAT"),
                 Token = Environment.GetEnvironmentVariable("AGGREGATOR_AZDO_TOKEN") ?? string.Empty,
             };

@@ -23,7 +23,7 @@ namespace integrationtests.cli
             _output = output;
         }
 
-        protected (int rc, string output) RunAggregatorCommand(string commandLine, IEnumerable<(string,string)> env = default)
+        protected (int rc, string output) RunAggregatorCommand(string commandLine, IEnumerable<(string, string)> env = default)
         {
             // see https://stackoverflow.com/a/14655145/100864
             var args = Regex.Matches(commandLine, @"[\""](?<a>.+?)[\""]|(?<a>[^ ]+)")
@@ -39,7 +39,8 @@ namespace integrationtests.cli
 
             if (env != default)
             {
-                env.ForEach((pair) => {
+                env.ForEach((pair) =>
+                {
                     (string name, string value) = pair;
                     Environment.SetEnvironmentVariable(name, value, EnvironmentVariableTarget.Process);
                 });

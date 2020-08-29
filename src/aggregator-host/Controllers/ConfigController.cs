@@ -41,7 +41,7 @@ namespace aggregator_host.Controllers
             string proof = body.GetString();
             string userManagedPassword = _configuration.GetValue<string>("Aggregator_SharedSecret");
 
-            if (proof== SharedSecret.DeriveFromPassword(userManagedPassword))
+            if (proof == SharedSecret.DeriveFromPassword(userManagedPassword))
             {
                 return _apiKeyRepo.PickValidKey();
             }

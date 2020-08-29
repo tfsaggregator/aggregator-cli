@@ -18,11 +18,11 @@ namespace aggregator.Engine
             _workItemUpdate = workItemUpdate ?? _noUpdate;
 
             Relations = new WorkItemRelationUpdatesWrapper()
-                        {
-                            Added   = _workItemUpdate.Relations?.Added?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList()   ?? new List<WorkItemRelationWrapper>(),
-                            Removed = _workItemUpdate.Relations?.Removed?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
-                            Updated = _workItemUpdate.Relations?.Updated?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
-                        };
+            {
+                Added = _workItemUpdate.Relations?.Added?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                Removed = _workItemUpdate.Relations?.Removed?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+                Updated = _workItemUpdate.Relations?.Updated?.Where(WorkItemRelationWrapper.IsWorkItemRelation).Select(relation => new WorkItemRelationWrapper(relation)).ToList() ?? new List<WorkItemRelationWrapper>(),
+            };
 
             Fields = _workItemUpdate.Fields?
                                     .ToDictionary(kvp => kvp.Key,
@@ -71,7 +71,7 @@ namespace aggregator.Engine
     {
         public WorkItemRelationUpdatesWrapper()
         {
-            Added   = new List<WorkItemRelationWrapper>();
+            Added = new List<WorkItemRelationWrapper>();
             Removed = new List<WorkItemRelationWrapper>();
             Updated = new List<WorkItemRelationWrapper>();
         }

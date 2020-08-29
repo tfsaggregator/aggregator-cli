@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator.Engine;
@@ -11,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
-using Newtonsoft.Json;
 using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 
 namespace aggregator
@@ -51,7 +48,7 @@ namespace aggregator
                 || eventData.PublisherId != DevOpsEvents.PublisherId)
             {
                 _log.LogDebug("return BadRequest");
-                return BadRequest(new {Error = "Not a good Azure DevOps post..."});
+                return BadRequest(new { Error = "Not a good Azure DevOps post..." });
             }
 
             var helper = new RequestHelper(_log);

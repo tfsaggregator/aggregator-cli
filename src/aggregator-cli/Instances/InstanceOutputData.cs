@@ -1,7 +1,4 @@
 ﻿using Semver;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace aggregator.cli
 {

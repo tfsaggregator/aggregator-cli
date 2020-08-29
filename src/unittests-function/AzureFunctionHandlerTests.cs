@@ -47,9 +47,9 @@ namespace unittests_function
                 .BuildServiceProvider();
 
             httpContext = new DefaultHttpContext()
-                          {
-                              RequestServices = services,
-                          };
+            {
+                RequestServices = services,
+            };
 
             httpContext.Request.Protocol = "http";
             httpContext.Request.Host = new HostString("localhost");
@@ -116,7 +116,7 @@ namespace unittests_function
         }
 
         private readonly RequestHelper helper;
-        
+
         internal WorkItemEventContext InvokeCreateContextFromEvent(WebHookEvent eventData)
         {
             return helper.CreateContextFromEvent(eventData);

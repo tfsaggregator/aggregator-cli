@@ -1,6 +1,6 @@
-﻿using Xunit;
+﻿using System;
 using aggregator.cli;
-using System;
+using Xunit;
 
 namespace unittests_core
 {
@@ -9,13 +9,13 @@ namespace unittests_core
         [Fact]
         public void GivenAGitHubVersionResponse_WhenCachingTheResponse_ThenACacheFile_ShouldBeSaved()
         {
-            var responseToCache = new GitHubVersionResponse() 
-            { 
-                Name = "test", 
-                ResponseDate = DateTime.Now, 
-                Tag = "tag", 
-                Url = "url", 
-                When = new DateTimeOffset(DateTime.Now) 
+            var responseToCache = new GitHubVersionResponse()
+            {
+                Name = "test",
+                ResponseDate = DateTime.Now,
+                Tag = "tag",
+                Url = "url",
+                When = new DateTimeOffset(DateTime.Now)
             };
 
             responseToCache.SaveCache();

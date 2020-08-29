@@ -1,10 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 namespace aggregator.cli
 {
@@ -37,7 +34,7 @@ namespace aggregator.cli
 
         public string Tag { get; private set; }
         public char[] Magic => Tag.ToCharArray();
-        protected string LogonDataPath => 
+        protected string LogonDataPath =>
             LocalAppData.GetPath(Tag + ".dat");
 
         public string Save<T>(T data)

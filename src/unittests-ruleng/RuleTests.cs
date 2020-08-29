@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.Work.WebApi;
-using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
 using NSubstitute;
-using NSubstitute.Core.Arguments;
 
 using unittests_ruleng.TestData;
 using Xunit;
@@ -23,8 +20,8 @@ namespace unittests_ruleng
     {
         internal static string[] Mince(this string ruleCode)
         {
-			// looks odd, but the file might come from any OS: Windows, Linux or Mac
-            return ruleCode.Split(new string[] {"\r\n","\r","\n" }, StringSplitOptions.None);
+            // looks odd, but the file might come from any OS: Windows, Linux or Mac
+            return ruleCode.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
         }
     }
 
@@ -242,7 +239,7 @@ parent.Relations.AddChild(newChild);
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
             string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
-			
+
             Assert.Null(result);
             logger.Received().WriteInfo($"Found a request for a new Task workitem in {clientsContext.ProjectName}");
             logger.Received().WriteInfo($"Found a request to update workitem {workItemId} in {clientsContext.ProjectName}");
@@ -369,7 +366,7 @@ return string.Empty
 ";
             string[] mincedCode = ruleCode.Mince();
             var rule = new ScriptedRuleWrapper("Test", mincedCode);
-            
+
             var (success, diagnostics) = rule.Verify();
 
             Assert.False(success);
@@ -644,7 +641,7 @@ foreach(var successorLink in allWorkItemLinks.Where(link => string.Equals(""Syst
             string eventType = ServiceHooksEventTypeConstants.WorkItemUpdated;
             var workItemFeature = ExampleTestData.BacklogFeatureTwoChildren;
             var workItemUS2 = ExampleTestData.BacklogUserStoryClosed;
-            var workItemUS3= ExampleTestData.BacklogUserStoryActive;
+            var workItemUS3 = ExampleTestData.BacklogUserStoryActive;
             workItemUS3.Id = 3;
 
             var workItemUpdate = ExampleTestData.WorkItemUpdateFields;

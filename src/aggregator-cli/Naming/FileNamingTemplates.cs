@@ -1,6 +1,6 @@
-﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
+﻿using System;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Newtonsoft.Json;
-using System;
 
 namespace aggregator.cli
 {
@@ -16,7 +16,8 @@ namespace aggregator.cli
         private class InstanceName_ : InstanceCreateNames
         {
             internal InstanceName_(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
-                : base(name, resourceGroup, isCustom, functionAppName) {
+                : base(name, resourceGroup, isCustom, functionAppName)
+            {
                 HostingPlanName = $"{affixes.HostingPlanPrefix}{name}{affixes.HostingPlanSuffix}";
                 AppInsightName = $"{affixes.AppInsightPrefix}{name}{affixes.AppInsightSuffix}";
                 StorageAccountName = $"{affixes.StorageAccountPrefix}{name}{affixes.StorageAccountSuffix}";

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using aggregator.Engine.Language;
 
 using Xunit;

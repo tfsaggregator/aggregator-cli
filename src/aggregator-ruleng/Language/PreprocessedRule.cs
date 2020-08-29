@@ -2,7 +2,8 @@
 using System.Collections.ObjectModel;
 
 
-namespace aggregator.Engine.Language {
+namespace aggregator.Engine.Language
+{
     internal class PreprocessedRule : IPreprocessedRule
     {
         public PreprocessedRule()

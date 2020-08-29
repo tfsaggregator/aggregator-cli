@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 
 
-namespace aggregator.Engine.Language {
+namespace aggregator.Engine.Language
+{
     public interface IPreprocessedRule
     {
         bool Impersonate { get; set; }

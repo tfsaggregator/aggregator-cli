@@ -1,15 +1,14 @@
-﻿using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
+using Newtonsoft.Json.Linq;
 
 namespace aggregator.cli
 {
@@ -95,7 +94,7 @@ namespace aggregator.cli
             if (!ok)
                 return false;
 
-            ok = await DeployArmTemplateAsync(instance, location, rgName, tuning,cancellationToken);
+            ok = await DeployArmTemplateAsync(instance, location, rgName, tuning, cancellationToken);
             if (!ok)
                 return false;
 

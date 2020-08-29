@@ -20,7 +20,8 @@ namespace aggregator_host
         {
             services.AddControllers();
             services.AddSingleton<IApiKeyRepository, ApiKeyRepository>();
-            services.AddAuthentication(o => {
+            services.AddAuthentication(o =>
+            {
                 o.DefaultScheme = ApiKeyAuthenticationScheme.DefaultScheme;
             })
             .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationScheme.DefaultScheme, o => { });

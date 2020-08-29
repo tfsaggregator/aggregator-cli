@@ -37,8 +37,8 @@ namespace aggregator.cli
             {
                 return null;
             }
-           
-            
+
+
         }
 
         public bool CacheIsInDate()
@@ -57,7 +57,7 @@ namespace aggregator.cli
             {
                 return false;
             }
-            
+
         }
 
         public static bool ClearCache()

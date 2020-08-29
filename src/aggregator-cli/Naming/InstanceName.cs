@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace aggregator.cli
+﻿namespace aggregator.cli
 {
     internal class InstanceName
     {
@@ -28,7 +24,7 @@ namespace aggregator.cli
         internal bool IsCustom => isCustom;
 
         // name of Azure App Service
-        internal string FunctionAppName=> functionAppName;
+        internal string FunctionAppName => functionAppName;
 
         internal string DnsHostName => $"{FunctionAppName}.azurewebsites.net";
 

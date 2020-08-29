@@ -4,7 +4,8 @@ using System.Linq;
 using System.Reflection;
 
 
-namespace aggregator.Engine.Language {
+namespace aggregator.Engine.Language
+{
     public static class RuleDirectivesExtensions
     {
         internal static string GetRuleCode(this IPreprocessedRule preprocessedRule)

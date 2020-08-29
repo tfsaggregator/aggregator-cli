@@ -1,10 +1,10 @@
-﻿using Microsoft.TeamFoundation.Core.WebApi;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace aggregator.cli
 {
@@ -13,7 +13,7 @@ namespace aggregator.cli
         private readonly VssConnection devops;
         private readonly ILogger logger;
 
-        public Boards(VssConnection devops,ILogger logger)
+        public Boards(VssConnection devops, ILogger logger)
         {
             this.devops = devops;
             this.logger = logger;

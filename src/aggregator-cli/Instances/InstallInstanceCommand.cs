@@ -1,10 +1,8 @@
-﻿using CommandLine;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
 
 namespace aggregator.cli
 {
@@ -27,7 +25,7 @@ namespace aggregator.cli
         public string RequiredVersion { get; set; }
 
         [ShowInTelemetry(TelemetryDisplayMode.MaskOthersUrl)]
-        [Option("sourceUrl", SetName="url", Required = false, HelpText = "URL of Aggregator Runtime.")]
+        [Option("sourceUrl", SetName = "url", Required = false, HelpText = "URL of Aggregator Runtime.")]
         public string SourceUrl { get; set; }
 
         /* next two should go together, no way to express this via CommandLine library */

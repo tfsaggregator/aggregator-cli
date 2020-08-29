@@ -1,13 +1,9 @@
-﻿using Microsoft.Azure.Management.Fluent;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Newtonsoft.Json;
-using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace aggregator.cli
 {

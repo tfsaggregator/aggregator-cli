@@ -1,6 +1,6 @@
-﻿using CommandLine;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
 
 namespace aggregator.cli
 {

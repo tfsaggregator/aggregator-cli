@@ -15,7 +15,7 @@ namespace aggregator.cli
                 throw new System.ArgumentNullException(nameof(content));
             }
 
-            var lines = content.Split(new [] { "\n", "\r\n" }, StringSplitOptions.None);
+            var lines = content.Split(new[] { "\n", "\r\n" }, StringSplitOptions.None);
             foreach (var line in lines)
             {
                 var isVersionLine = line.StartsWith(VersionPrefix, false, CultureInfo.InvariantCulture);

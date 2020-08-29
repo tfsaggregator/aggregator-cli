@@ -1,10 +1,10 @@
-﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace aggregator.Engine
 {
@@ -405,17 +405,17 @@ namespace aggregator.Engine
             switch (value)
             {
                 case IdentityRef id:
-                {
-                    return id.DisplayName;
-                }
+                    {
+                        return id.DisplayName;
+                    }
                 case WorkItemId id:
-                {
-                    return id.Value;
-                }
+                    {
+                        return id.Value;
+                    }
                 default:
-                {
-                    return value;
-                }
+                    {
+                        return value;
+                    }
             }
         }
 

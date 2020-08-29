@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-
-namespace aggregator.cli
+﻿namespace aggregator.cli
 {
     internal class RuleOutputData : ILogDataObject
     {

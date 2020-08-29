@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace aggregator.Engine
 {
@@ -13,7 +12,7 @@ namespace aggregator.Engine
         /// <param name="this"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        public static string ToSeparatedString<T>(this IEnumerable<T> listOfT, char separator=',')
+        public static string ToSeparatedString<T>(this IEnumerable<T> listOfT, char separator = ',')
         {
             return listOfT
                 .Aggregate("",

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +6,6 @@ using aggregator;
 using aggregator.Engine;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using NSubstitute;
 
@@ -56,7 +54,7 @@ namespace unittests_ruleng
         [Fact]
         public void GetWorkItems_ByIds_Succeeds()
         {
-            var ids = new [] { 42, 99 };
+            var ids = new[] { 42, 99 };
             witClient.GetWorkItemsAsync(ids, expand: WorkItemExpand.All)
                 .ReturnsForAnyArgs(new List<WorkItem>
                 {
@@ -300,11 +298,12 @@ namespace unittests_ruleng
             witClient
                 .ExecuteBatchRequest(default)
                 .ReturnsForAnyArgs(
-                    info => {
+                    info =>
+                    {
                         var requests = info.Arg<IEnumerable<WitBatchRequest>>();
                         return requests.Aggregate(
                             new List<WitBatchResponse>(),
-                            (acc,req) =>
+                            (acc, req) =>
                             {
                                 acc.Add(new WitBatchResponse { Body = req.Body });
                                 return acc;
@@ -345,11 +344,12 @@ namespace unittests_ruleng
             witClient
                 .ExecuteBatchRequest(default)
                 .ReturnsForAnyArgs(
-                    info => {
+                    info =>
+                    {
                         var requests = info.Arg<IEnumerable<WitBatchRequest>>();
                         return requests.Aggregate(
                             new List<WitBatchResponse>(),
-                            (acc,req) =>
+                            (acc, req) =>
                             {
                                 acc.Add(new WitBatchResponse { Body = req.Body });
                                 return acc;

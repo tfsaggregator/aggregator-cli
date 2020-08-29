@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.Azure.Management.Fluent;
-using System.Threading;
-using Microsoft.VisualStudio.Services.FormInput;
-using aggregator;
-using System.Net.Http;
-using Microsoft.VisualStudio.Services.Common;
 using System.Net;
+using System.Net.Http;
 using System.Security.Authentication;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Management.Fluent;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.VisualStudio.Services.FormInput;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator.cli
 {
@@ -101,7 +99,7 @@ namespace aggregator.cli
 
                 string proof = SharedSecret.DeriveFromPassword(userManagedPassword);
 
-                    var configUrl = new UriBuilder(targetUrl);
+                var configUrl = new UriBuilder(targetUrl);
                 configUrl.Path = configUrl.Path + $"config/key";
                 var handler = new HttpClientHandler()
                 {

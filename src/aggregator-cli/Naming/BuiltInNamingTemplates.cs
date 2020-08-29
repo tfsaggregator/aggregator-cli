@@ -1,6 +1,6 @@
-﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
-using System;
+﻿using System;
 using System.Linq;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
 
 namespace aggregator.cli
 {
@@ -38,12 +38,12 @@ namespace aggregator.cli
         public InstanceName Instance(string name, string resourceGroup)
         {
             return new InstanceName_(
-                name:               name,
-                resourceGroup:      string.IsNullOrEmpty(resourceGroup)
+                name: name,
+                resourceGroup: string.IsNullOrEmpty(resourceGroup)
                                     ? affixes.ResourceGroupPrefix + name
                                     : resourceGroup,
-                isCustom:           !string.IsNullOrEmpty(resourceGroup),
-                functionAppName:    name + affixes.FunctionAppSuffix,
+                isCustom: !string.IsNullOrEmpty(resourceGroup),
+                functionAppName: name + affixes.FunctionAppSuffix,
                 affixes);
         }
 

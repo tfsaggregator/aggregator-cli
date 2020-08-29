@@ -1,7 +1,7 @@
-﻿using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+﻿using System;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
 
 namespace aggregator.Engine
 {
