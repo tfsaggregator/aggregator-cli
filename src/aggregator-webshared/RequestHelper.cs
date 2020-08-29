@@ -22,7 +22,7 @@ namespace aggregator
 
         public WorkItemEventContext CreateContextFromEvent(WebHookEvent eventData)
         {
-            var collectionUrl = eventData.ResourceContainers.GetValueOrDefault("collection")?.BaseUrl ?? "https://example.com";
+            var collectionUrl = eventData.ResourceContainers.GetValueOrDefault("collection")?.BaseUrl ?? MagicConstants.MissingUrl;
             var teamProjectId = eventData.ResourceContainers.GetValueOrDefault("project")?.Id ?? Guid.Empty;
 
             if (eventData.Resource is Newtonsoft.Json.Linq.JObject)

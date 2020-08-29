@@ -66,7 +66,7 @@ namespace aggregator.cli
                     continue;
                 }
                 // HACK need to factor the URL<->rule_name
-                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", "https://example.com"));
+                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", MagicConstants.MissingUrl));
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
                 string ruleFullName = $"{naming.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(

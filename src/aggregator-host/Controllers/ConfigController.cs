@@ -14,7 +14,7 @@ namespace aggregator_host.Controllers
     {
         private readonly ILogger _log;
         private readonly IConfiguration _configuration;
-        IApiKeyRepository _apiKeyRepo;
+        private readonly IApiKeyRepository _apiKeyRepo;
 
         public ConfigController(IConfiguration configuration, ILoggerFactory loggerFactory, IApiKeyRepository apiKeyRepo)
         {

@@ -17,7 +17,7 @@ namespace aggregator
         private const string SCRIPT_RULE_NAME_PATTERN = ".rule";
 
         private readonly IAggregatorLogger _logger;
-        private IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
 
         public AspNetRuleProvider(ForwarderLogger logger, IConfiguration configuration)
         {
@@ -26,12 +26,12 @@ namespace aggregator
         }
 
         /// <inheritdoc />
-        public async Task<IRule> GetRule(string ruleName)
+        public async Task<IRule> GetRule(string name)
         {
-            var ruleFilePath = GetRuleFilePath(ruleName);
+            var ruleFilePath = GetRuleFilePath(name);
             var (preprocessedRule, _) = await RuleFileParser.ReadFile(ruleFilePath);
 
-            return new ScriptedRuleWrapper(ruleName, preprocessedRule);
+            return new ScriptedRuleWrapper(name, preprocessedRule);
         }
 
         private string GetRuleFilePath(string ruleName)

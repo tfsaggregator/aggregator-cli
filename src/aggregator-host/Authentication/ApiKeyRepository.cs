@@ -12,7 +12,7 @@ namespace aggregator_host
     public interface IApiKeyRepository
     {
         Task LoadAsync();
-        bool IsValidApiKey(StringValues reqkey);
+        bool IsValidApiKey(StringValues request);
         string PickValidKey();
     }
 
@@ -47,7 +47,7 @@ namespace aggregator_host
         {
             string reqkey = request.ToString().ToLowerInvariant();
 
-            return apiKeyRecords.Where(rec => rec.Key == reqkey).Any();
+            return apiKeyRecords.Any(rec => rec.Key == reqkey);
         }
 
         public string PickValidKey()

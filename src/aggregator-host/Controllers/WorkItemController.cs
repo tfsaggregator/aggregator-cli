@@ -122,7 +122,7 @@ namespace aggregator_host.Controllers
         private Uri GetRequestUri()
         {
             //during testing this can be null
-            var requestUrl = Request?.GetDisplayUrl() ?? "https://google.com/";
+            var requestUrl = Request?.GetDisplayUrl() ?? MagicConstants.MissingUrl;
             return new Uri(requestUrl);
         }
 

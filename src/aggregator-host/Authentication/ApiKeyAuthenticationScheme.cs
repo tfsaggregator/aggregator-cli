@@ -1,6 +1,6 @@
 ﻿namespace aggregator_host
 {
-    public class ApiKeyAuthenticationScheme
+    public static class ApiKeyAuthenticationScheme
     {
         public const string DefaultScheme = "ApiKeyAuthenticationScheme";
     }

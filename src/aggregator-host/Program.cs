@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace aggregator_host
 {
-    public class Program
+    public static class Program
     {
         private static bool InDocker
             => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
