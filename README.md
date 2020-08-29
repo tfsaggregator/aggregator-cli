@@ -4,7 +4,9 @@
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tfsaggregator_aggregator-cli&metric=alert_status)](https://sonarcloud.io/dashboard?id=tfsaggregator_aggregator-cli)
 
-This is the successor to renowned TFS Aggregator.
+Aggregator is a Rule Interpreter for Work Items events, allowing dynamic calculation of field values and more.
+
+It is the successor to renowned TFS Aggregator.
 The current Server Plugin version (2.x) will be maintained to support TFS.
 The Web Service flavour will be discontinued in favour of this new tool for two reasons:
 - deployment and configuration of Web Service was too complex for most users;

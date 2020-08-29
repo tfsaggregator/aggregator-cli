@@ -24,13 +24,18 @@ jobs:
       SONAR_ORG: 'tfsaggregator'
       SONAR_PROJECTKEY: 'tfsaggregator_aggregator-cli'
     outputs:
-      versionTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
-      releaseName: 'v${{ steps.gitversion.outputs.majorMinorPatch }}'
+      dockerTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
+      releaseTag: ${{ steps.get_git_tag.outputs.tag_name }}
+      releaseName: ${{ steps.get_git_tag.outputs.tag_name }}
     steps:
     - uses: actions/checkout@v1
     # versioning
     - name: Fetch Git history for GitVersion
       run: git fetch --prune --tags
+    - name: Extract git tag
+      id: get_git_tag
+      run: echo ::set-output name=tag_name::${GITHUB_REF/refs\/tags\//}
+      shell: bash
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.4
       with:
@@ -182,8 +187,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: 'v${{ needs.build.outputs.versionTag }}'
-        release_name: 'v${{ needs.build.outputs.releaseName }}'
+        tag_name: ${{ needs.build.outputs.releaseTag }}
+        release_name: ${{ needs.build.outputs.releaseName }}
         body: |
           ${{ steps.read_release_log.outputs.content }}
         draft: true
@@ -253,7 +258,7 @@ jobs:
       uses: mr-smithers-excellent/docker-build-push@v4
       with:
         image: ${{ env.docker_repo }}
-        tag: ${{ needs.build.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
+        tag: ${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
         registry: docker.io
         dockerfile: src/${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.Dockerfile
         directory: src/.
@@ -261,7 +266,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
     - run: |
         mkdir tags
-        echo . > tags/${{ needs.build.outputs.versionTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
+        echo . > tags/${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
     - name: Upload tags
       uses: actions/upload-artifact@v2
       with:
@@ -282,37 +287,37 @@ jobs:
         name: tags
         path: 'tags/'
     - name: Push manifest
+      id: push_manifest
       run: |
         cd tags
         amends=""; for tag in *; do amends=$amends" --amend ${{ env.docker_repo }}:${tag}"; done
+        all_tags="${{ env.docker_repo }}:latest ${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}"
+        for tag in *; do all_tags=$all_tags" ${{ env.docker_repo }}:${tag}"; done
+        echo ::set-output name=all_tags::$all_tags
         cd ..
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
         docker manifest create ${{ env.docker_repo }}:latest  $amends
         docker manifest push ${{ env.docker_repo }}:latest
-        docker manifest create ${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}  $amends
-        docker manifest push ${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}
+        docker manifest create ${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}  $amends
+        docker manifest push ${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}
         docker logout
       env:
         DOCKER_CLI_EXPERIMENTAL: enabled
-    ############# TODO ################################
-    # - name: Generate Docker Hub Description
-    #   uses: cuchi/jinja2-action@v1.2.0
-    #   with:
-    #     template: docker/README.md.j2
-    #     output_file: docker/README.md
-    #     strict: false
-    #     variables: |
-    #       repo=${{ env.docker_repo }}
-    #       l0=${{ env.docker_repo }}:latest
-    #       v0=${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}
-    #       w1=${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}-win-x64
-    #       x1=${{ env.docker_repo }}:${{ needs.build.outputs.versionTag }}-linux-x64
-    #     data_file: pippo.json
-    #     data_format: json
-    # - name: Update Docker Hub Description
-    #   uses: peter-evans/dockerhub-description@v2
-    #   env:
-    #     DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-    #     DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    #     DOCKERHUB_REPOSITORY: ${{ env.docker_repo }}
-    #     README_FILEPATH: ./docker/README.md
+    - name: Generate Docker Hub Description
+      uses: cuchi/jinja2-action@v1.2.0
+      with:
+        template: docker/README.md.j2
+        output_file: docker/README.md
+        strict: false
+        variables: |
+          repo=${{ env.docker_repo }}
+          all_tags=${{ steps.push_manifest.outputs.all_tags }}
+        data_file: docker/older_tags.json
+        data_format: json
+    - name: Update Docker Hub Description
+      uses: peter-evans/dockerhub-description@v2
+      env:
+        DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKERHUB_REPOSITORY: ${{ env.docker_repo }}
+        README_FILEPATH: docker/README.md

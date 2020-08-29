@@ -1,0 +1,81 @@
+# Quick reference
+
+- **Maintained by**: the [Aggregator Team](https://github.com/tfsaggregator).
+- **Documentation**: <https://tfsaggregator.github.io/docs/v3/>.
+- **Where to get help**: via [GitHub Issue](https://github.com/tfsaggregator/aggregator-cli/issues) or the [Aggregator Community Slack](https://tfsaggregator.slack.com/) (register [here](https://slackin-tfsaggregator.herokuapp.com/)).
+
+# Supported tags
+
+{{ repo }}
+{{ all_tags }}
+
+# How to use this image
+
+Pull the latest image from Docker Hub using the version matching the operating system.
+
+```bash
+docker pull tfsaggregator/aggregator3:latest
+```
+
+Example of running the container on Windows
+```bash
+docker run --rm -it -p 5320:5320 -e Aggregator_VstsToken=********  -e ASPNETCORE_Kestrel__Certificates__Default__Password="********"  --mount type=bind,source=c:/src/github.com/tfsaggregator/aggregator-cli/docker/secrets/,target=c:/secrets --mount type=bind,source=c:/src/github.com/tfsaggregator/aggregator-cli/docker/rules/,target=c:/rules   tfsaggregator/aggregator3:latest
+```
+
+Example of running the container on Linux
+```bash
+docker run --rm -it -p 5320:5320 -e Aggregator_VstsToken=******** -e ASPNETCORE_Kestrel__Certificates__Default__Password="********"  -v /mnt/c/src/github.com/tfsaggregator/aggregator-cli/docker/rules:/rules  -v /mnt/c/src/github.com/tfsaggregator/aggregator-cli/docker/secrets:/secrets   tfsaggregator/aggregator3:latest
+```
+
+Clearly, replace the asterisks (`********`) with secret values.
+
+The output should be similar to the following
+
+```log
+Docker mode.
+info: Microsoft.Hosting.Lifetime[0]
+      Now listening on: https://[::]:5320
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\app
+```
+
+> **Note** Azure DevOps refuses localhost connections for Web hooks. The container must be exposed using a DNS name.
+
+Try access the `/config/status` endpoint to check connectivity, e.g.
+```bash
+curl -X GET https://aggregator.example.com:5320/config/status
+```
+Add the `--insecure` if you are using a self-signed certificate (not recommended for production).
+If your system hasn't curl, you can test using PowerShell
+```powershell
+Invoke-RestMethod -Method Get -Uri https://aggregator.example.com:5320/config/status
+```
+Add ` -SkipCertificateCheck` if you are using a self-signed certificate (not recommended).
+
+## Environment Variables
+
+The container is configurable using these environment variables.
+
+Variable                                              | Use                                         | Linux Default value       | Windows Default value
+------------------------------------------------------|---------------------------------------------|:-------------------------:|:----------------------------:
+`ASPNETCORE_URLS`                                     | Set the listening port                      | `https://*:5320`          | `https://*:5320`
+`ASPNETCORE_Kestrel__Certificates__Default__Path`     | SSL Certificate                             | `/secrets/aggregator.pfx` | `c:\\secrets\\aggregator.pfx`
+`ASPNETCORE_Kestrel__Certificates__Default__Password` | SSL Certificate password                    |                           |
+`Logging__LogLevel__Aggregator`                       | Level of Application Logging                | `Debug`                   | `Debug`
+`Aggregator_ApiKeysPath`                              | Valid API Keys                              | `/secrets/apikeys.json`   | `c:\\secrets\\apikeys.json`
+`Aggregator_SharedSecret`                             | Shared password to authenticate CLI         |                           |
+`Aggregator_RulesPath`                                | Directory with Rule files                   | `/rules`                  | `c:\\rules`
+`Aggregator_VstsTokenType`                            | Type of Azure DevOps authentication         | `PAT`                     | `PAT`
+`Aggregator_VstsToken`                                | Azure DevOps Personal Authentication Token  |                           |
+`AGGREGATOR_TELEMETRY_DISABLED`                       | Control telemetry                           | `false`                   | `false`
+
+We do not recommend using unsecured HTTP. The certificate should be trusted by the Azure DevOps instance.
+Note that the backslash character (`\`) must be doubled for Windows paths.
+
+
+# How to extend this image
+
