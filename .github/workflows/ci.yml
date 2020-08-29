@@ -77,22 +77,21 @@ jobs:
         popd
     # Heavy weight integration tests
     # logon-data.json is stored in project Secrets
-    - name: 'Get integration tests secrets'
+    - name: 'Prepare integration tests'
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
       run: |
         echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
         export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
         INTEGRATIONTEST_SUBSCRIPTIONID=$(jq -r '.subscription?' $LOGONDATA_FNAME)
+        echo "Next message must display a valid Guid"
         echo "Azure subscription for testing: $INTEGRATIONTEST_SUBSCRIPTIONID"
+        echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json
       env:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
       shell: bash
-    - name: 'Prepare tests'
-      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
-      run: 'echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json'
     - name: 'Run integration tests'
       if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
-      run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-build --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
+      run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
     - name: 'Scrap secrets'
       if: always()
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
