@@ -32,6 +32,15 @@ namespace aggregator_host.Controllers
 
         }
 
+        [HttpGet("version")]
+        [AllowAnonymous] // bootstrap
+        public string GetVersion()
+        {
+            _log.LogInformation("GetVersion method was called!");
+            var aggregatorVersion = RequestHelper.AggregatorVersion;
+            return aggregatorVersion;
+
+        }
         [HttpPost("key")]
         [AllowAnonymous] // bootstrap
         public string RetrieveKey([FromBody] JsonElement body)

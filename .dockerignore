@@ -1,0 +1,12 @@
+**/bin*
+**/obj*
+.git
+.gitignore
+.github/*
+.edit*
+**/.terraform
+.vs
+.vscode
+Dockerfile
+*.Dockerfile
+**/*.zip

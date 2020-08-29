@@ -1,8 +1,0 @@
-**/bin
-**/obj
-**/*test*
-.*/
-Dockerfile
-*.Dockerfile
-.git*
-.edit*
