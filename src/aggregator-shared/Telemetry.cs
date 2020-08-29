@@ -29,6 +29,7 @@ namespace aggregator
         }
 
         public static bool Enabled { get; private set; }
+        private static bool WaitAtShutdown { get; set; }
 
         public static void InitializeTelemetry()
         {
@@ -36,14 +37,16 @@ namespace aggregator
             if (dll == "aggregator-cli")
             {
                 telemetrySettings = CliTelemetrySettings.Get();
+                WaitAtShutdown = false;
             }
             else if (dll == "aggregator-host")
             {
                 telemetrySettings = HostTelemetrySettings.Get();
+                WaitAtShutdown = true;
             }
             else
             {
-                //TODO another option would be to disable telemetry
+                // another option would be to disable telemetry
                 throw new InvalidOperationException("Telemetry can be used only in CLI or Host");
             }
 
@@ -106,7 +109,10 @@ namespace aggregator
                 telemetryClient.Flush();
                 // flush is not blocking when not using InMemoryChannel so wait a bit. There is an active issue regarding the need for `Sleep`/`Delay`
                 // which is tracked here: https://github.com/microsoft/ApplicationInsights-dotnet/issues/407
-                //System.Threading.Tasks.Task.Delay(5000).Wait();
+                if (WaitAtShutdown)
+                {
+                    System.Threading.Tasks.Task.Delay(5000).Wait();
+                }
             }
         }
 
