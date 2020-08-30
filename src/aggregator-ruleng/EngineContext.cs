@@ -1,8 +1,4 @@
-﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 
 namespace aggregator.Engine
 {

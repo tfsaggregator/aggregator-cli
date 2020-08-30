@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace aggregator.Engine
 {
@@ -108,9 +107,9 @@ namespace aggregator.Engine
                 .Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsDirty && !w.Value.Current.IsNew)
                 .ToList();
 
-            var @new     = tracked.Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsNew).Select(w => w.Value.Current).ToArray();
-            var updated  = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.NoChange ).Select(w => w.Value.Current).ToArray();
-            var deleted  = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.ToDelete ).Select(w => w.Value.Current).ToArray();
+            var @new = tracked.Where(w => !w.Value.Current.IsReadOnly && w.Value.Current.IsNew).Select(w => w.Value.Current).ToArray();
+            var updated = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.NoChange).Select(w => w.Value.Current).ToArray();
+            var deleted = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.ToDelete).Select(w => w.Value.Current).ToArray();
             var restored = trackedChanged.Where(w => w.Value.Current.RecycleStatus == RecycleStatus.ToRestore).Select(w => w.Value.Current).ToArray();
             return (@new, updated, deleted, restored);
         }

@@ -1,15 +1,11 @@
-﻿using CommandLine;
-using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Azure.Management.Fluent;
-using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace aggregator.cli
 {

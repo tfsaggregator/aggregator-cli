@@ -1,8 +1,7 @@
-﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace aggregator.Engine
 {
@@ -33,7 +32,7 @@ namespace aggregator.Engine
             {
                 Rel = type,
                 Url = url,
-                Attributes = new Dictionary<string,object> { { "comment", comment } }
+                Attributes = new Dictionary<string, object> { { "comment", comment } }
             };
         }
 

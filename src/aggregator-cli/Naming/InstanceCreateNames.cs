@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace aggregator.cli
+﻿namespace aggregator.cli
 {
     internal class InstanceCreateNames : InstanceName
     {
         protected InstanceCreateNames(string name, string resourceGroup, bool isCustom, string functionAppName)
-            :base(name, resourceGroup, isCustom, functionAppName)
+            : base(name, resourceGroup, isCustom, functionAppName)
         {
         }
 

@@ -46,7 +46,6 @@ namespace aggregator.cli
 
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
-
                 void cancelEventHandler(object sender, ConsoleCancelEventArgs e)
                 {
                     // call methods to clean up
@@ -56,8 +55,21 @@ namespace aggregator.cli
                         cancellationTokenSource.Cancel();
                     }
                 }
-
                 Console.CancelKeyPress += cancelEventHandler;
+                var cancellationToken = cancellationTokenSource.Token;
+
+                bool versionCheckEnabled = !EnvironmentVariables.GetAsBool("AGGREGATOR_NEW_VERSION_CHECK_DISABLED", false);
+                if (versionCheckEnabled)
+                {
+                    var tempLogger = new ConsoleLogger(true);
+                    var verChecker = new FunctionRuntimePackage(tempLogger);
+                    (bool upgrade, string newversion) = verChecker.IsCliUpgradable(cancellationToken).Result;
+                    if (upgrade)
+                    {
+                        // bug user
+                        tempLogger.WriteWarning($"A new version ({newversion}) of Aggregator CLI is available, please upgrade.");
+                    }
+                }
 
                 var parser = new Parser(settings =>
                 {
@@ -73,11 +85,11 @@ namespace aggregator.cli
                     typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
                     typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
                     typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
-                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand)
+                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand),
+                    typeof(MapLocalRuleCommand)
                 };
                 var parserResult = parser.ParseArguments(args, types);
                 int rc = ExitCodes.Unexpected;
-                var cancellationToken = cancellationTokenSource.Token;
                 parserResult
                     .WithParsed<CreateTestCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<CleanupTestCommand>(cmd => rc = cmd.Run(cancellationToken))
@@ -100,6 +112,7 @@ namespace aggregator.cli
                     .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<MapLocalRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithNotParsed(errs =>
                     {
                         var helpText = HelpText.AutoBuild(parserResult);

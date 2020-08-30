@@ -11,7 +11,7 @@ namespace unittests_ruleng
         public const string DEFAULT_COLLECTION_URL = "https://dev.azure.com/fake-organization";
         public const string DEFAULT_PROJECT_NAME = "test-project";
 
-        public TestClientsContext(string collectionUrl = DEFAULT_COLLECTION_URL , string projectName = DEFAULT_PROJECT_NAME)
+        public TestClientsContext(string collectionUrl = DEFAULT_COLLECTION_URL, string projectName = DEFAULT_PROJECT_NAME)
         {
             CollectionUrl = collectionUrl;
             ProjectName = projectName;

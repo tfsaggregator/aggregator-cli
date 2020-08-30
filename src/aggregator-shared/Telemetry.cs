@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using System.Reflection;
 using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models;
-using Newtonsoft.Json;
 
-namespace aggregator.cli
+namespace aggregator
 {
 
     public static class Telemetry
@@ -17,7 +14,7 @@ namespace aggregator.cli
         private const string applicationInsightsKey = "b5896615-5bbe-4cd8-bbb8-9bdeb59463ba";
 
         private static TelemetryClient telemetryClient;
-        private static TelemetrySettings telemetrySettings;
+        private static ITelemetrySettings telemetrySettings;
 
         private static TelemetryClient Current
         {
@@ -32,10 +29,26 @@ namespace aggregator.cli
         }
 
         public static bool Enabled { get; private set; }
+        private static bool WaitAtShutdown { get; set; }
 
         public static void InitializeTelemetry()
         {
-            telemetrySettings = TelemetrySettings.Get();
+            string dll = Assembly.GetEntryAssembly().GetName().Name;
+            if (dll == "aggregator-cli")
+            {
+                telemetrySettings = CliTelemetrySettings.Get();
+                WaitAtShutdown = false;
+            }
+            else if (dll == "aggregator-host")
+            {
+                telemetrySettings = HostTelemetrySettings.Get();
+                WaitAtShutdown = true;
+            }
+            else
+            {
+                // another option would be to disable telemetry
+                throw new InvalidOperationException("Telemetry can be used only in CLI or Host");
+            }
 
             TelemetryConfiguration configuration = TelemetryConfiguration.CreateDefault();
             configuration.InstrumentationKey = applicationInsightsKey;
@@ -96,7 +109,10 @@ namespace aggregator.cli
                 telemetryClient.Flush();
                 // flush is not blocking when not using InMemoryChannel so wait a bit. There is an active issue regarding the need for `Sleep`/`Delay`
                 // which is tracked here: https://github.com/microsoft/ApplicationInsights-dotnet/issues/407
-                //System.Threading.Tasks.Task.Delay(5000).Wait();
+                if (WaitAtShutdown)
+                {
+                    System.Threading.Tasks.Task.Delay(5000).Wait();
+                }
             }
         }
 

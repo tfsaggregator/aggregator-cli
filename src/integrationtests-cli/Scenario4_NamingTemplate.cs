@@ -1,11 +1,4 @@
-﻿using System.IO;
-using aggregator.cli;
-using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
-using Microsoft.TeamFoundation.Common;
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
 

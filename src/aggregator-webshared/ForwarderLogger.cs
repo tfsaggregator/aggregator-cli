@@ -5,7 +5,7 @@ namespace aggregator
     /// <summary>
     /// Forwards to Azure Function logging subsystem
     /// </summary>
-    internal class ForwarderLogger : IAggregatorLogger
+    public class ForwarderLogger : IAggregatorLogger
     {
         private readonly ILogger log;
 

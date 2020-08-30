@@ -77,15 +77,15 @@ namespace unittests_ruleng
         {
             int workItemId = 42;
             WorkItem workItem = new WorkItem
-                                {
-                                    Id = workItemId,
-                                    Fields = new Dictionary<string, object>
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
                                              {
                                                  { "System.WorkItemType", "Bug" },
                                                  { "System.Title", "Hello" },
                                              },
-                                    Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
-                                };
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
 
             var wrapper = new WorkItemWrapper(context, workItem);
 
@@ -116,16 +116,16 @@ namespace unittests_ruleng
         {
             var testKey = "testKey";
             WorkItem workItem = new WorkItem
-                                {
-                                    Id = 11,
-                                    Fields = new Dictionary<string, object>
+            {
+                Id = 11,
+                Fields = new Dictionary<string, object>
                                              {
                                                  { "System.WorkItemType", "Bug" },
                                                  { "System.Title", "Hello" },
                                                  { testKey, testValue },
                                              },
-                                    Url = $"{clientsContext.WorkItemsBaseUrl}/11"
-                                };
+                Url = $"{clientsContext.WorkItemsBaseUrl}/11"
+            };
 
             var wrapper = new WorkItemWrapper(context, workItem);
 
@@ -168,7 +168,7 @@ namespace unittests_ruleng
             };
             Assert.Equal(2, wrapper.Changes.Count);
             var actual = wrapper.Changes[0];
-            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value.ToString() == actual.Value.ToString() && expected.From == actual.From );
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value.ToString() == actual.Value.ToString() && expected.From == actual.From);
         }
 
         [Fact]

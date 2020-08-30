@@ -1,8 +1,4 @@
-﻿using Microsoft.Azure.Management.AppService.Fluent.Models;
-using Microsoft.Azure.Management.Fluent;
-using Octokit;
-using Semver;
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -11,6 +7,9 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.Fluent;
+using Octokit;
+using Semver;
 
 namespace aggregator.cli
 {
@@ -31,6 +30,42 @@ namespace aggregator.cli
         }
 
         public string RuntimePackageFile { get; private set; }
+
+        internal async Task<(bool upgrade, string newversion)> IsCliUpgradable(CancellationToken cancellationToken)
+        {
+            string tag = "latest";
+            var gitHubVersion = GitHubVersionResponse.TryReadFromCache();
+            if (gitHubVersion != null)
+                logger.WriteVerbose("located a cached GitHub version query response");
+            if (gitHubVersion == null || !gitHubVersion.CacheIsInDate() || tag != gitHubVersion.Tag)
+            {
+                logger.WriteVerbose($"Checking runtime package versions in GitHub");
+                gitHubVersion = await FindVersionInGitHubAsync(tag);
+                if (gitHubVersion != null && gitHubVersion.SaveCache())
+                    logger.WriteVerbose($"Saved GitHub response to disk");
+            }
+            else
+            {
+                logger.WriteVerbose($"Cached versions are recent enough to not require checking GitHub");
+            }
+
+            if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
+            {
+                logger.WriteError($"Requested version does not exist.");
+                return (upgrade: false, newversion: "");
+            }
+            logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
+
+            SemVersion latest;
+            SemVersion.TryParse(gitHubVersion.Name.Substring(1), out latest);
+            var current = new SemVersion(
+                Assembly.GetEntryAssembly().GetName().Version);
+
+            bool upgrade = latest.CompareTo(current) > 0;
+            return upgrade
+                ? (upgrade, newversion: gitHubVersion.Name)
+                : (upgrade: false, newversion: "");
+        }
 
         internal async Task<bool> UpdateVersionAsync(string requiredVersion, string sourceUrl, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
@@ -165,7 +200,7 @@ namespace aggregator.cli
                     : requiredVersion);
             var gitHubVersion = GitHubVersionResponse.TryReadFromCache();
             if (gitHubVersion != null)
-                logger.WriteVerbose("located a cached GitHub vesion query response");
+                logger.WriteVerbose("located a cached GitHub version query response");
             if (gitHubVersion == null || !gitHubVersion.CacheIsInDate() || tag != gitHubVersion.Tag)
             {
                 logger.WriteVerbose($"Checking runtime package versions in GitHub");
@@ -175,16 +210,16 @@ namespace aggregator.cli
             }
             else
             {
-                logger.WriteVerbose($"Cached version is recent enough to not require checking GitHub");
+                logger.WriteVerbose($"Cached versions are recent enough to not require checking GitHub");
             }
-            
+
             if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
             {
                 logger.WriteError($"Requested runtime {requiredVersion} version does not exist.");
                 return false;
             }
             logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
-            
+
             if (gitHubVersion.Name[0] == 'v') gitHubVersion.Name = gitHubVersion.Name.Substring(1);
             var requiredRuntimeVer = SemVersion.Parse(gitHubVersion.Name);
             logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {gitHubVersion.When}).");
@@ -309,13 +344,13 @@ namespace aggregator.cli
                 return default;
             }
             var asset = release.Assets.Where(a => a.Name == RuntimePackageFile).FirstOrDefault();
-            return new GitHubVersionResponse() 
-            { 
-                Tag = tag, 
+            return new GitHubVersionResponse()
+            {
+                Tag = tag,
                 Name = release.Name,
-                When = release.PublishedAt, 
-                Url = asset.BrowserDownloadUrl, 
-                ResponseDate = DateTime.Now 
+                When = release.PublishedAt,
+                Url = asset.BrowserDownloadUrl,
+                ResponseDate = DateTime.Now
             };
         }
 

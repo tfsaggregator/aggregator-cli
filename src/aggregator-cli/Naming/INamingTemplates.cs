@@ -1,5 +1,5 @@
-﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
-using System;
+﻿using System;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
 
 namespace aggregator.cli
 {

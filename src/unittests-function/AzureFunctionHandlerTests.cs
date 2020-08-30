@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -47,9 +47,9 @@ namespace unittests_function
                 .BuildServiceProvider();
 
             httpContext = new DefaultHttpContext()
-                          {
-                              RequestServices = services,
-                          };
+            {
+                RequestServices = services,
+            };
 
             httpContext.Request.Protocol = "http";
             httpContext.Request.Host = new HostString("localhost");
@@ -109,17 +109,22 @@ namespace unittests_function
     internal class TestAzureFunctionHandler : AzureFunctionHandler
     {
         /// <inheritdoc />
-        public TestAzureFunctionHandler(ILogger logger, ExecutionContext executionContext, HttpContext httpContext) : base(logger, executionContext, httpContext) { }
+        public TestAzureFunctionHandler(ILogger logger, ExecutionContext executionContext, HttpContext httpContext)
+            : base(logger, executionContext, httpContext)
+        {
+            helper = new RequestHelper(logger);
+        }
 
+        private readonly RequestHelper helper;
 
         internal WorkItemEventContext InvokeCreateContextFromEvent(WebHookEvent eventData)
         {
-            return CreateContextFromEvent(eventData);
+            return helper.CreateContextFromEvent(eventData);
         }
 
         internal void InvokeMigrateIdentityInformation(string resourceVersion, WorkItem workItem)
         {
-            MigrateIdentityInformation(resourceVersion, workItem);
+            helper.MigrateIdentityInformation(resourceVersion, workItem);
         }
     }
 }

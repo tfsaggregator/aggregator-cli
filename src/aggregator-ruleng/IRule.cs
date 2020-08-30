@@ -2,7 +2,8 @@
 using System.Threading.Tasks;
 
 
-namespace aggregator.Engine {
+namespace aggregator.Engine
+{
     public interface IRule
     {
         /// <summary>

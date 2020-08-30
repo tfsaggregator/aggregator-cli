@@ -1,5 +1,5 @@
-using Xunit;
 using aggregator.cli;
+using Xunit;
 
 namespace unittests_core
 {

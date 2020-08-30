@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace aggregator.Engine
+﻿namespace aggregator.Engine
 {
     ///<summary>
     /// Holds any configuration data picked by the directive parser that may influence a rule behaviour.

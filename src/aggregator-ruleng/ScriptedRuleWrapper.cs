@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using aggregator.Engine.Language;
@@ -38,6 +37,11 @@ namespace aggregator.Engine
             Name = ruleName;
         }
 
+        /// <summary>
+        /// Ctor for Unit Testing
+        /// </summary>
+        /// <param name="ruleName"></param>
+        /// <param name="ruleCode"></param>
         internal ScriptedRuleWrapper(string ruleName, string[] ruleCode) : this(ruleName, new NullLogger())
         {
             (IPreprocessedRule preprocessedRule, bool parseSuccess) = RuleFileParser.Read(ruleCode);
@@ -46,10 +50,21 @@ namespace aggregator.Engine
             Initialize(preprocessedRule);
         }
 
+        /// <summary>
+        /// Standard constructor
+        /// </summary>
+        /// <param name="ruleName"></param>
+        /// <param name="preprocessedRule"></param>
         public ScriptedRuleWrapper(string ruleName, IPreprocessedRule preprocessedRule) : this(ruleName, preprocessedRule, new NullLogger())
         {
         }
 
+        /// <summary>
+        /// Ctor for User testing
+        /// </summary>
+        /// <param name="ruleName"></param>
+        /// <param name="preprocessedRule"></param>
+        /// <param name="logger"></param>
         public ScriptedRuleWrapper(string ruleName, IPreprocessedRule preprocessedRule, IAggregatorLogger logger) : this(ruleName, logger)
         {
             Initialize(preprocessedRule);

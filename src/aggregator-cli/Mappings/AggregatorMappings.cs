@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.Azure.Management.Fluent;
+using System.Net;
+using System.Net.Http;
+using System.Security.Authentication;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Management.Fluent;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.FormInput;
-using aggregator;
+using Microsoft.VisualStudio.Services.ServiceHooks.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator.cli
 {
@@ -63,7 +66,7 @@ namespace aggregator.cli
                     continue;
                 }
                 // HACK need to factor the URL<->rule_name
-                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", "https://example.com"));
+                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", MagicConstants.MissingUrl));
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
                 string ruleFullName = $"{naming.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
                 result.Add(
@@ -75,14 +78,74 @@ namespace aggregator.cli
 
         internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
         {
+            Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever = async (_ruleName, _cancellationToken) =>
+              {
+                  var rules = new AggregatorRules(azure, logger);
+                  return await rules.GetInvocationUrlAndKey(instance, _ruleName, _cancellationToken);
+              };
+
+            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, urlRetriever, "x-functions-key", cancellationToken);
+        }
+
+        internal async Task<Guid> AddFromUrlAsync(string projectName, string @event, EventFilters filters, Uri targetUrl, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
+        {
+            Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever = async (_ruleName, _cancellationToken) =>
+            {
+                string apiKey = "INVALID";
+
+                logger.WriteVerbose($"Validating target URL {targetUrl.AbsoluteUri}");
+
+                string userManagedPassword = Environment.GetEnvironmentVariable("Aggregator_SharedSecret");
+
+                string proof = SharedSecret.DeriveFromPassword(userManagedPassword);
+
+                var configUrl = new UriBuilder(targetUrl);
+                configUrl.Path = configUrl.Path + $"config/key";
+                var handler = new HttpClientHandler()
+                {
+                    SslProtocols = SslProtocols.Tls12,// | SslProtocols.Tls11 | SslProtocols.Tls,
+                    ServerCertificateCustomValidationCallback = delegate { return true; }
+                };
+                using (var client = new HttpClient(handler))
+                using (var request = new HttpRequestMessage(HttpMethod.Post, configUrl.Uri))
+                {
+                    using (request.Content = new StringContent($"\"{proof}\"", Encoding.UTF8, "application/json"))
+                    using (var response = await client.SendAsync(request, cancellationToken))
+                    {
+                        switch (response.StatusCode)
+                        {
+                            case HttpStatusCode.OK:
+                                logger.WriteVerbose($"Connected to {targetUrl}");
+                                apiKey = await response.Content.ReadAsStringAsync();
+                                logger.WriteInfo($"Coniguration retrieved.");
+                                break;
+
+                            default:
+                                logger.WriteError($"{targetUrl} returned {response.ReasonPhrase}.");
+                                break;
+                        }//switch
+                    }
+                }
+
+                logger.WriteInfo($"Target URL is working");
+
+                var b = new UriBuilder(targetUrl);
+                b.Path = b.Path + $"/workitem/{_ruleName}";
+                return (b.Uri, apiKey);
+            };
+
+            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, urlRetriever, MagicConstants.ApiKeyAuthenticationHeaderName, cancellationToken);
+        }
+
+        protected async Task<Guid> CoreAddAsync(string projectName, string @event, EventFilters filters, string ruleName, bool impersonateExecution, Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever, string headerName, CancellationToken cancellationToken)
+        {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
             var projectClient = devops.GetClient<ProjectHttpClient>();
             var project = await projectClient.GetProject(projectName);
             logger.WriteInfo($"Project {projectName} data read.");
 
-            var rules = new AggregatorRules(azure, logger);
             logger.WriteVerbose($"Retrieving {ruleName} Function Key...");
-            (Uri ruleUrl, string ruleKey) = await rules.GetInvocationUrlAndKey(instance, ruleName, cancellationToken);
+            (Uri ruleUrl, string ruleKey) = await urlRetriever(ruleName, cancellationToken);
             logger.WriteInfo($"{ruleName} Function Key retrieved.");
 
             ruleUrl = ruleUrl.AddToUrl(impersonate: impersonateExecution);

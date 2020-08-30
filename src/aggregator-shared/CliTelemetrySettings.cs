@@ -1,13 +1,14 @@
 ﻿using System;
 using System.IO;
+using aggregator.cli;
 using Newtonsoft.Json;
 
-namespace aggregator.cli
+namespace aggregator
 {
     /// <summary>
     /// Per-machine and per-user data across CLI invocation
     /// </summary>
-    class TelemetrySettings
+    class CliTelemetrySettings : ITelemetrySettings
     {
         private static string SettingsFileName => LocalAppData.GetPath("telemetry.settings.json");
 
@@ -19,12 +20,12 @@ namespace aggregator.cli
         [JsonIgnore]
         public bool Enabled { get; private set; }
 
-        public static TelemetrySettings Get()
+        public static ITelemetrySettings Get()
         {
-            TelemetrySettings s;
+            CliTelemetrySettings s;
             if (File.Exists(SettingsFileName))
             {
-                s = JsonConvert.DeserializeObject<TelemetrySettings>(
+                s = JsonConvert.DeserializeObject<CliTelemetrySettings>(
                     File.ReadAllText(SettingsFileName));
 
                 bool sessionExpired = DateTime.Now.Subtract(MaxSessionDuration) > s.LastUpdate;
@@ -40,7 +41,7 @@ namespace aggregator.cli
             }
             else
             {
-                s = new TelemetrySettings()
+                s = new CliTelemetrySettings()
                 {
                     SessionId = Guid.NewGuid().ToString(),
                     IsNewSession = true,
@@ -51,7 +52,7 @@ namespace aggregator.cli
                     DeviceId = GetHash(Environment.MachineName),
                 };
             }
-            s.Enabled = !GetEnvironmentVariableAsBool("AGGREGATOR_TELEMETRY_DISABLED", false);
+            s.Enabled = !EnvironmentVariables.GetAsBool("AGGREGATOR_TELEMETRY_DISABLED", false);
 
             return s;
         }
@@ -80,31 +81,6 @@ namespace aggregator.cli
                 return false;
             }
 
-        }
-
-        private static bool GetEnvironmentVariableAsBool(string varName, bool valueIfMissing = false)
-        {
-            string str = Environment.GetEnvironmentVariable(varName);
-            if (str == null)
-                return valueIfMissing;
-
-            bool isTrue = false;
-            switch (str.ToLowerInvariant())
-            {
-                case "true":
-                case "yes":
-                case "1":
-                    isTrue = true;
-                    break;
-                case "false":
-                case "no":
-                case "0":
-                    isTrue = false;
-                    break;
-                default:
-                    throw new ArgumentException("Environment variable was not truthy nor falsy", varName);
-            }
-            return isTrue;
         }
 
         public string SessionId { get; set; }

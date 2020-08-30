@@ -40,9 +40,9 @@ namespace aggregator.Engine.Language
 
             var directiveLineIndex = 0;
             var preprocessedRule = new PreprocessedRule()
-                                 {
-                                     Language = RuleLanguage.Csharp
-                                 };
+            {
+                Language = RuleLanguage.Csharp
+            };
 
             while (directiveLineIndex < ruleCode.Length
                 && ruleCode[directiveLineIndex].Length > 0
@@ -76,11 +76,11 @@ namespace aggregator.Engine.Language
                                     preprocessedRule.Language = RuleLanguage.Csharp;
                                     break;
                                 default:
-                                {
-                                    FailParsingWithMessage($"Unrecognized language {arguments}");
-                                    preprocessedRule.Language = RuleLanguage.Unknown;
-                                    break;
-                                }
+                                    {
+                                        FailParsingWithMessage($"Unrecognized language {arguments}");
+                                        preprocessedRule.Language = RuleLanguage.Unknown;
+                                        break;
+                                    }
                             }
                         }
                         break;
@@ -158,10 +158,10 @@ namespace aggregator.Engine.Language
                         break;
 
                     default:
-                    {
-                        FailParsingWithMessage($"Unrecognized directive {directive}");
-                        break;
-                    }
+                        {
+                            FailParsingWithMessage($"Unrecognized directive {directive}");
+                            break;
+                        }
                 }//switch
 
                 // this keep the same number of lines

@@ -1,0 +1,58 @@
+﻿using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using aggregator;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+
+namespace aggregator_host
+{
+    public interface IApiKeyRepository
+    {
+        Task LoadAsync();
+        bool IsValidApiKey(StringValues request);
+        string PickValidKey();
+    }
+
+    public class ApiKeyRepository : IApiKeyRepository
+    {
+        private readonly ILogger _log;
+        private readonly IConfiguration _configuration;
+        ApiKeyRecord[] apiKeyRecords;
+
+        public ApiKeyRepository(IConfiguration configuration, ILoggerFactory loggerFactory)
+        {
+            _configuration = configuration;
+            _log = loggerFactory.CreateLogger(MagicConstants.LoggerCategoryName);
+        }
+
+        public async Task LoadAsync()
+        {
+            string fileName = _configuration.GetValue<string>("Aggregator_ApiKeysPath");
+            _log.LogDebug($"Loading API Keys from {fileName}");
+            using (var fs = File.OpenRead(fileName))
+            {
+                apiKeyRecords = await JsonSerializer.DeserializeAsync<ApiKeyRecord[]>(fs,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                });
+            }
+            _log.LogInformation($"Loaded {apiKeyRecords?.Length} API Keys");
+        }
+
+        public bool IsValidApiKey(StringValues request)
+        {
+            string reqkey = request.ToString().ToLowerInvariant();
+
+            return apiKeyRecords.Any(rec => rec.Key == reqkey);
+        }
+
+        public string PickValidKey()
+        {
+            return apiKeyRecords.First().Key;
+        }
+    }
+}

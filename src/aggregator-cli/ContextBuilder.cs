@@ -1,11 +1,9 @@
-﻿using Microsoft.Azure.Management.Fluent;
-using Microsoft.VisualStudio.Services.WebApi;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.Fluent;
+using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator.cli
 {
@@ -62,7 +60,7 @@ namespace aggregator.cli
                 if (reason != LogonResult.Succeeded)
                 {
                     string msg = TranslateResult(reason);
-                    throw new InvalidOperationException(string.Format(msg, "Azure","logon.azure"));
+                    throw new InvalidOperationException(string.Format(msg, "Azure", "logon.azure"));
                 }
 
                 azure = connection.Logon();

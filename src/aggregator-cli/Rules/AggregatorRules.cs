@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -380,8 +379,8 @@ namespace aggregator.cli
             // AddAsync
             // - read and parse file
             // - compile and validate content
-                // - packaging
-                // - upload
+            // - packaging
+            // - upload
             // - Configure App for impersonate if needed
             return ok;
         }
@@ -428,9 +427,9 @@ namespace aggregator.cli
                     _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
                     var (preprocessedRule, _) = await RuleFileParser.ReadFile(ruleFilePath, cancellationToken);
                     var rule = new Engine.ScriptedRuleWrapper(Path.GetFileNameWithoutExtension(ruleFilePath), preprocessedRule)
-                               {
-                                   ImpersonateExecution = impersonateExecution
-                               };
+                    {
+                        ImpersonateExecution = impersonateExecution
+                    };
 
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);

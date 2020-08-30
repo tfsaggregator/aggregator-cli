@@ -1,7 +1,6 @@
-﻿using Xunit;
+﻿using System.Collections.Generic;
 using aggregator.cli;
-using System;
-using System.Collections.Generic;
+using Xunit;
 
 namespace unittests_core
 {

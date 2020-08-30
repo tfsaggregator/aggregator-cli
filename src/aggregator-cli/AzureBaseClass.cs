@@ -5,7 +5,8 @@ using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.Fluent;
 
 
-namespace aggregator.cli {
+namespace aggregator.cli
+{
     internal abstract class AzureBaseClass
     {
         protected IAzure _azure;

@@ -1,6 +1,4 @@
-using aggregator;
 using aggregator.Engine;
-using NSubstitute;
 using Xunit;
 
 namespace unittests_ruleng

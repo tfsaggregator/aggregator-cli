@@ -1,15 +1,13 @@
-﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.TeamFoundation.Work.WebApi.Contracts;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+using Newtonsoft.Json;
 
 
 namespace aggregator.Engine
@@ -285,7 +283,7 @@ namespace aggregator.Engine
             }
 
             var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
-            string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.Indented, converters);
+            string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.None, converters);
             _context.Logger.WriteVerbose(requestBody);
 
             if (commit)
@@ -394,7 +392,7 @@ namespace aggregator.Engine
             var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
             foreach (var failedResponse in failedResponses)
             {
-                string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
+                string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.None);
                 _context.Logger.WriteVerbose(stringResponse);
                 _context.Logger.WriteError($"Save failed: {failedResponse.Body}");
             }
@@ -420,7 +418,7 @@ namespace aggregator.Engine
             foreach (var item in restore)
             {
                 _context.Logger.WriteInfo($"Restoring workitem {item.Id} in {item.TeamProject}");
-                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() {IsDeleted = false}, item.Id, cancellationToken: cancellationToken);
+                _ = await _clients.WitClient.RestoreWorkItemAsync(new WorkItemDeleteUpdate() { IsDeleted = false }, item.Id, cancellationToken: cancellationToken);
             }
         }
 
@@ -436,7 +434,7 @@ namespace aggregator.Engine
 
                                        //TODO oldId should be known by item, and not needed to be passed as parameter
                                        item.ReplaceIdAndResetChanges(oldId, newId);
-                                       return new {oldId, newId};
+                                       return new { oldId, newId };
                                    })
                                    .ToDictionary(kvp => kvp.oldId, kvp => kvp.newId);
 
