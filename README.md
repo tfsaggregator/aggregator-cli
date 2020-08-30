@@ -1,8 +1,6 @@
 # aggregator-cli
 
-[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg?branch=master)](https://github.com/tfsaggregator/aggregator-cli/actions)
-
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tfsaggregator_aggregator-cli&metric=alert_status)](https://sonarcloud.io/dashboard?id=tfsaggregator_aggregator-cli)
+[![Build Status](https://github.com/tfsaggregator/aggregator-cli/workflows/CI/badge.svg?branch=master)](https://github.com/tfsaggregator/aggregator-cli/actions)   [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tfsaggregator_aggregator-cli&metric=alert_status)](https://sonarcloud.io/dashboard?id=tfsaggregator_aggregator-cli)
 
 Aggregator is a Rule Interpreter for Work Items events, allowing dynamic calculation of field values and more.
 

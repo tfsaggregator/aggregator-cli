@@ -151,7 +151,9 @@ jobs:
     # Release notes (maybe one day we will use https://gittools.github.io/GitReleaseManager)
     - name: 'Dump commit messages since last tag as draft release notes'
       if: startsWith(github.ref, 'refs/tags/v')
-      run: git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > outputs/release.log
+      run: |
+        git log $(git describe --abbrev=0 --always)..HEAD --pretty=format:"%s" --reverse > outputs/git.log
+        cp Next-Release-ChangeLog.md outputs/
     # everything in outputs can be used by other jobs
     - name: Upload artifacts
       if: startsWith(github.ref, 'refs/tags/v')
@@ -177,11 +179,21 @@ jobs:
         cd outputs/
         mv */*.zip ./
         shasum -a 256 *.zip > SHA256.txt
-    - name: Read package.json
-      id: read_release_log
+    - name: Read git.log
+      id: read_packages_sha
       uses: juliangruber/read-file-action@v1
       with:
-        path: outputs/release.log
+        path: outputs/SHA256.txt
+    - name: Read git.log
+      id: read_gitlog
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: outputs/git.log
+    - name: Read package.json
+      id: read_changelog
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: outputs/Next-Release-ChangeLog.md
     # Create Release in GitHub as Draft
     - name: Create Release
       id: create_release
@@ -192,7 +204,9 @@ jobs:
         tag_name: ${{ needs.build.outputs.releaseTag }}
         release_name: ${{ needs.build.outputs.releaseName }}
         body: |
-          ${{ steps.read_release_log.outputs.content }}
+          ${{ steps.read_changelog.outputs.content }}
+          ${{ steps.read_packages_sha.outputs.content }}
+          ${{ steps.read_gitlog.outputs.content }}
         draft: true
         prerelease: true
     - name: Upload FunctionRuntime
