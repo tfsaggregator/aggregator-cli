@@ -27,7 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.WebApiCompatShim" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.16" />
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.18" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0" />
