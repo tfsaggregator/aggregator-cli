@@ -4,6 +4,8 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 ARG MAJOR_MINOR_PATCH=0.0.0
 ARG PRERELEASE_TAG=
 ARG CONFIGURATION=Release
+ARG FRAMEWORK=netcoreapp3.1
+ARG RUNTIME_IDENTIFIER=linux-musl-x64
 
 COPY ./art /workspace/art
 COPY ./src /workspace/src
@@ -11,20 +13,18 @@ COPY ./src /workspace/src
 WORKDIR /workspace
 
 RUN dotnet restore src/aggregator-host/aggregator-host.csproj
-RUN dotnet build --version-suffix beta -f netcoreapp3.1 -c $CONFIGURATION  -o build src/aggregator-host/aggregator-host.csproj /p:VersionPrefix=$MAJOR_MINOR_PATCH  /p:VersionSuffix=$PRERELEASE_TAG
+RUN dotnet build -f $FRAMEWORK  -r $RUNTIME_IDENTIFIER  -c $CONFIGURATION  -o build src/aggregator-host/aggregator-host.csproj /p:VersionPrefix=$MAJOR_MINOR_PATCH  /p:VersionSuffix=$PRERELEASE_TAG
 RUN dotnet test --configuration $CONFIGURATION  src/unittests-core/unittests-core.csproj \
     && dotnet test --configuration $CONFIGURATION  src/unittests-ruleng/unittests-ruleng.csproj
 
-
-FROM build AS publish
-RUN dotnet publish --version-suffix beta -f netcoreapp3.1 -r linux-musl-x64 -c $CONFIGURATION  -o out src/aggregator-host/aggregator-host.csproj -p:VersionPrefix=$MAJOR_MINOR_PATCH  -p:VersionSuffix=$PRERELEASE_TAG
+RUN dotnet publish --no-restore -f $FRAMEWORK  -r $RUNTIME_IDENTIFIER  -c $CONFIGURATION  -o out src/aggregator-host/aggregator-host.csproj -p:VersionPrefix=$MAJOR_MINOR_PATCH  -p:VersionSuffix=$PRERELEASE_TAG
 
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine3.12 AS final
 
 WORKDIR /app
 
-COPY --from=publish /workspace/out .
+COPY --from=build /workspace/out .
 
 VOLUME /rules
 VOLUME /secrets

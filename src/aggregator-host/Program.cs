@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using aggregator;
 using Microsoft.AspNetCore.Hosting;
@@ -16,7 +17,11 @@ namespace aggregator_host
         {
             if (InDocker)
             {
-                Console.WriteLine("Docker mode.");
+                Console.WriteLine($@"Aggregator {RequestHelper.AggregatorVersion} started in Docker mode.
+{RuntimeInformation.FrameworkDescription}
+{RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant()})
+");
+
                 Telemetry.InitializeTelemetry();
                 Telemetry.TrackEvent("Docker Host Start");
 
