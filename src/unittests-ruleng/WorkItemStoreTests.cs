@@ -324,11 +324,7 @@ namespace unittests_ruleng
 
             Assert.Equal(0, result.created);
             Assert.Equal(1, result.updated);
-            logger.Received().WriteVerbose(@"[
-  {
-    ""Body"": ""[{\""op\"":5,\""path\"":\""/rev\"",\""from\"":null,\""value\"":2},{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""
-  }
-]");
+            logger.Received().WriteVerbose(@"[{""Body"":""[{\""op\"":5,\""path\"":\""/rev\"",\""from\"":null,\""value\"":2},{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""}]");
         }
 
         [Fact]
@@ -370,11 +366,8 @@ namespace unittests_ruleng
 
             Assert.Equal(0, result.created);
             Assert.Equal(1, result.updated);
-            logger.Received().WriteVerbose(@"[
-  {
-    ""Body"": ""[{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""
-  }
-]");
+            await witClient.Received().ExecuteBatchRequest(Arg.Is<IEnumerable<WitBatchRequest>>(l => l.Count() == 1));
+            logger.Received().WriteVerbose(@"[{""Body"":""[{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""}]");
         }
     }
 }

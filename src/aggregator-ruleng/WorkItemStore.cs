@@ -283,7 +283,7 @@ namespace aggregator.Engine
             }
 
             var converters = new JsonConverter[] { new JsonPatchOperationConverter() };
-            string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.Indented, converters);
+            string requestBody = JsonConvert.SerializeObject(batchRequests, Formatting.None, converters);
             _context.Logger.WriteVerbose(requestBody);
 
             if (commit)
@@ -392,7 +392,7 @@ namespace aggregator.Engine
             var failedResponses = batchResponses.Where(batchResponse => !IsSuccessStatusCode(batchResponse.Code)).ToList();
             foreach (var failedResponse in failedResponses)
             {
-                string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.Indented);
+                string stringResponse = JsonConvert.SerializeObject(batchResponses, Formatting.None);
                 _context.Logger.WriteVerbose(stringResponse);
                 _context.Logger.WriteError($"Save failed: {failedResponse.Body}");
             }
