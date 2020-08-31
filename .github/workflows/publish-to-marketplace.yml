@@ -22,7 +22,7 @@ jobs:
       - name: Calc extension version
         id: extension_version
         run: |
-          if ('${{ github.event_name }}' == 'push') {
+          if ('${{ github.event_name }}' -eq 'push') {
             $tag = "${{ steps.latest_version.outputs.latest_tag }}"
           } else {
             $tag = "${{ github.event.release.name }}"
