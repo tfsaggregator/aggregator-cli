@@ -44,6 +44,6 @@ jobs:
       - name: Publish
         run: |
           cd marketplace
-          $jsonOverride = "`"{\`"version\`": \`"${{ steps.extension_version.outputs.version }}}\`"}`""
+          $jsonOverride = "`"{\`"version\`": \`"${{ steps.extension_version.outputs.version }}\`"}`""
           tfx extension publish --manifest vss-extension.json --token ${{ secrets.MARKETPLACE_PAT }} --override $jsonOverride
         shell: pwsh
