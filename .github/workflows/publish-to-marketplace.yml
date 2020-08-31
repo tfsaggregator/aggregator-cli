@@ -12,16 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get Previous tag
+      - name: Get Latest Release
         if: github.event_name == 'push'
-        id: previous_tag
-        uses: "WyriHaximus/github-action-get-previous-tag@master"
-        
+        id: latest_version
+        uses: abatilo/release-info-action@v1.2.0
+        with:
+          owner: abatilo
+          repo: release-info-action        
       - name: Calc extension version
         id: extension_version
         run: |
           if ('"${{ github.event_name }}' == 'push') {
-            $tag = "${{ steps.previous_tag.outputs.tag }}"
+            $tag = "${{ steps.latest_version.outputs.latest_tag }}"
           } else {
             $tag = "${{ github.event.release.name }}"
           }
