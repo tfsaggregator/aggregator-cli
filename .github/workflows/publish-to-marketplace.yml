@@ -12,22 +12,36 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Get Previous tag
+        if: github.event_name == 'push'
+        id: previous_tag
+        uses: "WyriHaximus/github-action-get-previous-tag@master"
+        
+      - name: Calc extension version
+        id: extension_version
+        run: |
+          if ('"${{ github.event_name }}' == 'push') {
+            $tag = "${{ steps.previous_tag.outputs.tag }}"
+          } else {
+            $tag = "${{ github.event.release.name }}"
+          }
+          if ($tag.StartsWith('v')) { $tag = $tag.Substring(1) }
+          $ver = [System.Management.Automation.SemanticVersion]::Parse($tag)
+          $ver3 = "$($ver.Major).$($ver.Minor).$($ver.Patch)"
+          echo "::set-output name=version::${ver3}"
+        shell: pwsh
+
       - name: Node.js v12
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
 
-      - name: Install or update the TFS Cross Platform Command Line Interface 
+      - name: Install or update the TFS Cross Platform Command Line Interface
         run: npm i -g tfx-cli
 
       - name: Publish
         run: |
           cd marketplace
-          $tag = "${{ github.event.release.name }}"
-          if ($tag.StartsWith('v')) { $tag = $tag.Substring(1) }
-          $ver = [System.Management.Automation.SemanticVersion]::Parse($tag)
-          $ver3 = "$($ver.Major).$($ver.Minor).$($ver.Patch)"
-          $jsonOverride = "`"{\`"version\`": \`"${ver3}\`"}`""
+          $jsonOverride = "`"{\`"version\`": \`"${{ steps.extension_version.outputs.version }}}\`"}`""
           tfx extension publish --manifest vss-extension.json --token ${{ secrets.MARKETPLACE_PAT }} --override $jsonOverride
         shell: pwsh
- 

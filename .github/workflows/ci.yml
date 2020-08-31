@@ -3,11 +3,11 @@ name: build-and-deploy
 on:
   push:
     paths:
-    - '.github/workflows/**'
+    - '.github/workflows/ci.yml'
     - 'src/**'
   pull_request:
     paths:
-    - '.github/workflows/**'
+    - '.github/workflows/ci.yml'
     - 'src/**'
 
 env:
@@ -208,7 +208,7 @@ jobs:
           ${{ steps.read_packages_sha.outputs.content }}
           ${{ steps.read_gitlog.outputs.content }}
         draft: true
-        prerelease: true
+        prerelease: false
     - name: Upload FunctionRuntime
       uses: actions/upload-release-asset@v1
       env:
