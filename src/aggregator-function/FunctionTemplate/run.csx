@@ -1,5 +1,6 @@
 ﻿#r "../bin/aggregator-function.dll"
 #r "../bin/aggregator-shared.dll"
+#r "../bin/aggregator-webshared.dll"
 #r "../bin/Microsoft.VisualStudio.Services.ServiceHooks.WebApi.dll"
 
 using System.Threading;
