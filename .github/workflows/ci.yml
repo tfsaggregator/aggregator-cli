@@ -75,7 +75,7 @@ jobs:
         dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-function.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
     # Prepare Artifacts (req'd by integration tests)
     - name: 'Package FunctionRuntime'
-      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
       run: |
         mkdir -p outputs/function
         dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
@@ -85,7 +85,7 @@ jobs:
     # Heavy weight integration tests
     # logon-data.json is stored in project Secrets
     - name: 'Prepare integration tests'
-      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
       run: |
         echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
         export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
@@ -97,7 +97,7 @@ jobs:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
       shell: bash
     - name: 'Run integration tests'
-      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
       run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
     - name: 'Scrap secrets'
       if: always()
@@ -112,7 +112,7 @@ jobs:
         name: coverage_report
         path: coverage-report/**
     - name: SonarCloud Scan
-      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'ref/head/master'
+      if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
       run: dotnet sonarscanner end
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
