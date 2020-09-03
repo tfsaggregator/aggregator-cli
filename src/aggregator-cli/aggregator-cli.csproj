@@ -26,6 +26,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="..\.sonarlint\tfsaggregator_aggregator-cli\CSharp\SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Instances\instance-template.json" />
   </ItemGroup>
 

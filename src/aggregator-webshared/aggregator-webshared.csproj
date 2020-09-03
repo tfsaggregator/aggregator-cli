@@ -9,7 +9,12 @@
     <Product>Aggregator CLI</Product>
     <Copyright>Copyright © TFS Aggregator Team</Copyright>
     <Description>Shared code between Azure Function and ASP.NET</Description>
+    <CodeAnalysisRuleSet>..\.sonarlint\tfsaggregator_aggregator-clicsharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\.sonarlint\tfsaggregator_aggregator-cli\CSharp\SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.7" />

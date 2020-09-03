@@ -22,6 +22,9 @@
     <None Remove="FunctionTemplate\run.csx" />
   </ItemGroup>
   <ItemGroup>
+    <AdditionalFiles Include="..\.sonarlint\tfsaggregator_aggregator-cli\CSharp\SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="FunctionTemplate\function.json" />
     <EmbeddedResource Include="FunctionTemplate\run.csx" />
   </ItemGroup>
