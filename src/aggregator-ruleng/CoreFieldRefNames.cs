@@ -1,12 +1,14 @@
-﻿/*
+﻿#pragma warning disable S125 // Sections of code should not be commented out
+/*
  *  TODO replace this class with references to 
 using Microsoft.TeamFoundation.WorkItemTracking.Common;
 using Microsoft.TeamFoundation.WorkItemTracking.Common.Constants;
 */
+#pragma warning restore S125 // Sections of code should not be commented out
 
 namespace aggregator.Engine
 {
-    internal class CoreFieldRefNames
+    internal static class CoreFieldRefNames
     {
 
         public const string TeamProject = "System.TeamProject";

@@ -19,24 +19,28 @@
         /// <inheritdoc />
         public void WriteVerbose(string message)
         {
+            // must be empty
         }
 
 
         /// <inheritdoc />
         public void WriteInfo(string message)
         {
+            // must be empty
         }
 
 
         /// <inheritdoc />
         public void WriteWarning(string message)
         {
+            // must be empty
         }
 
 
         /// <inheritdoc />
         public void WriteError(string message)
         {
+            // must be empty
         }
     }
 }

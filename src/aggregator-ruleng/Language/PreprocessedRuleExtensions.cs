@@ -38,7 +38,7 @@ namespace aggregator.Engine.Language
                 case RuleLanguage.Unknown:
                     return "Unknown";
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException($"BUG: {nameof(LanguageAsString)} misses {nameof(RuleLanguage)} enum value");
             }
         }
 

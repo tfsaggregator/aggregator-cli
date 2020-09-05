@@ -22,6 +22,7 @@ namespace aggregator.Engine
 
     public static class WorkItemEventContextExtension
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "In this case it is bogus data")]
         public static bool IsTestEvent(this WorkItemEventContext eventContext)
         {
             const string TEST_EVENT_COLLECTION_URL = "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/";

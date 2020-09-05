@@ -22,7 +22,7 @@ namespace aggregator.Engine
         }
 
         private int watermark = -1;
-        IDictionary<WorkItemId, TrackedWrapper> tracked = new Dictionary<WorkItemId, TrackedWrapper>();
+        private readonly IDictionary<WorkItemId, TrackedWrapper> tracked = new Dictionary<WorkItemId, TrackedWrapper>();
 
         internal Tracker()
         {

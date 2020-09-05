@@ -159,6 +159,7 @@ namespace aggregator.Engine
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Sonar Code Smell", "S907:\"goto\" statement should not be used")]
         public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, CancellationToken cancellationToken)
         {
             if (impersonate)
@@ -218,10 +219,10 @@ namespace aggregator.Engine
             }
             else if (workItems.Deleted.Any() || workItems.Restored.Any())
             {
-                string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id));
+                static string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id));
                 var teamProjectName = workItems.Restored.FirstOrDefault()?.TeamProject ??
                                       workItems.Deleted.FirstOrDefault()?.TeamProject;
-                _context.Logger.WriteInfo($"Dry-run mode: should restore: {FormatIds(workItems.Restored)} and delete {FormatIds(workItems.Deleted)} workitems");
+                _context.Logger.WriteInfo($"Dry-run mode: should restore: {FormatIds(workItems.Restored)} and delete {FormatIds(workItems.Deleted)} workitems from {teamProjectName}");
             }
             updated += workItems.Restored.Length + workItems.Deleted.Length;
 
@@ -398,11 +399,12 @@ namespace aggregator.Engine
             }
 
             //TODO should we throw exception?
+#pragma warning disable S125 // Sections of code should not be commented out
             //if (failedResponses.Any())
             //{
             //    throw new InvalidOperationException("Save failed.");
             //}
-
+#pragma warning restore S125 // Sections of code should not be commented out
             return batchResponses;
         }
 
