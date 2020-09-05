@@ -25,8 +25,7 @@ namespace aggregator_host
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var headers = Request.Headers;
-            StringValues apiKey;
-            if (!headers.TryGetValue(AuthenticationHeaderName, out apiKey))
+            if (!headers.TryGetValue(AuthenticationHeaderName, out var apiKey))
             {
                 return Task.FromResult(AuthenticateResult.Fail("Api Key is null"));
             }
