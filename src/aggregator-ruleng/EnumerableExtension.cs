@@ -17,7 +17,7 @@ namespace aggregator.Engine
             return listOfT
                 .Aggregate("",
                     (s, i) => FormattableString.Invariant($"{s}{separator}{i}"))
-                .Substring(1);
+                [1..];
         }
     }
 }

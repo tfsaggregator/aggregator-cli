@@ -62,7 +62,7 @@ namespace aggregator.Engine.Language
                 && ruleCode[directiveLineIndex].Length > 0
                 && ruleCode[directiveLineIndex][0] == '.')
             {
-                string directive = ruleCode[directiveLineIndex].Substring(1);
+                string directive = ruleCode[directiveLineIndex][1..];
                 // stop at first '=' or ' '
                 int endVerb = directive.IndexOfAny(new char[] { '=', ' ' });
                 if (endVerb < 1)
@@ -70,7 +70,7 @@ namespace aggregator.Engine.Language
                     FailParsingWithMessage($"Invalid language directive {directive}");
                 }
                 string verb = directive.Substring(0, endVerb);
-                string arguments = directive.Substring(endVerb + 1);
+                string arguments = directive[(endVerb + 1)..];
 
                 ParseDirective(preprocessedRule, directive, verb, arguments);
 
@@ -250,30 +250,26 @@ namespace aggregator.Engine.Language
         private static async Task<string[]> ReadAllLinesAsync(string ruleFilePath, CancellationToken cancellationToken)
         {
             using var fileStream = File.OpenRead(ruleFilePath);
-            using (var streamReader = new StreamReader(fileStream))
+            using var streamReader = new StreamReader(fileStream);
+            var lines = new List<string>();
+            string line;
+            while ((line = await streamReader.ReadLineAsync().ConfigureAwait(false)) != null)
             {
-                var lines = new List<string>();
-                string line;
-                while ((line = await streamReader.ReadLineAsync().ConfigureAwait(false)) != null)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    lines.Add(line);
-                }
-
-                return lines.ToArray();
+                cancellationToken.ThrowIfCancellationRequested();
+                lines.Add(line);
             }
+
+            return lines.ToArray();
         }
 
         private static async Task WriteAllLinesAsync(string ruleFilePath, IEnumerable<string> ruleContent, CancellationToken cancellationToken)
         {
             using var fileStream = File.OpenWrite(ruleFilePath);
-            using (var streamWriter = new StreamWriter(fileStream))
+            using var streamWriter = new StreamWriter(fileStream);
+            foreach (var line in ruleContent)
             {
-                foreach (var line in ruleContent)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await streamWriter.WriteLineAsync(line).ConfigureAwait(false);
-                }
+                cancellationToken.ThrowIfCancellationRequested();
+                await streamWriter.WriteLineAsync(line).ConfigureAwait(false);
             }
         }
     }
