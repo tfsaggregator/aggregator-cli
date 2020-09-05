@@ -59,12 +59,10 @@ namespace aggregator
 
         private static string GetHash(string text)
         {
-            using (var sha = new System.Security.Cryptography.SHA256Managed())
-            {
-                byte[] textData = System.Text.Encoding.UTF8.GetBytes(text);
-                byte[] hash = sha.ComputeHash(textData);
-                return BitConverter.ToString(hash).Replace("-", String.Empty);
-            }
+            using var sha = new System.Security.Cryptography.SHA256Managed();
+            byte[] textData = System.Text.Encoding.UTF8.GetBytes(text);
+            byte[] hash = sha.ComputeHash(textData);
+            return BitConverter.ToString(hash).Replace("-", String.Empty);
         }
 
         public bool Save()
@@ -86,10 +84,12 @@ namespace aggregator
         public string SessionId { get; set; }
         public bool IsNewSession { get; set; }
         // TrueXXX is in troubleshooting: telemetry sees the hashed value but the user can trace back to the original value looking at the settings file
+#pragma warning disable IDE0052 // Remove unread private members
         [JsonProperty]
         private string TrueUserId { get; set; }
         [JsonProperty]
         private string TrueDeviceId { get; set; }
+#pragma warning restore IDE0052 // Remove unread private members
         public string UserId { get; set; }
         public string DeviceId { get; set; }
     }

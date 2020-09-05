@@ -10,7 +10,7 @@ namespace aggregator
             if (str == null)
                 return valueIfMissing;
 
-            bool isTrue = false;
+            bool isTrue;
             switch (str.ToLowerInvariant())
             {
                 case "true":

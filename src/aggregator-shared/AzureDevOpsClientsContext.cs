@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator
 {
-    public class AzureDevOpsClientsContext : IDisposable, IClientsContext
+    public sealed class AzureDevOpsClientsContext : IDisposable, IClientsContext
     {
         private readonly VssConnection _vssConnection;
         private readonly IDictionary<Type, VssHttpClientBase> _resources;

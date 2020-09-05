@@ -51,15 +51,15 @@ namespace aggregator
 
         public static async Task<IAggregatorConfiguration> ReadConfiguration(Microsoft.Azure.Management.AppService.Fluent.IWebApp webApp)
         {
-            (string ruleName, string key) SplitRuleNameKey(string input)
+            static (string ruleName, string key) SplitRuleNameKey(string input)
             {
                 int idx = input.LastIndexOf('.');
-                return (input.Substring(0, idx), input.Substring(idx + 1));
+                return (input.Substring(0, idx), input[(idx + 1)..]);
             }
 
             var settings = await webApp.GetAppSettingsAsync();
             var ac = new Model.AggregatorConfiguration();
-            foreach (var ruleSetting in settings.Where(kvp => kvp.Key.StartsWith(RULE_SETTINGS_PREFIX)).Select(kvp => new { ruleNameKey = kvp.Key.Substring(RULE_SETTINGS_PREFIX.Length), value = kvp.Value.Value }))
+            foreach (var ruleSetting in settings.Where(kvp => kvp.Key.StartsWith(RULE_SETTINGS_PREFIX)).Select(kvp => new { ruleNameKey = kvp.Key[RULE_SETTINGS_PREFIX.Length..], value = kvp.Value.Value }))
             {
                 var (ruleName, key) = SplitRuleNameKey(ruleSetting.ruleNameKey);
 
@@ -142,7 +142,12 @@ namespace aggregator
 
         public static IRuleConfiguration GetRuleConfiguration(this IAggregatorConfiguration config, string ruleName)
         {
-            var ruleConfig = config.RulesConfiguration.GetValueOrDefault(ruleName) ?? (config.RulesConfiguration[ruleName] = new RuleConfiguration(ruleName));
+            var ruleConfig = config.RulesConfiguration.GetValueOrDefault(ruleName);
+            if (ruleConfig == null)
+            {
+                ruleConfig = new RuleConfiguration(ruleName);
+                config.RulesConfiguration[ruleName] = ruleConfig;
+            }
 
             return ruleConfig;
         }

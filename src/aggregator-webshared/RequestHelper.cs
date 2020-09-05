@@ -98,7 +98,7 @@ namespace aggregator
                 return;
             }
 
-            IdentityRef ConvertOrDefault(string input)
+            static IdentityRef ConvertOrDefault(string input)
             {
                 var uniqueNameStartIndex = input.LastIndexOf(UNIQUE_NAME_START_CHAR);
                 var uniqueNameEndIndex = input.LastIndexOf(UNIQUE_NAME_END_CHAR);
