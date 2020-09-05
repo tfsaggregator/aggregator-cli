@@ -29,6 +29,8 @@
     <EmbeddedResource Include="FunctionTemplate\run.csx" />
   </ItemGroup>
   <ItemGroup>
+    <!-- resolves MSB3277 -->
+    <PackageReference Include="System.Text.Json" Version="4.7.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.WebApiCompatShim" Version="2.2.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.18" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.7" />
