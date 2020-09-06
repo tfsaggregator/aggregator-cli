@@ -12,6 +12,8 @@
     <Product>Aggregator CLI</Product>
     <Copyright>Copyright © TFS Aggregator Team</Copyright>
     <Description>Aggregator CLI manages Rules for Azure DevOps</Description>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionSuffix>localdev</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

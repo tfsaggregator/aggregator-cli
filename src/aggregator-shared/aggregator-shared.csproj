@@ -9,7 +9,9 @@
     <Company>TFS Aggregator Team</Company>
     <Product>Aggregator CLI</Product>
     <Copyright>Copyright © TFS Aggregator Team</Copyright>
-    <Description>Azure DevOps Aggregator Shared Types</Description>  
+    <Description>Azure DevOps Aggregator Shared Types</Description>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionSuffix>localdev</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
