@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using aggregator.cli;
 using Microsoft.TeamFoundation.Common;
@@ -97,35 +98,25 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(33)]
+        [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Code shared")]
+
         void ListInstancesAfterLogonEnv()
         {
-            (int rc, string output) = RunAggregatorCommand($"list.instances --verbose --resourceGroup {TestLogonData.ResourceGroup}");
-
-            Assert.Equal(0, rc);
-            Assert.Contains("No aggregator instances found", output);
-            Assert.DoesNotContain("] Failed!", output);
+            ListInstances();
         }
 
         [Fact, Order(37)]
+        [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Code shared")]
         void ListMappingsAfterLogonEnv()
         {
-            string instance = "my45" + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"list.mappings --verbose --instance {instance}--resourceGroup {TestLogonData.ResourceGroup}");
-
-            Assert.Equal(3, rc);
-            Assert.Contains("No rule mappings found", output);
-            Assert.DoesNotContain("] Failed!", output);
+            ListMappings();
         }
 
         [Fact, Order(39)]
+        [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Code shared")]
         void LogoffAfterLogonEnv()
         {
-            (int rc, string output) = RunAggregatorCommand($"logoff --verbose");
-            bool isEmpty = Directory.GetFiles(LocalAppData.GetDirectory(), "*.dat").IsNullOrEmpty();
-
-            Assert.Equal(0, rc);
-            Assert.DoesNotContain("] Failed!", output);
-            Assert.True(isEmpty);
+            Logoff();
         }
     }
 }

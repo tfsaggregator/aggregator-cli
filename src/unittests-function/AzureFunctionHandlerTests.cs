@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using aggregator;
 using aggregator.Engine;
 
@@ -59,7 +60,7 @@ namespace unittests_function
         }
 
         [Fact]
-        public async void HandleTestEvent_ReturnAggregatorInformation_Succeeds()
+        public async Task HandleTestEvent_ReturnAggregatorInformation_Succeeds()
         {
             IActionResult actionResult = await azureFunctionHandler.RunAsync(ExampleEvents.TestEvent, CancellationToken.None);
 
