@@ -24,11 +24,11 @@ namespace aggregator.cli
                 );
         }
 
-        private class InstanceName_ : InstanceCreateNames
+        private class InstanceCreateNamesImpl : InstanceCreateNames
         {
             // keep unused parameter  for uniformity
 #pragma warning disable S1172,IDE0060 // Unused method parameters should be removed
-            internal InstanceName_(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
+            internal InstanceCreateNamesImpl(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
 #pragma warning restore S1172,IDE0060 // Unused method parameters should be removed
                 : base(name, resourceGroup, isCustom, functionAppName)
             {
@@ -40,7 +40,7 @@ namespace aggregator.cli
 
         public InstanceName Instance(string name, string resourceGroup)
         {
-            return new InstanceName_(
+            return new InstanceCreateNamesImpl(
                 name: name,
                 resourceGroup: string.IsNullOrEmpty(resourceGroup)
                                     ? affixes.ResourceGroupPrefix + name

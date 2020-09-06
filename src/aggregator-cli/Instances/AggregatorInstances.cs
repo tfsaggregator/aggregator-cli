@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -234,6 +233,25 @@ namespace aggregator.cli
             return true;
         }
 
+        internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, string _/*location*/, SaveMode saveMode, CancellationToken cancellationToken)
+        {
+            bool ok;
+            var devopsLogonData = DevOpsLogon.Load().connection;
+            if (devopsLogonData.Mode == DevOpsTokenType.PAT)
+            {
+                logger.WriteVerbose($"Saving Azure DevOps token");
+                ok = await ChangeAppSettingsAsync(instance, devopsLogonData, saveMode, cancellationToken);
+                logger.WriteInfo($"Azure DevOps token saved");
+            }
+            else
+            {
+                logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
+                ok = false;
+            }
+
+            return ok;
+        }
+
         internal async Task<bool> RemoveAsync(InstanceName instance, string location)
         {
             string rgName = instance.ResourceGroupName;
@@ -274,27 +292,6 @@ namespace aggregator.cli
 
             return true;
         }
-
-        [SuppressMessage("", "IDE0060")]
-        internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, string location, SaveMode saveMode, CancellationToken cancellationToken)
-        {
-            bool ok;
-            var devopsLogonData = DevOpsLogon.Load().connection;
-            if (devopsLogonData.Mode == DevOpsTokenType.PAT)
-            {
-                logger.WriteVerbose($"Saving Azure DevOps token");
-                ok = await ChangeAppSettingsAsync(instance, devopsLogonData, saveMode, cancellationToken);
-                logger.WriteInfo($"Azure DevOps token saved");
-            }
-            else
-            {
-                logger.WriteWarning($"Azure DevOps token type {devopsLogonData.Mode} is unsupported");
-                ok = false;
-            }
-
-            return ok;
-        }
-
 
         internal async Task<bool> StreamLogsAsync(InstanceName instance, CancellationToken cancellationToken, string lastLinePattern = "!!THIS STRING NEVER SHOWS!!", TextWriter outStream = null)
         {

@@ -13,9 +13,9 @@ namespace aggregator.cli
             affixes = JsonConvert.DeserializeObject<NamingAffixes>(jsonData);
         }
 
-        private class InstanceName_ : InstanceCreateNames
+        private class InstanceCreateNamesImpl : InstanceCreateNames
         {
-            internal InstanceName_(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
+            internal InstanceCreateNamesImpl(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
                 : base(name, resourceGroup, isCustom, functionAppName)
             {
                 HostingPlanName = $"{affixes.HostingPlanPrefix}{name}{affixes.HostingPlanSuffix}";
@@ -30,7 +30,7 @@ namespace aggregator.cli
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Instance name cannot be empty");
 
-            return new InstanceName_(
+            return new InstanceCreateNamesImpl(
                 name: name,
                 resourceGroup: $"{affixes.ResourceGroupPrefix}{resourceGroup}{affixes.ResourceGroupSuffix}",
                 isCustom: true,
