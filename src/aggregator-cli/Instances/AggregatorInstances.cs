@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -274,6 +275,7 @@ namespace aggregator.cli
             return true;
         }
 
+        [SuppressMessage("", "IDE0060")]
         internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, string location, SaveMode saveMode, CancellationToken cancellationToken)
         {
             bool ok;
@@ -312,48 +314,55 @@ namespace aggregator.cli
             // update runtime package
             var package = new FunctionRuntimePackage(_logger);
             bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
+            if (!ok)
+                return false;
 
+            await ForceFunctionRuntimeVersionAsync(instance, cancellationToken);
+
+            var uploadFiles = await UpdateDefaultFilesAsync(package);
+
+            var rules = new AggregatorRules(_azure, _logger);
+            var allRules = await rules.ListAsync(instance, cancellationToken);
+
+            foreach (var ruleName in allRules.Select(r => r.RuleName))
             {
-                // Change V2 to V3 FUNCTIONS_EXTENSION_VERSION ~3
-                var webFunctionApp = await GetWebApp(instance, cancellationToken);
-                var currentAzureRuntimeVersion = webFunctionApp.GetAppSettings()
-                                                               .GetValueOrDefault("FUNCTIONS_EXTENSION_VERSION");
-                webFunctionApp.Update()
-                              .WithAppSetting("FUNCTIONS_EXTENSION_VERSION", "~3")
-                              .Apply(); ;
+                _logger.WriteInfo($"Updating Rule '{ruleName}'");
+                await rules.UploadRuleFilesAsync(instance, ruleName, uploadFiles, cancellationToken);
             }
 
-            {
-                var uploadFiles = new Dictionary<string, string>();
-                using (var archive = System.IO.Compression.ZipFile.OpenRead(package.RuntimePackageFile))
-                {
-                    var entry = archive.Entries
-                                       .Single(e => string.Equals("aggregator-function.dll", e.Name, StringComparison.OrdinalIgnoreCase));
-
-                    using (var assemblyStream = entry.Open())
-                    {
-                        await uploadFiles.AddFunctionDefaultFiles(assemblyStream);
-                    }
-                }
-                //TODO handle FileNotFound Exception when trying to get resource content, and resource not found
-
-                var rules = new AggregatorRules(_azure, _logger);
-                var allRules = await rules.ListAsync(instance, cancellationToken);
-
-                foreach (var ruleName in allRules.Select(r => r.RuleName))
-                {
-                    _logger.WriteInfo($"Updating Rule '{ruleName}'");
-                    await rules.UploadRuleFilesAsync(instance, ruleName, uploadFiles, cancellationToken);
-                }
-            }
-
-            return false;
+            return true;
         }
 
-
-        private void DomainOnAssemblyLoad(object sender, AssemblyLoadEventArgs args)
+        private static async Task<Dictionary<string, string>> UpdateDefaultFilesAsync(FunctionRuntimePackage package)
         {
-            //throw new NotImplementedException();
+            var uploadFiles = new Dictionary<string, string>();
+            using (var archive = System.IO.Compression.ZipFile.OpenRead(package.RuntimePackageFile))
+            {
+                var entry = archive.Entries
+                                   .Single(e => string.Equals("aggregator-function.dll", e.Name, StringComparison.OrdinalIgnoreCase));
+
+                using (var assemblyStream = entry.Open())
+                {
+                    await uploadFiles.AddFunctionDefaultFiles(assemblyStream);
+                }
+            }
+            //TODO handle FileNotFound Exception when trying to get resource content, and resource not found
+            return uploadFiles;
+        }
+
+        private async Task ForceFunctionRuntimeVersionAsync(InstanceName instance, CancellationToken cancellationToken)
+        {
+            const string TargetVersion = "~3";
+            // Change V2 to V3 FUNCTIONS_EXTENSION_VERSION ~3
+            var webFunctionApp = await GetWebApp(instance, cancellationToken);
+            var currentAzureRuntimeVersion = webFunctionApp.GetAppSettings()
+                                                           .GetValueOrDefault("FUNCTIONS_EXTENSION_VERSION");
+            if (currentAzureRuntimeVersion?.Value != TargetVersion)
+            {
+                webFunctionApp.Update()
+                          .WithAppSetting("FUNCTIONS_EXTENSION_VERSION", TargetVersion)
+                          .Apply();
+            }
         }
     }
 }

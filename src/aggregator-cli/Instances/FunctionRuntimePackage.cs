@@ -31,7 +31,7 @@ namespace aggregator.cli
 
         public string RuntimePackageFile { get; private set; }
 
-        internal async Task<(bool upgrade, string newversion)> IsCliUpgradable(CancellationToken cancellationToken)
+        internal async Task<(bool upgrade, string newversion)> IsCliUpgradable()
         {
             string tag = "latest";
             var gitHubVersion = GitHubVersionResponse.TryReadFromCache();
@@ -56,8 +56,7 @@ namespace aggregator.cli
             }
             logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
 
-            SemVersion latest;
-            SemVersion.TryParse(gitHubVersion.Name.Substring(1), out latest);
+            SemVersion.TryParse(gitHubVersion.Name.Substring(1), out var latest);
             var current = new SemVersion(
                 Assembly.GetEntryAssembly().GetName().Version);
 
@@ -191,38 +190,7 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateVersionFromGitHubAsync(string requiredVersion, InstanceName instance, IAzure azure, CancellationToken cancellationToken)
         {
-            string tag = string.IsNullOrWhiteSpace(requiredVersion)
-                ? "latest"
-                : (requiredVersion != "latest"
-                    ? (requiredVersion[0] != 'v'
-                        ? "v" + requiredVersion
-                        : requiredVersion)
-                    : requiredVersion);
-            var gitHubVersion = GitHubVersionResponse.TryReadFromCache();
-            if (gitHubVersion != null)
-                logger.WriteVerbose("located a cached GitHub version query response");
-            if (gitHubVersion == null || !gitHubVersion.CacheIsInDate() || tag != gitHubVersion.Tag)
-            {
-                logger.WriteVerbose($"Checking runtime package versions in GitHub");
-                gitHubVersion = await FindVersionInGitHubAsync(tag);
-                if (gitHubVersion != null && gitHubVersion.SaveCache())
-                    logger.WriteVerbose($"Saved GitHub response to disk");
-            }
-            else
-            {
-                logger.WriteVerbose($"Cached versions are recent enough to not require checking GitHub");
-            }
-
-            if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
-            {
-                logger.WriteError($"Requested runtime {requiredVersion} version does not exist.");
-                return false;
-            }
-            logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
-
-            if (gitHubVersion.Name[0] == 'v') gitHubVersion.Name = gitHubVersion.Name.Substring(1);
-            var requiredRuntimeVer = SemVersion.Parse(gitHubVersion.Name);
-            logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {gitHubVersion.When}).");
+            (SemVersion requiredRuntimeVer, GitHubVersionResponse gitHubVersion)  = await GetGitHubReleaseMatchingUserVersionAsync(GitHubTagFromUserVersion(requiredVersion), requiredVersion);
 
             var localRuntimeVer = await GetLocalPackageVersionAsync(RuntimePackageFile);
             logger.WriteVerbose($"Locally cached Runtime package version is {localRuntimeVer}.");
@@ -260,6 +228,48 @@ namespace aggregator.cli
                 logger.WriteInfo($"Runtime package is up to date.");
                 return true;
             }
+        }
+
+        string GitHubTagFromUserVersion(string requiredVersion)
+        {
+            if (string.IsNullOrWhiteSpace(requiredVersion)
+                || requiredVersion == "latest")
+                return "latest";
+            else 
+                return requiredVersion[0] != 'v'
+                        ? "v" + requiredVersion
+                        : requiredVersion;
+        }
+
+        async Task<(SemVersion requiredRuntimeVer, GitHubVersionResponse gitHubVersion)> GetGitHubReleaseMatchingUserVersionAsync(string tag, string requiredVersion)
+        {
+            var gitHubVersion = GitHubVersionResponse.TryReadFromCache();
+            if (gitHubVersion != null)
+                logger.WriteVerbose("located a cached GitHub version query response");
+            if (gitHubVersion == null || !gitHubVersion.CacheIsInDate() || tag != gitHubVersion.Tag)
+            {
+                logger.WriteVerbose($"Checking runtime package versions in GitHub");
+                gitHubVersion = await FindVersionInGitHubAsync(tag);
+                if (gitHubVersion != null && gitHubVersion.SaveCache())
+                    logger.WriteVerbose($"Saved GitHub response to disk");
+            }
+            else
+            {
+                logger.WriteVerbose($"Cached versions are recent enough to not require checking GitHub");
+            }
+
+            if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
+            {
+                logger.WriteError($"Requested runtime {requiredVersion} version does not exist.");
+                return (null, null);
+            }
+            logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
+
+            if (gitHubVersion.Name[0] == 'v') gitHubVersion.Name = gitHubVersion.Name.Substring(1);
+            var requiredRuntimeVer = SemVersion.Parse(gitHubVersion.Name);
+            logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {gitHubVersion.When}).");
+
+            return (requiredRuntimeVer, gitHubVersion);
         }
 
         internal async Task<SemVersion> GetDeployedRuntimeVersion(InstanceName instance, IAzure azure, CancellationToken cancellationToken)
@@ -329,7 +339,7 @@ namespace aggregator.cli
             }
         }
 
-        private async Task<GitHubVersionResponse> FindVersionInGitHubAsync(string tag = "latest")
+        private async Task<GitHubVersionResponse> FindVersionInGitHubAsync(string tag)
         {
             var githubClient = new GitHubClient(new ProductHeaderValue("aggregator-cli", cliVersion));
             var releases = await githubClient.Repository.Release.GetAll("tfsaggregator", "aggregator-cli");
@@ -337,13 +347,13 @@ namespace aggregator.cli
             var release = releases[0];
             if (string.Compare(tag, "latest", true) != 0)
             {
-                release = releases.Where(r => string.Compare(tag, r.TagName, true) == 0).FirstOrDefault();
+                release = releases.FirstOrDefault(r => string.Compare(tag, r.TagName, true) == 0);
             }
             if (release == null)
             {
                 return default;
             }
-            var asset = release.Assets.Where(a => a.Name == RuntimePackageFile).FirstOrDefault();
+            var asset = release.Assets.FirstOrDefault(a => a.Name == RuntimePackageFile);
             return new GitHubVersionResponse()
             {
                 Tag = tag,

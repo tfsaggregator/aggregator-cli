@@ -28,22 +28,21 @@ namespace aggregator.cli
             logger.WriteInfo($"Project {projectName} data read.");
 
             var witClient = devops.GetClient<WorkItemTrackingHttpClient>();
-            JsonPatchDocument patchDocument = new JsonPatchDocument();
-
-            patchDocument.Add(
+            JsonPatchDocument patchDocument = new JsonPatchDocument
+            {
                 new JsonPatchOperation()
                 {
                     Operation = Operation.Add,
                     Path = "/fields/System.Title",
                     Value = title
                 }
-            );
+            };
 
             logger.WriteVerbose($"Creating work item '{title}' in '{project.Name}'");
             var newWorkItem = await witClient.CreateWorkItemAsync(patchDocument, project.Id, "Task", cancellationToken: cancellationToken);
             logger.WriteInfo($"Created work item ID {newWorkItem.Id} '{newWorkItem.Fields["System.Title"]}' in '{project.Name}'");
 
-            return newWorkItem.Id.HasValue ? newWorkItem.Id.Value : 0;
+            return newWorkItem.Id ?? 0;
         }
 
     }

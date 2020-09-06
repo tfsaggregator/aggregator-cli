@@ -4,7 +4,7 @@ namespace aggregator.cli
 {
     class MyProtector
     {
-        IDataProtector _protector;
+        readonly IDataProtector _protector;
 
         // the 'provider' parameter is provided by DI
         public MyProtector(IDataProtectionProvider provider)

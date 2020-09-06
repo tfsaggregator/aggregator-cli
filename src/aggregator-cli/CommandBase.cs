@@ -27,9 +27,11 @@ namespace aggregator.cli
 
         internal int Run(CancellationToken cancellationToken)
         {
-            var eventStart = new EventTelemetry();
-            // use Reflection to capture Command and Options
-            eventStart.Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} Start";
+            var eventStart = new EventTelemetry
+            {
+                // use Reflection to capture Command and Options
+                Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} Start"
+            };
             this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ForEach(
                 prop =>
                 {
@@ -62,8 +64,10 @@ namespace aggregator.cli
                 cancellationToken.ThrowIfCancellationRequested();
                 int rc = t.Result;
 
-                var eventEnd = new EventTelemetry();
-                eventEnd.Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} End";
+                var eventEnd = new EventTelemetry
+                {
+                    Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} End"
+                };
                 eventEnd.Properties["exitCode"] = rc.ToString();
                 Telemetry.TrackEvent(eventEnd);
 

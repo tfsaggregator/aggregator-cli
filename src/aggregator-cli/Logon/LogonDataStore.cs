@@ -15,7 +15,7 @@ namespace aggregator.cli
     class LogonDataStore
     {
         // TODO is this the right number?
-        public static int MaxHoursForCachedCredential = 2;
+        public static readonly int MaxHoursForCachedCredential = 2;
 
         public LogonDataStore(string tag)
         {
@@ -30,7 +30,7 @@ namespace aggregator.cli
             protector = ActivatorUtilities.CreateInstance<MyProtector>(services);
         }
 
-        private MyProtector protector;
+        private readonly MyProtector protector;
 
         public string Tag { get; private set; }
         public char[] Magic => Tag.ToCharArray();

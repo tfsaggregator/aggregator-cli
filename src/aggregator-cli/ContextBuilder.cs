@@ -81,11 +81,13 @@ namespace aggregator.cli
                 logger.WriteInfo($"Connected to {devops.Uri.Host}");
             }
 
-            INamingTemplates naming = null;
+            INamingTemplates naming;
             switch (namingTemplate.ToLower())
             {
                 case "builtin":
+#pragma warning disable S907 // "goto" statement should not be used
                     goto case "";
+#pragma warning restore S907 // "goto" statement should not be used
                 case "":
                     naming = new BuiltInNamingTemplates();
                     break;

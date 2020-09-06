@@ -4,9 +4,9 @@ namespace aggregator.cli
 {
     internal class InstanceOutputData : ILogDataObject
     {
-        string name;
-        string region;
-        SemVersion version;
+        readonly string name;
+        readonly string region;
+        readonly SemVersion version;
 
         internal InstanceOutputData(string name, string region, SemVersion version)
         {

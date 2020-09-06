@@ -28,16 +28,18 @@ namespace aggregator.cli
 
         public static (AzureLogon connection, LogonResult reason) Load()
         {
-            var result = new LogonDataStore(LogonDataTag).Load<AzureLogon>();
-            return (result.connection, result.reason);
+            (AzureLogon connection, LogonResult reason) = new LogonDataStore(LogonDataTag).Load<AzureLogon>();
+            return (connection, reason);
         }
 
         public IAzure Logon()
         {
             try
             {
+#pragma warning disable S2696 // Instance members should not write to "static" fields
                 // see https://github.com/AzureAD/azure-activedirectory-library-for-dotnet/wiki/Logging-in-ADAL.Net
                 LoggerCallbackHandler.UseDefaultLogging = false;
+#pragma warning restore S2696 // Instance members should not write to "static" fields
 
                 var credentials = SdkContext.AzureCredentialsFactory
                     .FromServicePrincipal(

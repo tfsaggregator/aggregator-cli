@@ -2,12 +2,14 @@
 {
     internal class MappingOutputData : ILogDataObject
     {
-        private string instanceName;
-        private string rule;
-        private bool executeImpersonated;
-        private string project;
-        private string @event;
-        private string status;
+#pragma warning disable S4487,IDE0052 // Unread "private" fields should be removed
+        private readonly string instanceName;
+#pragma warning restore S4487,IDE0052 // Unread "private" fields should be removed
+        private readonly string rule;
+        private readonly bool executeImpersonated;
+        private readonly string project;
+        private readonly string @event;
+        private readonly string status;
 
         internal MappingOutputData(InstanceName instance, string rule, bool executeImpersonated, string project, string @event, string status)
         {

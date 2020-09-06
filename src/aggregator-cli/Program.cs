@@ -63,7 +63,7 @@ namespace aggregator.cli
                 {
                     var tempLogger = new ConsoleLogger(true);
                     var verChecker = new FunctionRuntimePackage(tempLogger);
-                    (bool upgrade, string newversion) = verChecker.IsCliUpgradable(cancellationToken).Result;
+                    (bool upgrade, string newversion) = verChecker.IsCliUpgradable().Result;
                     if (upgrade)
                     {
                         // bug user

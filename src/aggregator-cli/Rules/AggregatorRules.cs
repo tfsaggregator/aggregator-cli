@@ -211,6 +211,7 @@ namespace aggregator.cli
                 { $"{ruleName}.rule", string.Join(Environment.NewLine, RuleFileParser.Write(preprocessedRule)) }
             };
 
+            // TODO need to find the Assembly with these files, maybe we should move them to shared
             //var assembly = Assembly.GetExecutingAssembly();
             //await inMemoryFiles.AddFunctionDefaultFiles(assembly);
 
@@ -385,7 +386,11 @@ namespace aggregator.cli
             return ok;
         }
 
+#pragma warning disable S107 // Methods should not have too many parameters
+#pragma warning disable S4457 // Parameter validation in "async"/"await" methods should be wrapped
         internal async Task<bool> InvokeLocalAsync(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, bool impersonateExecution, CancellationToken cancellationToken)
+#pragma warning restore S4457 // Parameter validation in "async"/"await" methods should be wrapped
+#pragma warning restore S107 // Methods should not have too many parameters
         {
             if (!File.Exists(ruleFilePath))
             {
@@ -396,7 +401,7 @@ namespace aggregator.cli
             var devopsLogonData = DevOpsLogon.Load().connection;
 
             _logger.WriteVerbose($"Connecting to Azure DevOps using {devopsLogonData.Mode}...");
-            var clientCredentials = default(VssCredentials);
+            VssCredentials clientCredentials;
             if (devopsLogonData.Mode == DevOpsTokenType.PAT)
             {
                 clientCredentials = new VssBasicCredential(devopsLogonData.Mode.ToString(), devopsLogonData.Token);
@@ -404,9 +409,17 @@ namespace aggregator.cli
             else
             {
                 _logger.WriteError($"Azure DevOps Token type {devopsLogonData.Mode} not supported!");
-                throw new ArgumentOutOfRangeException(nameof(devopsLogonData.Mode));
+                throw new ArgumentException($"Azure DevOps Token type {devopsLogonData.Mode} not supported!");
             }
 
+            // see https://rules.sonarsource.com/csharp/RSPEC-4457
+            return await InvokeLocalAsyncImpl(projectName, @event, workItemId, ruleFilePath, dryRun, saveMode, impersonateExecution, devopsLogonData, clientCredentials, cancellationToken);
+        }
+
+#pragma warning disable S107 // Methods should not have too many parameters
+        private async Task<bool> InvokeLocalAsyncImpl(string projectName, string @event, int workItemId, string ruleFilePath, bool dryRun, SaveMode saveMode, bool impersonateExecution, DevOpsLogon devopsLogonData, VssCredentials clientCredentials, CancellationToken cancellationToken)
+#pragma warning restore S107 // Methods should not have too many parameters
+        {
             string collectionUrl = devopsLogonData.Url;
             using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
             {
@@ -443,7 +456,9 @@ namespace aggregator.cli
             }
         }
 
+#pragma warning disable S107 // Methods should not have too many parameters
         internal async Task<bool> InvokeRemoteAsync(string account, string project, string @event, int workItemId, InstanceName instance, string ruleName, bool dryRun, SaveMode saveMode, bool impersonateExecution, CancellationToken cancellationToken)
+#pragma warning restore S107 // Methods should not have too many parameters
         {
             // build the request ...
             _logger.WriteVerbose($"Retrieving {ruleName} Function Key...");

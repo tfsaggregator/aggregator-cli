@@ -6,7 +6,7 @@ namespace aggregator.cli
 {
     internal class FileNamingTemplates : INamingTemplates
     {
-        NamingAffixes affixes;
+        readonly NamingAffixes affixes;
 
         internal FileNamingTemplates(string jsonData)
         {

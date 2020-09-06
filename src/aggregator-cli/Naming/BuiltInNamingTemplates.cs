@@ -6,7 +6,7 @@ namespace aggregator.cli
 {
     internal class BuiltInNamingTemplates : INamingTemplates
     {
-        static NamingAffixes affixes = new NamingAffixes
+        static readonly NamingAffixes affixes = new NamingAffixes
         {
             ResourceGroupPrefix = "aggregator-",
             ResourceGroupSuffix = "",
@@ -26,7 +26,10 @@ namespace aggregator.cli
 
         private class InstanceName_ : InstanceCreateNames
         {
+            // keep unused parameter  for uniformity
+#pragma warning disable S1172,IDE0060 // Unused method parameters should be removed
             internal InstanceName_(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
+#pragma warning restore S1172,IDE0060 // Unused method parameters should be removed
                 : base(name, resourceGroup, isCustom, functionAppName)
             {
                 HostingPlanName = $"{functionAppName}-plan";

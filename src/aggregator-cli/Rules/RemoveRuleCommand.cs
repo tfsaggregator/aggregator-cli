@@ -29,7 +29,6 @@ namespace aggregator.cli
                 return ExitCodes.Failure;
 
             var rules = new AggregatorRules(context.Azure, context.Logger);
-            //rules.Progress += Instances_Progress;
             bool ok = await rules.RemoveAsync(instance, Name, cancellationToken);
             return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
