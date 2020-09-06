@@ -39,19 +39,15 @@ namespace aggregator.Engine
             cancellationToken.ThrowIfCancellationRequested();
 
             // TODO improve from https://github.com/Microsoft/vsts-work-item-migrator
-            using (var devops = new VssConnection(eventContext.CollectionUri, clientCredentials))
-            {
-                await devops.ConnectAsync(cancellationToken);
-                logger.WriteInfo($"Connected to Azure DevOps");
-                using (var clientsContext = new AzureDevOpsClientsContext(devops))
-                {
-                    var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
+            using var devops = new VssConnection(eventContext.CollectionUri, clientCredentials);
+            await devops.ConnectAsync(cancellationToken);
+            logger.WriteInfo($"Connected to Azure DevOps");
+            using var clientsContext = new AzureDevOpsClientsContext(devops);
+            var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
 
-                    var ruleResult = await engine.RunAsync(rule, eventContext.ProjectId, eventContext.WorkItemPayload, eventContext.EventType, clientsContext, cancellationToken);
-                    logger.WriteInfo(ruleResult);
-                    return ruleResult;
-                }
-            }
+            var ruleResult = await engine.RunAsync(rule, eventContext.ProjectId, eventContext.WorkItemPayload, eventContext.EventType, clientsContext, cancellationToken);
+            logger.WriteInfo(ruleResult);
+            return ruleResult;
         }
     }
 }
