@@ -138,7 +138,7 @@ namespace aggregator.cli
         }
 
 #pragma warning disable S107 // Methods should not have too many parameters
-        protected async Task<Guid> CoreAddAsync(string projectName, string @event, EventFilters filters, string ruleName, bool impersonateExecution, Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever, string _/*headerName*/, CancellationToken cancellationToken)
+        protected async Task<Guid> CoreAddAsync(string projectName, string @event, EventFilters filters, string ruleName, bool impersonateExecution, Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever, string headerName, CancellationToken cancellationToken)
 #pragma warning restore S107 // Methods should not have too many parameters
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
@@ -202,7 +202,7 @@ namespace aggregator.cli
                 ConsumerInputs = new Dictionary<string, string>
                 {
                     { "url", ruleUrl.ToString() },
-                    { "httpHeaders", $"x-functions-key:{ruleKey}" },
+                    { "httpHeaders", $"{headerName}:{ruleKey}" },
                     // careful with casing!
                     { "resourceDetailsToSend", "all" },
                     { "messagesToSend", "none" },
