@@ -13,6 +13,7 @@ namespace aggregator.Engine.Language
             Language = RuleLanguage.Unknown;
             References = new List<string>();
             Imports = new List<string>();
+            Events = new List<string>();
             FirstCodeLine = 0;
             RuleCode = new List<string>();
         }
@@ -27,6 +28,8 @@ namespace aggregator.Engine.Language
 
         IReadOnlyList<string> IPreprocessedRule.Imports => new ReadOnlyCollection<string>(Imports);
 
+        IReadOnlyList<string> IPreprocessedRule.Events => new ReadOnlyCollection<string>(Events);
+
         IReadOnlyList<string> IPreprocessedRule.RuleCode => new ReadOnlyCollection<string>(RuleCode);
 
         int IPreprocessedRule.FirstCodeLine => FirstCodeLine;
@@ -39,5 +42,7 @@ namespace aggregator.Engine.Language
         public int FirstCodeLine { get; internal set; }
 
         public IList<string> RuleCode { get; }
+
+        public IList<string> Events { get; }
     }
 }

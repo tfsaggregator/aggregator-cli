@@ -10,6 +10,7 @@ namespace aggregator.Engine.Language
         RuleLanguage Language { get; }
         IReadOnlyList<string> References { get; }
         IReadOnlyList<string> Imports { get; }
+        IReadOnlyList<string> Events { get; }
         int FirstCodeLine { get; }
         IReadOnlyList<string> RuleCode { get; }
     }

@@ -32,7 +32,12 @@ namespace aggregator.Engine.Language
         public static (IPreprocessedRule preprocessedRule, bool parseSuccess) Read(string[] ruleCode, IAggregatorLogger logger = default)
         {
             var me = new RuleFileParser(logger);
-            return me.Parse(ruleCode);
+            var result = me.Parse(ruleCode);
+            if (result.parseSuccess)
+            {
+                result.parseSuccess = me.Validate(result.preprocessedRule);
+            }
+            return result;
         }
 
         bool parsingIssues = false;
@@ -110,6 +115,11 @@ namespace aggregator.Engine.Language
                     ParseImportDirective(preprocessedRule, directive, arguments);
                     break;
 
+                case "event":
+                case "events":
+                    ParseEventDirective(preprocessedRule, directive, arguments);
+                    break;
+
                 case "impersonate":
                     ParseImpersonateDirective(preprocessedRule, directive, arguments);
                     break;
@@ -160,6 +170,7 @@ namespace aggregator.Engine.Language
                 preprocessedRule.References.Add(arguments);
             }
         }
+
         private void ParseImportDirective(PreprocessedRule preprocessedRule, string directive, string arguments)
         {
             if (string.IsNullOrWhiteSpace(arguments))
@@ -171,6 +182,26 @@ namespace aggregator.Engine.Language
                 preprocessedRule.Imports.Add(arguments);
             }
         }
+
+        private void ParseEventDirective(PreprocessedRule preprocessedRule, string directive, string arguments)
+        {
+            if (string.IsNullOrWhiteSpace(arguments))
+            {
+                FailParsingWithMessage($"Invalid event directive {directive}");
+            }
+            else
+            {
+                var events = arguments.Split(',', ' ', ' ');
+
+                var invalidEvents = events.Where(e => !DevOpsEvents.IsValidEvent(e));
+                if (invalidEvents.Any())
+                {
+                    FailParsingWithMessage($"Invalid event {invalidEvents.First()} in directive");
+                }
+                preprocessedRule.Events.AddRange(events);
+            }
+        }
+
         private void ParseImpersonateDirective(PreprocessedRule preprocessedRule, string directive, string arguments)
         {
             if (string.IsNullOrWhiteSpace(arguments))
@@ -219,6 +250,16 @@ namespace aggregator.Engine.Language
             }
         }
 
+        // TODO after 1.0 uncomment
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1172:Unused method parameters should be removed", Justification = "<Pending>")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S125:Sections of code should not be commented out", Justification = "<Pending>")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>")]
+        private bool Validate(IPreprocessedRule _/*preprocessedRule*/)
+        {
+            //if (preprocessedRule.Events.Count < 1)
+            //    return false;
+            return true;
+        }
 
         public static async Task WriteFile(string ruleFilePath, IPreprocessedRule preprocessedRule, CancellationToken cancellationToken = default)
         {
@@ -241,6 +282,7 @@ namespace aggregator.Engine.Language
 
             content.AddRange(preprocessedRule.References.Select(reference => $".reference={reference}"));
             content.AddRange(preprocessedRule.Imports.Select(import => $".import={import}"));
+            content.AddRange(preprocessedRule.Events.Select(evnt => $".event={evnt}"));
 
             content.AddRange(preprocessedRule.RuleCode.Skip(preprocessedRule.FirstCodeLine));
 
