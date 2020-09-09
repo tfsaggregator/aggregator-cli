@@ -5,6 +5,7 @@ on:
   push:
     paths:
     - '.github/workflows/publish-to-marketplace.yml'
+    - 'marketplace/**'
 
 jobs:
   publish:
