@@ -1,19 +1,7 @@
 <Project>
   <!-- see https://github.com/aspnet/websdk/issues/152 -->
   <Target Name="PackageForCLI" AfterTargets="Publish">
-    
-    <ItemGroup>
-      <AzFunctionFiles Include="$(PublishUrl)\**\*.*"/>
-    </ItemGroup>
-    
-    <Message Importance="high" Text="PUBLISHED TO URL $(PublishUrl)" />
-    <!--
-    <Copy
-      SourceFiles="@(AzFunctionFiles)"
-      DestinationFiles="@(AzFunctionFiles->'..\aggregator-cli\function-bin\%(RecursiveDir)%(Filename)%(Extension)')" 
-      />
-    -->
     <Exec Command="PowerShell -NoProfile -command Compress-Archive -Path $(PublishUrl)* -DestinationPath ..\aggregator-cli\FunctionRuntime.zip -Force"
-          Condition="'$(BuildingInsideVisualStudio)' == 'true'" />
+          Condition=" '$(BuildingInsideVisualStudio)' == 'true' AND '$(CI)' != 'true' " />
   </Target>
 </Project>

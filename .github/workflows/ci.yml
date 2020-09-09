@@ -62,8 +62,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    - name: 'Delete Directory.Build.targets from src/aggregator-function'
-      run: rm src/aggregator-function/Directory.Build.targets
     - name: 'NuGet Restore'
       run: 'dotnet restore src/aggregator-cli.sln'
     - name: 'Build solution'
