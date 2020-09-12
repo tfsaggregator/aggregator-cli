@@ -3,11 +3,11 @@ name: build-and-deploy
 on:
   push:
     paths:
-    - '.github/workflows/ci.yml'
+    - '.github/workflows/build-and-deploy.yml'
     - 'src/**'
   pull_request:
     paths:
-    - '.github/workflows/ci.yml'
+    - '.github/workflows/build-and-deploy.yml'
     - 'src/**'
 
 env:
