@@ -319,7 +319,7 @@ jobs:
         for tag in *; do all_tags=$all_tags" ${{ env.docker_repo }}:${tag}"; done
         echo ::set-output name=all_tags::$all_tags
         cd ..
-        echo ${{ secrets.GHCR_PASSWORD }} | docker login -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+        echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         docker manifest create ${{ env.docker_repo }}:latest  $amends
         docker manifest push ${{ env.docker_repo }}:latest
         docker manifest create ${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}  $amends
