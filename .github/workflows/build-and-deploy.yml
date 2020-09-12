@@ -3,11 +3,11 @@ name: build-and-deploy
 on:
   push:
     paths:
-    - '.github/workflows/ci.yml'
+    - '.github/workflows/build-and-deploy.yml'
     - 'src/**'
   pull_request:
     paths:
-    - '.github/workflows/ci.yml'
+    - '.github/workflows/build-and-deploy.yml'
     - 'src/**'
 
 env:
@@ -56,14 +56,12 @@ jobs:
       run: dotnet tool restore
     - name: SonarCloud Setup
       run: |
-        curl https://raw.githubusercontent.com/ikemtz/NRSRx/master/tools/sonarqube-create-project-guids.ps1 -o sonarqube-create-project-guids.ps1
+        cp ./build/sonarqube-create-project-guids.ps1 .
         pwsh -NonInteractive -ExecutionPolicy RemoteSigned -File ./sonarqube-create-project-guids.ps1
         dotnet sonarscanner begin /o:${{ env.SONAR_ORG }} /k:${{ env.SONAR_PROJECTKEY }} /d:sonar.host.url=https://sonarcloud.io /d:sonar.cs.vstest.reportsPaths=test-results/*.trx /d:sonar.cs.opencover.reportsPaths=test-results/*/coverage.opencover.xml /d:sonar.coverage.exclusions="**Test*.cs"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    - name: 'Delete Directory.Build.targets from src/aggregator-function'
-      run: rm src/aggregator-function/Directory.Build.targets
     - name: 'NuGet Restore'
       run: 'dotnet restore src/aggregator-cli.sln'
     - name: 'Build solution'
@@ -270,7 +268,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     # the official docker/build-push-action@v1 does not support Windows!!!
-    - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image
+    - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image to DockerHub
       uses: mr-smithers-excellent/docker-build-push@v4
       with:
         image: ${{ env.docker_repo }}
@@ -278,8 +276,18 @@ jobs:
         registry: docker.io
         dockerfile: docker/${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.Dockerfile
         buildArgs: MAJOR_MINOR_PATCH=${{ needs.build.outputs.majorMinorPatch }},PRERELEASE_TAG=${{ needs.build.outputs.preReleaseTag }}
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+    - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image to GHCR
+      uses: mr-smithers-excellent/docker-build-push@v4
+      with:
+        image: ${{ env.docker_repo }}
+        tag: ${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
+        registry: ghcr.io
+        dockerfile: docker/${{ fromJSON(env.map_os_to_rid)[matrix.os] }}.Dockerfile
+        buildArgs: MAJOR_MINOR_PATCH=${{ needs.build.outputs.majorMinorPatch }},PRERELEASE_TAG=${{ needs.build.outputs.preReleaseTag }}
+        username: ${{ secrets.GHCR_USERNAME }}
+        password: ${{ secrets.GHCR_PASSWORD }}
     - run: |
         mkdir tags
         echo . > tags/${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
@@ -302,8 +310,8 @@ jobs:
       with:
         name: tags
         path: 'tags/'
-    - name: Push manifest
-      id: push_manifest
+    - name: Push manifest to DockerHub
+      id: push_manifest_dockerhub
       run: |
         cd tags
         amends=""; for tag in *; do amends=$amends" --amend ${{ env.docker_repo }}:${tag}"; done
@@ -311,11 +319,28 @@ jobs:
         for tag in *; do all_tags=$all_tags" ${{ env.docker_repo }}:${tag}"; done
         echo ::set-output name=all_tags::$all_tags
         cd ..
-        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         docker manifest create ${{ env.docker_repo }}:latest  $amends
         docker manifest push ${{ env.docker_repo }}:latest
         docker manifest create ${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}  $amends
         docker manifest push ${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}
+        docker logout
+      env:
+        DOCKER_CLI_EXPERIMENTAL: enabled
+    - name: Push manifest to GHCR
+      id: push_manifest_ghcr
+      run: |
+        cd tags
+        amends=""; for tag in *; do amends=$amends" --amend ghcr.io/${{ env.docker_repo }}:${tag}"; done
+        all_tags="ghcr.io/${{ env.docker_repo }}:latest ghcr.io/${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}"
+        for tag in *; do all_tags=$all_tags" ghcr.io/${{ env.docker_repo }}:${tag}"; done
+        echo ::set-output name=all_tags::$all_tags
+        cd ..
+        echo ${{ secrets.GHCR_PASSWORD }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+        docker manifest create ghcr.io/${{ env.docker_repo }}:latest  $amends
+        docker manifest push ghcr.io/${{ env.docker_repo }}:latest
+        docker manifest create ghcr.io/${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}  $amends
+        docker manifest push ghcr.io/${{ env.docker_repo }}:${{ needs.build.outputs.dockerTag }}
         docker logout
       env:
         DOCKER_CLI_EXPERIMENTAL: enabled
@@ -327,13 +352,13 @@ jobs:
         strict: false
         variables: |
           repo=${{ env.docker_repo }}
-          all_tags=${{ steps.push_manifest.outputs.all_tags }}
+          all_tags=${{ steps.push_manifest_dockerhub.outputs.all_tags }}
         data_file: docker/older_tags.json
         data_format: json
     - name: Update Docker Hub Description
       uses: peter-evans/dockerhub-description@v2
       env:
-        DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         DOCKERHUB_REPOSITORY: ${{ env.docker_repo }}
         README_FILEPATH: docker/README.md

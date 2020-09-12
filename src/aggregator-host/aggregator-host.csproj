@@ -4,10 +4,25 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>aggregator_host</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- AssemblyInfo -->
+    <Title>Aggregator CLI</Title>
+    <Company>TFS Aggregator Team</Company>
+    <Product>Aggregator Host</Product>
+    <Copyright>Copyright © TFS Aggregator Team</Copyright>
+    <Description>Aggregator Hosts the Rules Interpreter</Description>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionSuffix>localdev</VersionSuffix>    
+    <CodeAnalysisRuleSet>..\.sonarlint\tfsaggregator_aggregator-clicsharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.7" />
+    <AdditionalFiles Include="..\.sonarlint\tfsaggregator_aggregator-cli\CSharp\SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- resolves MSB3277 -->
+    <PackageReference Include="System.Text.Json" Version="4.7.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.8" />
   </ItemGroup>
   
   <ItemGroup>

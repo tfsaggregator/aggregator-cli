@@ -334,24 +334,23 @@ ASALocalRun/
 .mfractor/
 
 ## Specific to this repo
-secrets/
-src/aggregator-cli/FunctionRuntime.zip
-*.exe
-*.diagsession
-experiments/
-src/aggregator-function/test*/*
-.vscode
-.DS_Store
-build.sh
-*.vsix
-outputs
-## Terraform stuff
-*.tfvars
-.terraform
-*.tfstate*
-**/_plan
-/coverage-report/
-/test-results/
 .sonarqube/
+.terraform/
+.vscode/
+coverage-report/
+experiments/
+outputs/
+secrets/
+test-results/
 docker/netcoreapp3.1
 docker/rules
+src/aggregator-function/test*/*
+src/aggregator-cli/FunctionRuntime.zip
+.DS_Store
+*.exe
+*.diagsession
+*.vsix
+*.rdp
+*.tfvars
+*.tfstate*
+**/_plan

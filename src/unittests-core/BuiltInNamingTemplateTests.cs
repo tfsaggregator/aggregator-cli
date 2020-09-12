@@ -41,6 +41,7 @@ namespace unittests_core
         }
 
         [Fact]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S4144:Methods should not have identical implementations", Justification = "<Pending>")]
         public void FromResourceGroupName_DefaultResourceGroupName()
         {
             var templates = new BuiltInNamingTemplates();

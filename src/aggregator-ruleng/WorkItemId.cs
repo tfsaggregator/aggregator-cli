@@ -33,7 +33,7 @@ namespace aggregator.Engine
             this.Value = id;
         }
 
-        public bool Equals(WorkItemId other)
+        public virtual bool Equals(WorkItemId other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;

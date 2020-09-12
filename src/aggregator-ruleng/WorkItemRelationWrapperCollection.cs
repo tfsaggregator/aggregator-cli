@@ -10,9 +10,9 @@ namespace aggregator.Engine
 {
     public class WorkItemRelationWrapperCollection : ICollection<WorkItemRelationWrapper>
     {
-        private WorkItemWrapper _pivotWorkItem;
-        private IList<WorkItemRelationWrapper> _original;
-        private IList<WorkItemRelationWrapper> _current;
+        private readonly WorkItemWrapper _pivotWorkItem;
+        private readonly IList<WorkItemRelationWrapper> _original;
+        private readonly IList<WorkItemRelationWrapper> _current;
 
         internal WorkItemRelationWrapperCollection(WorkItemWrapper workItem, IList<WorkItemRelation> relations)
         {

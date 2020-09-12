@@ -11,7 +11,7 @@ namespace aggregator
 
     public static class Telemetry
     {
-        private const string applicationInsightsKey = "b5896615-5bbe-4cd8-bbb8-9bdeb59463ba";
+        private const string ApplicationInsightsKey = "b5896615-5bbe-4cd8-bbb8-9bdeb59463ba";
 
         private static TelemetryClient telemetryClient;
         private static ITelemetrySettings telemetrySettings;
@@ -51,7 +51,7 @@ namespace aggregator
             }
 
             TelemetryConfiguration configuration = TelemetryConfiguration.CreateDefault();
-            configuration.InstrumentationKey = applicationInsightsKey;
+            configuration.InstrumentationKey = ApplicationInsightsKey;
             // use default InMemory channel, if there are network issues, who cares
             configuration.TelemetryChannel.DeveloperMode = Debugger.IsAttached;
 #if DEBUG

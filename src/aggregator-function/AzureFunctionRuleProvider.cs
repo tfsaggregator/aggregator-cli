@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,12 +21,12 @@ namespace aggregator
         }
 
         /// <inheritdoc />
-        public async Task<IRule> GetRule(string ruleName)
+        public async Task<IRule> GetRule(string name)
         {
-            var ruleFilePath = GetRuleFilePath(ruleName);
+            var ruleFilePath = GetRuleFilePath(name);
             var (preprocessedRule, _) = await RuleFileParser.ReadFile(ruleFilePath);
 
-            return new ScriptedRuleWrapper(ruleName, preprocessedRule);
+            return new ScriptedRuleWrapper(name, preprocessedRule);
         }
 
         private string GetRuleFilePath(string ruleName)

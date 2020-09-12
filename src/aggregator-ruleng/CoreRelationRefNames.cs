@@ -1,6 +1,6 @@
 ﻿namespace aggregator.Engine
 {
-    internal class CoreRelationRefNames
+    internal static class CoreRelationRefNames
     {
         public const string Parent = "System.LinkTypes.Hierarchy-Reverse";
         public const string Children = "System.LinkTypes.Hierarchy-Forward";

@@ -161,11 +161,10 @@ namespace integrationtests.cli
         void FinalCleanUp()
         {
             string instance = "my45" + TestLogonData.UniqueSuffix;
-            (int _, string _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
+            (_, _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
             instance = "MyMixedCase54" + TestLogonData.UniqueSuffix;
-            (int _, string _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
-
-            (int rc, string output) = RunAggregatorCommand($"test.cleanup --verbose --resourceGroup {TestLogonData.ResourceGroup} ");
+            (_, _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instance} --resourceGroup {TestLogonData.ResourceGroup}");
+            (int rc, _) = RunAggregatorCommand($"test.cleanup --verbose --resourceGroup {TestLogonData.ResourceGroup} ");
             Assert.Equal(0, rc);
         }
     }

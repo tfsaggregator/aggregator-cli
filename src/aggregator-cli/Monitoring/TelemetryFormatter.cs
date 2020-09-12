@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace aggregator.cli
 {
-    class TelemetryFormatter
+    static class TelemetryFormatter
     {
         internal static string Format(TelemetryDisplayMode mode, object value)
         {
@@ -41,8 +41,7 @@ namespace aggregator.cli
             if (value == null)
                 return "";
 
-            Uri uri;
-            if (!Uri.TryCreate(value.ToString(), UriKind.Absolute, out uri))
+            if (!Uri.TryCreate(value.ToString(), UriKind.Absolute, out Uri uri))
                 return "";
 
             if (uri.Host == "github.com"

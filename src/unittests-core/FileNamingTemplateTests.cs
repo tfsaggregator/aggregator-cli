@@ -7,14 +7,6 @@ namespace unittests_core
     public class FileNamingTemplateTests
     {
         [Fact]
-        public void CtorValidate_Fails()
-        {
-            //"Must specify at least one affix for ResourceGroup"
-            Assert.True(true);
-            //Assert.Throws<ArgumentException>(() => new FileNamingTemplates("{}"));
-        }
-
-        [Fact]
         public void InstanceValidate_Fails_OnNullName()
         {
             //"Must specify at least one affix for ResourceGroup"

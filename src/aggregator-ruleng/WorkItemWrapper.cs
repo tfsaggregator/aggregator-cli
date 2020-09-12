@@ -93,7 +93,9 @@ namespace aggregator.Engine
             get
             {
                 // TODO load a few revisions at a time
+#pragma warning disable S125 // Sections of code should not be commented out
                 //var all = _context.Clients.WitClient.GetRevisionsAsync(this.Id, expand: WorkItemExpand.All).Result;
+#pragma warning restore S125 // Sections of code should not be commented out
                 var revision = this;
                 while ((revision = revision.PreviousRevision) != null)
                 {
@@ -371,7 +373,7 @@ namespace aggregator.Engine
 
                 _item.Fields[field] = value;
                 // do we have a previous op for this field?
-                var op = Changes.Where(op => op.Path == "/fields/" + field).FirstOrDefault();
+                var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
                 if (op != null)
                 {
                     op.Value = TranslateValue(value);

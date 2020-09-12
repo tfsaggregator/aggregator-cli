@@ -31,15 +31,12 @@ namespace aggregator.Engine.Language
 
         public static string LanguageAsString(this IPreprocessedRule preprocessedRule)
         {
-            switch (preprocessedRule.Language)
+            return preprocessedRule.Language switch
             {
-                case RuleLanguage.Csharp:
-                    return "C#";
-                case RuleLanguage.Unknown:
-                    return "Unknown";
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+                RuleLanguage.Csharp => "C#",
+                RuleLanguage.Unknown => "Unknown",
+                _ => throw new ArgumentOutOfRangeException($"BUG: {nameof(LanguageAsString)} misses {nameof(RuleLanguage)} enum value"),
+            };
         }
 
         internal static IEnumerable<Assembly> LoadAssemblyReferences(this IPreprocessedRule preprocessedRule)

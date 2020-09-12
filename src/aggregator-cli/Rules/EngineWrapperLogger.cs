@@ -2,7 +2,7 @@
 {
     internal class EngineWrapperLogger : IAggregatorLogger
     {
-        private ILogger logger;
+        private readonly ILogger logger;
 
         public EngineWrapperLogger(ILogger logger)
         {

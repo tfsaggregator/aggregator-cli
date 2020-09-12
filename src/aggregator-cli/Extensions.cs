@@ -45,14 +45,13 @@ namespace aggregator.cli
 
         internal static async Task AddFunctionDefaultFiles(this IDictionary<string, string> uploadFiles, Assembly assembly)
         {
-            {
-                var content = await assembly.GetEmbeddedResourceContent("function.json");
-                uploadFiles.Add("function.json", content);
-            }
+            await AddFileFromResource(uploadFiles, assembly, "function.json");
+            await AddFileFromResource(uploadFiles, assembly, "run.csx");
 
+            async Task AddFileFromResource(IDictionary<string, string> _uploadFiles, Assembly _assembly, string filename)
             {
-                var content = await assembly.GetEmbeddedResourceContent("run.csx");
-                uploadFiles.Add("run.csx", content);
+                var content = await _assembly.GetEmbeddedResourceContent(filename);
+                _uploadFiles.Add(filename, content);
             }
         }
     }

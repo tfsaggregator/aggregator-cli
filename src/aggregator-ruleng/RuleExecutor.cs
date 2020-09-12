@@ -21,33 +21,33 @@ namespace aggregator.Engine
         public async Task<string> ExecuteAsync(IRule rule, WorkItemEventContext eventContext, CancellationToken cancellationToken)
         {
             logger.WriteVerbose($"Connecting to Azure DevOps using {configuration.DevOpsTokenType}...");
-            var clientCredentials = default(VssCredentials);
             if (configuration.DevOpsTokenType == DevOpsTokenType.PAT)
             {
-                clientCredentials = new VssBasicCredential(configuration.DevOpsTokenType.ToString(), configuration.DevOpsToken);
+                var clientCredentials = new VssBasicCredential(configuration.DevOpsTokenType.ToString(), configuration.DevOpsToken);
+                // see https://rules.sonarsource.com/csharp/RSPEC-4457
+                return await ExecAsyncImpl(rule, eventContext, clientCredentials, cancellationToken);
             }
             else
             {
                 logger.WriteError($"Azure DevOps Token type {configuration.DevOpsTokenType} not supported!");
-                throw new ArgumentOutOfRangeException(nameof(configuration.DevOpsTokenType));
+                throw new ArgumentException($"Azure DevOps Token type {configuration.DevOpsTokenType} not supported.");
             }
+        }
 
+        private async Task<string> ExecAsyncImpl(IRule rule, WorkItemEventContext eventContext, VssCredentials clientCredentials, CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
 
             // TODO improve from https://github.com/Microsoft/vsts-work-item-migrator
-            using (var devops = new VssConnection(eventContext.CollectionUri, clientCredentials))
-            {
-                await devops.ConnectAsync(cancellationToken);
-                logger.WriteInfo($"Connected to Azure DevOps");
-                using (var clientsContext = new AzureDevOpsClientsContext(devops))
-                {
-                    var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
+            using var devops = new VssConnection(eventContext.CollectionUri, clientCredentials);
+            await devops.ConnectAsync(cancellationToken);
+            logger.WriteInfo($"Connected to Azure DevOps");
+            using var clientsContext = new AzureDevOpsClientsContext(devops);
+            var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
 
-                    var ruleResult = await engine.RunAsync(rule, eventContext.ProjectId, eventContext.WorkItemPayload, eventContext.EventType, clientsContext, cancellationToken);
-                    logger.WriteInfo(ruleResult);
-                    return ruleResult;
-                }
-            }
+            var ruleResult = await engine.RunAsync(rule, eventContext.ProjectId, eventContext.WorkItemPayload, eventContext.EventType, clientsContext, cancellationToken);
+            logger.WriteInfo(ruleResult);
+            return ruleResult;
         }
     }
 }

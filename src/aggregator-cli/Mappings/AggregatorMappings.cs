@@ -78,18 +78,18 @@ namespace aggregator.cli
 
         internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
         {
-            Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever = async (_ruleName, _cancellationToken) =>
-              {
-                  var rules = new AggregatorRules(azure, logger);
-                  return await rules.GetInvocationUrlAndKey(instance, _ruleName, _cancellationToken);
-              };
+            async Task<(Uri, string)> RetrieveAzureFunctionUrl(string _ruleName, CancellationToken _cancellationToken)
+            {
+                var rules = new AggregatorRules(azure, logger);
+                return await rules.GetInvocationUrlAndKey(instance, _ruleName, _cancellationToken);
+            }
 
-            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, urlRetriever, "x-functions-key", cancellationToken);
+            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, RetrieveAzureFunctionUrl, "x-functions-key", cancellationToken);
         }
 
         internal async Task<Guid> AddFromUrlAsync(string projectName, string @event, EventFilters filters, Uri targetUrl, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
         {
-            Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever = async (_ruleName, _cancellationToken) =>
+            async Task<(Uri, string)> RetrieveHostedUrl(string _ruleName, CancellationToken _cancellationToken)
             {
                 string apiKey = "INVALID";
 
@@ -100,7 +100,7 @@ namespace aggregator.cli
                 string proof = SharedSecret.DeriveFromPassword(userManagedPassword);
 
                 var configUrl = new UriBuilder(targetUrl);
-                configUrl.Path = configUrl.Path + $"config/key";
+                configUrl.Path += $"config/key";
                 var handler = new HttpClientHandler()
                 {
                     SslProtocols = SslProtocols.Tls12,// | SslProtocols.Tls11 | SslProtocols.Tls,
@@ -117,7 +117,7 @@ namespace aggregator.cli
                             case HttpStatusCode.OK:
                                 logger.WriteVerbose($"Connected to {targetUrl}");
                                 apiKey = await response.Content.ReadAsStringAsync();
-                                logger.WriteInfo($"Coniguration retrieved.");
+                                logger.WriteInfo($"Configuration retrieved.");
                                 break;
 
                             default:
@@ -130,14 +130,16 @@ namespace aggregator.cli
                 logger.WriteInfo($"Target URL is working");
 
                 var b = new UriBuilder(targetUrl);
-                b.Path = b.Path + $"/workitem/{_ruleName}";
+                b.Path += $"/workitem/{_ruleName}";
                 return (b.Uri, apiKey);
-            };
+            }
 
-            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, urlRetriever, MagicConstants.ApiKeyAuthenticationHeaderName, cancellationToken);
+            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, RetrieveHostedUrl, MagicConstants.ApiKeyAuthenticationHeaderName, cancellationToken);
         }
 
+#pragma warning disable S107 // Methods should not have too many parameters
         protected async Task<Guid> CoreAddAsync(string projectName, string @event, EventFilters filters, string ruleName, bool impersonateExecution, Func<string, CancellationToken, Task<(Uri, string)>> urlRetriever, string headerName, CancellationToken cancellationToken)
+#pragma warning restore S107 // Methods should not have too many parameters
         {
             logger.WriteVerbose($"Reading Azure DevOps project data...");
             var projectClient = devops.GetClient<ProjectHttpClient>();
@@ -200,7 +202,7 @@ namespace aggregator.cli
                 ConsumerInputs = new Dictionary<string, string>
                 {
                     { "url", ruleUrl.ToString() },
-                    { "httpHeaders", $"x-functions-key:{ruleKey}" },
+                    { "httpHeaders", $"{headerName}:{ruleKey}" },
                     // careful with casing!
                     { "resourceDetailsToSend", "all" },
                     { "messagesToSend", "none" },

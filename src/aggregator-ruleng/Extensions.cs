@@ -20,21 +20,25 @@ namespace aggregator.Engine
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (pageSize <= 1) throw new ArgumentException("Must be greater than 1", nameof(pageSize));
 
-            using (var enumerator = source.GetEnumerator())
+            // see https://rules.sonarsource.com/csharp/RSPEC-4456
+            return PaginateIterator(source, pageSize);
+        }
+
+        private static IEnumerable<IEnumerable<T>> PaginateIterator<T>(this IEnumerable<T> source, int pageSize)
+        {
+            using var enumerator = source.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                while (enumerator.MoveNext())
-                {
-                    var currentPage = new List<T>(pageSize)
+                var currentPage = new List<T>(pageSize)
                     {
                         enumerator.Current
                     };
 
-                    while (currentPage.Count < pageSize && enumerator.MoveNext())
-                    {
-                        currentPage.Add(enumerator.Current);
-                    }
-                    yield return new ReadOnlyCollection<T>(currentPage);
+                while (currentPage.Count < pageSize && enumerator.MoveNext())
+                {
+                    currentPage.Add(enumerator.Current);
                 }
+                yield return new ReadOnlyCollection<T>(currentPage);
             }
         }
     }

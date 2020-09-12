@@ -22,12 +22,10 @@ namespace aggregator
 
         private static string GetHash(string text)
         {
-            using (var sha = new System.Security.Cryptography.SHA256Managed())
-            {
-                byte[] textData = System.Text.Encoding.UTF8.GetBytes(text);
-                byte[] hash = sha.ComputeHash(textData);
-                return BitConverter.ToString(hash).Replace("-", String.Empty);
-            }
+            using var sha = new System.Security.Cryptography.SHA256Managed();
+            byte[] textData = System.Text.Encoding.UTF8.GetBytes(text);
+            byte[] hash = sha.ComputeHash(textData);
+            return BitConverter.ToString(hash).Replace("-", String.Empty);
         }
 
         public bool Save()
@@ -42,7 +40,7 @@ namespace aggregator
             if (str == null)
                 return valueIfMissing;
 
-            bool isTrue = false;
+            bool isTrue;
             switch (str.ToLowerInvariant())
             {
                 case "true":

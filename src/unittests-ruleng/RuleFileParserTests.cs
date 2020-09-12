@@ -99,6 +99,31 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         }
 
         [Theory]
+        [InlineData(".event workitem.created", 1)]
+        [InlineData(".events workitem.created workitem.updated", 2)]
+        [InlineData(".events workitem.deleted,workitem.restored", 2)]
+        [InlineData(".events=workitem.commented", 1)]
+        [InlineData(".event=workitem.created\n.event=workitem.deleted", 2)]
+        public void RuleEventsDirectiveParse_Succeeds(string ruleCode, int expectedEventCount)
+        {
+            (IPreprocessedRule ppRule, bool parsingSuccess) = RuleFileParser.Read(ruleCode.Mince());
+
+            Assert.True(parsingSuccess);
+            Assert.Equal(expectedEventCount, ppRule.Events.Count);
+        }
+
+        [Theory]
+        [InlineData(".event workitem.create")]
+        [InlineData(".events workitem.created workitem.changed")]
+        [InlineData(".events git.push")]
+        public void RuleEventsDirectiveParse_Fails(string ruleCode)
+        {
+            (IPreprocessedRule _, bool parsingSuccess) = RuleFileParser.Read(ruleCode.Mince());
+
+            Assert.False(parsingSuccess);
+        }
+
+        [Theory]
         [InlineData(".impersonate onBehalfOfInitiator")]
         [InlineData(".impersonate=onBehalfOfInitiator")]
         public void RuleImpersonateDirectiveParse_Succeeds(string ruleCode)

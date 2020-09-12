@@ -27,13 +27,13 @@ namespace aggregator.cli
 
         public static (DevOpsLogon connection, LogonResult reason) Load()
         {
-            var result = new LogonDataStore(LogonDataTag).Load<DevOpsLogon>();
-            return (result.connection, result.reason);
+            (DevOpsLogon connection, LogonResult reason) = new LogonDataStore(LogonDataTag).Load<DevOpsLogon>();
+            return (connection, reason);
         }
 
         public async Task<VssConnection> LogonAsync(CancellationToken cancellationToken)
         {
-            var clientCredentials = default(VssCredentials);
+            VssCredentials clientCredentials;
             switch (Mode)
             {
                 case DevOpsTokenType.Integrated:
@@ -43,9 +43,15 @@ namespace aggregator.cli
                     clientCredentials = new VssBasicCredential("pat", Token);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(Mode));
+                    throw new InvalidOperationException($"BUG: Unexpected value {Mode} for {nameof(Mode)}");
             }
 
+            // see https://rules.sonarsource.com/csharp/RSPEC-4457
+            return await LocalAsyncImpl(clientCredentials, cancellationToken);
+        }
+
+        private async Task<VssConnection> LocalAsyncImpl(VssCredentials clientCredentials, CancellationToken cancellationToken)
+        {
             var connection = new VssConnection(new Uri(Url), clientCredentials);
             await connection.ConnectAsync(cancellationToken);
             return connection;

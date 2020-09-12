@@ -159,6 +159,7 @@ namespace aggregator.Engine
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Sonar Code Smell", "S907:\"goto\" statement should not be used")]
         public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, CancellationToken cancellationToken)
         {
             if (impersonate)
@@ -187,11 +188,11 @@ namespace aggregator.Engine
 
         private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, bool impersonate, CancellationToken cancellationToken)
         {
-            int created = 0;
-            int updated = 0;
+            int createdCounter = 0;
+            int updatedCounter = 0;
 
-            var workItems = _context.Tracker.GetChangedWorkItems();
-            foreach (var item in workItems.Created)
+            var (createdWorkItems, updatedWorkItems, deletedWorkItems, restoredWorkItems) = _context.Tracker.GetChangedWorkItems();
+            foreach (var item in createdWorkItems)
             {
                 if (commit)
                 {
@@ -209,23 +210,23 @@ namespace aggregator.Engine
                     _context.Logger.WriteInfo($"Dry-run mode: should create a {item.WorkItemType} workitem in {item.TeamProject}");
                 }
 
-                created++;
+                createdCounter++;
             }
 
             if (commit)
             {
-                await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
+                await RestoreAndDelete(restoredWorkItems, deletedWorkItems, cancellationToken);
             }
-            else if (workItems.Deleted.Any() || workItems.Restored.Any())
+            else if (deletedWorkItems.Any() || restoredWorkItems.Any())
             {
-                string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id));
-                var teamProjectName = workItems.Restored.FirstOrDefault()?.TeamProject ??
-                                      workItems.Deleted.FirstOrDefault()?.TeamProject;
-                _context.Logger.WriteInfo($"Dry-run mode: should restore: {FormatIds(workItems.Restored)} and delete {FormatIds(workItems.Deleted)} workitems");
+                static string FormatIds(WorkItemWrapper[] items) => string.Join(",", items.Select(item => item.Id));
+                var teamProjectName = restoredWorkItems.FirstOrDefault()?.TeamProject ??
+                                      deletedWorkItems.FirstOrDefault()?.TeamProject;
+                _context.Logger.WriteInfo($"Dry-run mode: should restore: {FormatIds(restoredWorkItems)} and delete {FormatIds(deletedWorkItems)} workitems from {teamProjectName}");
             }
-            updated += workItems.Restored.Length + workItems.Deleted.Length;
+            updatedCounter += restoredWorkItems.Length + deletedWorkItems.Length;
 
-            foreach (var item in workItems.Updated.Concat(workItems.Restored))
+            foreach (var item in updatedWorkItems.Concat(restoredWorkItems))
             {
                 if (commit)
                 {
@@ -242,10 +243,10 @@ namespace aggregator.Engine
                     _context.Logger.WriteInfo($"Dry-run mode: should update workitem {item.Id} in {item.TeamProject}");
                 }
 
-                updated++;
+                updatedCounter++;
             }
 
-            return (created, updated);
+            return (createdCounter, updatedCounter);
         }
 
         private async Task<(int created, int updated)> SaveChanges_Batch(bool commit, bool impersonate, CancellationToken cancellationToken)
@@ -254,12 +255,12 @@ namespace aggregator.Engine
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
             // BUG this code won't work if there is a relation between a new (id<0) work item and an existing one (id>0): it is an API limit
 
-            var workItems = _context.Tracker.GetChangedWorkItems();
-            int created = workItems.Created.Length;
-            int updated = workItems.Updated.Length + workItems.Deleted.Length + workItems.Restored.Length;
+            var (createdWorkItems, updatedWorkItems, deletedWorkItems, restoredWorkItems) = _context.Tracker.GetChangedWorkItems();
+            int createdCounter = createdWorkItems.Length;
+            int updatedCounter = updatedWorkItems.Length + deletedWorkItems.Length + restoredWorkItems.Length;
 
             List<WitBatchRequest> batchRequests = new List<WitBatchRequest>();
-            foreach (var item in workItems.Created)
+            foreach (var item in createdWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
@@ -271,7 +272,7 @@ namespace aggregator.Engine
                 batchRequests.Add(request);
             }
 
-            foreach (var item in workItems.Updated)
+            foreach (var item in updatedWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request to update workitem {item.Id} in {item.TeamProject}");
 
@@ -289,14 +290,14 @@ namespace aggregator.Engine
             if (commit)
             {
                 _ = await ExecuteBatchRequest(batchRequests, cancellationToken);
-                await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
+                await RestoreAndDelete(restoredWorkItems, deletedWorkItems, cancellationToken);
             }
             else
             {
                 _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
             }//if
 
-            return (created, updated);
+            return (createdCounter, updatedCounter);
         }
 
         private static bool IsSuccessStatusCode(int statusCode)
@@ -313,13 +314,13 @@ namespace aggregator.Engine
             // The workitembatchupdate API has a huge limit:
             // it fails adding a relation between a new (id<0) work item and an existing one (id>0)
 
-            var workItems = _context.Tracker.GetChangedWorkItems();
-            int created = workItems.Created.Length;
-            int updated = workItems.Updated.Length + workItems.Deleted.Length + workItems.Restored.Length;
+            var (createdWorkItems, updatedWorkItems, deletedWorkItems, restoredWorkItems) = _context.Tracker.GetChangedWorkItems();
+            int createdCounter = createdWorkItems.Length;
+            int updatedCounter = updatedWorkItems.Length + deletedWorkItems.Length + restoredWorkItems.Length;
 
             //TODO strange handling, better would be a redesign here: Add links as new Objects and do not create changes when they occur but when accessed to Changes property
             var batchRequests = new List<WitBatchRequest>();
-            foreach (var item in workItems.Created)
+            foreach (var item in createdWorkItems)
             {
                 _context.Logger.WriteInfo($"Found a request for a new {item.WorkItemType} workitem in {item.TeamProject}");
 
@@ -345,7 +346,7 @@ namespace aggregator.Engine
 
                 UpdateIdsInRelations(batchResponses);
 
-                await RestoreAndDelete(workItems.Restored, workItems.Deleted, cancellationToken);
+                await RestoreAndDelete(restoredWorkItems, deletedWorkItems, cancellationToken);
             }
             else
             {
@@ -353,7 +354,7 @@ namespace aggregator.Engine
             }
 
             batchRequests.Clear();
-            var allWorkItems = workItems.Created.Concat(workItems.Updated).Concat(workItems.Restored);
+            var allWorkItems = createdWorkItems.Concat(updatedWorkItems).Concat(restoredWorkItems);
             foreach (var item in allWorkItems)
             {
                 var changes = item.Changes
@@ -380,7 +381,7 @@ namespace aggregator.Engine
                 _context.Logger.WriteWarning($"Dry-run mode: no updates sent to Azure DevOps.");
             }
 
-            return (created, updated);
+            return (createdCounter, updatedCounter);
         }
 
         private async Task<IEnumerable<WitBatchResponse>> ExecuteBatchRequest(IList<WitBatchRequest> batchRequests, CancellationToken cancellationToken)
@@ -398,11 +399,12 @@ namespace aggregator.Engine
             }
 
             //TODO should we throw exception?
+#pragma warning disable S125 // Sections of code should not be commented out
             //if (failedResponses.Any())
             //{
             //    throw new InvalidOperationException("Save failed.");
             //}
-
+#pragma warning restore S125 // Sections of code should not be commented out
             return batchResponses;
         }
 
@@ -424,8 +426,8 @@ namespace aggregator.Engine
 
         private void UpdateIdsInRelations(IEnumerable<WitBatchResponse> batchResponses)
         {
-            var workItems = _context.Tracker.GetChangedWorkItems();
-            var realIds = workItems.Created
+            var (createdWorkItems, updatedWorkItems, deletedWorkItems, restoredWorkItems) = _context.Tracker.GetChangedWorkItems();
+            var realIds = createdWorkItems
                                    // the response order matches the request order
                                    .Zip(batchResponses, (item, response) =>
                                    {
@@ -438,7 +440,7 @@ namespace aggregator.Engine
                                    })
                                    .ToDictionary(kvp => kvp.oldId, kvp => kvp.newId);
 
-            foreach (var item in workItems.Updated)
+            foreach (var item in updatedWorkItems)
             {
                 item.RemapIdReferences(realIds);
             }
