@@ -56,7 +56,7 @@ jobs:
       run: dotnet tool restore
     - name: SonarCloud Setup
       run: |
-        curl https://raw.githubusercontent.com/ikemtz/NRSRx/master/tools/sonarqube-create-project-guids.ps1 -o sonarqube-create-project-guids.ps1
+        cp ./build/sonarqube-create-project-guids.ps1 .
         pwsh -NonInteractive -ExecutionPolicy RemoteSigned -File ./sonarqube-create-project-guids.ps1
         dotnet sonarscanner begin /o:${{ env.SONAR_ORG }} /k:${{ env.SONAR_PROJECTKEY }} /d:sonar.host.url=https://sonarcloud.io /d:sonar.cs.vstest.reportsPaths=test-results/*.trx /d:sonar.cs.opencover.reportsPaths=test-results/*/coverage.opencover.xml /d:sonar.coverage.exclusions="**Test*.cs"
       env:
