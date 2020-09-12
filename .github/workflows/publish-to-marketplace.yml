@@ -4,8 +4,11 @@ on:
     types: [published]
   push:
     paths:
-    - '.github/workflows/publish-to-marketplace.yml'
-    - 'marketplace/**'
+      - '.github/workflows/publish-to-marketplace.yml'
+      - 'marketplace/**'
+      - '!src/**'
+    tags-ignore:
+      - '*'
 
 jobs:
   publish:
