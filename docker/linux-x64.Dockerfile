@@ -37,7 +37,12 @@ ENV Aggregator_ApiKeysPath=/secrets/apikeys.json
 ENV Logging__LogLevel__Aggregator=Debug
 ENV ASPNETCORE_URLS=https://*:5320
 ENV AGGREGATOR_TELEMETRY_DISABLED=false
+ENV Aggregator_AzureDevOpsCertificate=
 
 EXPOSE 5320/tcp
 
-ENTRYPOINT [ "dotnet", "aggregator-host.dll" ]
+COPY ./docker/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+ENTRYPOINT /app/start.sh
+#ENTRYPOINT [ "dotnet", "aggregator-host.dll" ]

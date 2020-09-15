@@ -348,6 +348,7 @@ src/aggregator-function/test*/*
 src/aggregator-cli/FunctionRuntime.zip
 .DS_Store
 *.exe
+!docker/certoc.exe
 *.diagsession
 *.vsix
 *.rdp
