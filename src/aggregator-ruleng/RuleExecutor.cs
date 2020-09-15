@@ -40,8 +40,19 @@ namespace aggregator.Engine
 
             // TODO improve from https://github.com/Microsoft/vsts-work-item-migrator
             using var devops = new VssConnection(eventContext.CollectionUri, clientCredentials);
-            await devops.ConnectAsync(cancellationToken);
-            logger.WriteInfo($"Connected to Azure DevOps");
+            try
+            {
+                await devops.ConnectAsync(cancellationToken);
+                logger.WriteInfo($"Connected to Azure DevOps");
+            }
+            catch (System.Exception ex)
+            {
+                logger.WriteError(ex.Message);
+                if (ex.InnerException != null) {
+                    logger.WriteError(ex.InnerException.Message);
+                }
+                throw ex;
+            }
             using var clientsContext = new AzureDevOpsClientsContext(devops);
             var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
 
