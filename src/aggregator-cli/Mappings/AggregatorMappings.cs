@@ -130,7 +130,7 @@ namespace aggregator.cli
                 logger.WriteInfo($"Target URL is working");
 
                 var b = new UriBuilder(targetUrl);
-                b.Path += $"/workitem/{_ruleName}";
+                b.Path += $"workitem/{_ruleName}";
                 return (b.Uri, apiKey);
             }
 
