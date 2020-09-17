@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 using aggregator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,15 +49,22 @@ namespace aggregator_host.Controllers
             _log.LogDebug("RetrieveKey method was called!");
 
             string proof = body.GetString();
-            string userManagedPassword = _configuration.GetValue<string>("Aggregator_SharedSecret");
+            string userManagedPassword = _configuration.GetValue<string>(MagicConstants.EnvironmentVariable_SharedSecret);
+            if (string.IsNullOrEmpty(userManagedPassword))
+            {
+                throw new ApplicationException($"{MagicConstants.EnvironmentVariable_SharedSecret} environment variable is required by CLI");
+            }
 
             if (proof == SharedSecret.DeriveFromPassword(userManagedPassword))
             {
                 return _apiKeyRepo.PickValidKey();
             }
+            else
+            {
+                _log.LogError("API Key request failed from {0}", HttpContext.Connection.RemoteIpAddress);
+                return MagicConstants.InvalidApiKey;
 
-            return "OK";
-
+            }
         }
     }
 }

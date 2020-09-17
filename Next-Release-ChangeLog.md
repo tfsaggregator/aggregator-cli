@@ -1,25 +1,29 @@
-This is the final **Release Candidate** version.
+This is the inital **1.0** release.
 
 CLI Commands and Options
 ========================
 * Resolve code analysis warnings.
 * Fix incorrect HTTP Header in web hook Subscriptions made by `map.local.rule`.
+* Fix incorrect URL in web hook Subscriptions made by `map.local.rule`.
 
 
 Docker and Azure Function Hosting
 ========================
 * Resolve code analysis warnings.
-* Fix error CS1705
+* Fix CS1705 error.
+* Support for `Aggregator_AzureDevOpsCertificate` when Azure DevOps is using a certificate issued by non-trusted Certification Authority (e.g.self-signed).
+* Better handling of API keys.
 
 
 Rule Language
 ========================
-* optional `events` directive
+* New optional `events` directive.
 
 
 Rule Interpreter Engine
 ========================
 * Resolve code analysis warnings.
+* Improved some messages.
 
 
 Build, Test, Documentation
@@ -29,6 +33,9 @@ Build, Test, Documentation
 * Resolve code analysis warnings.
 * Fix default branch reference in CI workflow.
 * Push docker images to GitHub Container Registry (beta) in addition to Docker Hub.
+* Local version number is now `0.0.1-localdev`.
+* Fix build badge, added SonarQube badge.
+* Trimmed `.dockerignore`.
 
 
 File Hashes
