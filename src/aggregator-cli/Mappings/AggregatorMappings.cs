@@ -91,11 +91,15 @@ namespace aggregator.cli
         {
             async Task<(Uri, string)> RetrieveHostedUrl(string _ruleName, CancellationToken _cancellationToken)
             {
-                string apiKey = "INVALID";
+                string apiKey = MagicConstants.InvalidApiKey;
 
                 logger.WriteVerbose($"Validating target URL {targetUrl.AbsoluteUri}");
 
-                string userManagedPassword = Environment.GetEnvironmentVariable("Aggregator_SharedSecret");
+                string userManagedPassword = Environment.GetEnvironmentVariable(MagicConstants.EnvironmentVariable_SharedSecret);
+                if (string.IsNullOrEmpty(userManagedPassword))
+                {
+                    throw new ApplicationException($"{MagicConstants.EnvironmentVariable_SharedSecret} environment variable is required for this command");
+                }
 
                 string proof = SharedSecret.DeriveFromPassword(userManagedPassword);
 
@@ -115,7 +119,7 @@ namespace aggregator.cli
                         switch (response.StatusCode)
                         {
                             case HttpStatusCode.OK:
-                                logger.WriteVerbose($"Connected to {targetUrl}");
+                                logger.WriteVerbose($"Connection to {targetUrl} succeded");
                                 apiKey = await response.Content.ReadAsStringAsync();
                                 logger.WriteInfo($"Configuration retrieved.");
                                 break;
@@ -127,10 +131,13 @@ namespace aggregator.cli
                     }
                 }
 
-                logger.WriteInfo($"Target URL is working");
+                if (string.IsNullOrEmpty(apiKey) || apiKey == MagicConstants.InvalidApiKey)
+                {
+                    throw new ApplicationException("Unable to retrieve API Key, please check Shared secret configuration");
+                }
 
                 var b = new UriBuilder(targetUrl);
-                b.Path += $"/workitem/{_ruleName}";
+                b.Path += $"workitem/{_ruleName}";
                 return (b.Uri, apiKey);
             }
 

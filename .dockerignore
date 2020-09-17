@@ -6,6 +6,10 @@
 **/.vscode
 **/*.zip
 docker/
+!docker/*.exe
+!docker/*.cmd
+!docker/*.sh
+!docker/*.pem
 outputs/
 marketplace/
 src/.build-trigger

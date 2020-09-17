@@ -51,10 +51,10 @@ namespace aggregator.cli
 
             if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
             {
-                logger.WriteError($"Requested version does not exist.");
+                logger.WriteError($"Requested CLI version does not exist in GitHub.");
                 return (upgrade: false, newversion: "");
             }
-            logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
+            logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub.");
 
             SemVersion.TryParse(gitHubVersion.Name.Substring(1), out var latest);
             var current = new SemVersion(
@@ -260,7 +260,7 @@ namespace aggregator.cli
 
             if (gitHubVersion == null || string.IsNullOrEmpty(gitHubVersion.Name))
             {
-                logger.WriteError($"Requested runtime {requiredVersion} version does not exist.");
+                logger.WriteError($"Requested runtime {requiredVersion} version does not exist in GitHub.");
                 return (null, null);
             }
             logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
@@ -289,7 +289,7 @@ namespace aggregator.cli
                 }
                 else
                 {
-                    logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase}");
+                    logger.WriteWarning($"Cannot read aggregator-manifest.ini: {response.ReasonPhrase} (disregard this message on new instances)");
                     uploadedRuntimeVer = new SemVersion(0, 0, 0);
                 }
             }

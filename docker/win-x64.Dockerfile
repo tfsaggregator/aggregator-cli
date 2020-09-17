@@ -38,6 +38,7 @@ VOLUME c:/secrets
 ENV Aggregator_VstsTokenType=PAT
 ENV Aggregator_VstsToken=
 ENV Aggregator_RulesPath=c:\rules
+ENV Aggregator_AzureDevOpsCertificate=
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path=c:\secrets\aggregator.pfx
 ENV Aggregator_ApiKeysPath=c:\secrets\apikeys.json
 ENV Logging__LogLevel__Aggregator=Debug
@@ -49,5 +50,8 @@ EXPOSE 5320/tcp
 # https://github.com/dotnet/dotnet-docker/issues/915
 USER ContainerAdministrator
 
-ENTRYPOINT [ "dotnet", "aggregator-host.dll" ]
+COPY ./docker/certoc.exe .
+COPY ./docker/start.cmd .
+
+ENTRYPOINT [ "start.cmd" ]
 
