@@ -98,6 +98,202 @@ namespace unittests_ruleng
         }
 
 
+        [Fact]
+        public void AssignDestinationFieldAndSourceFieldIsMissing()
+        {
+            const string CustomField = "My.Custom";
+            int sourceWorkItemId = 42;
+            var sourceWorkItem = new WorkItem
+            {
+                Id = sourceWorkItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "User Story" },
+                                                 { "System.Title", "The Parent" }
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{sourceWorkItemId}"
+            };
+            var sourceWrapper = new WorkItemWrapper(context, sourceWorkItem);
+            int destWorkItemId = 43;
+            var destWorkItem = new WorkItem
+            {
+                Id = destWorkItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Task" },
+                                                 { "System.Title", "The Child" },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
+            };
+            var destWrapper = new WorkItemWrapper(context, destWorkItem);
+
+            destWrapper[CustomField] = sourceWrapper[CustomField];
+
+            // first is the /test op
+            Assert.Equal(2, destWrapper.Changes.Count);
+            var actual = destWrapper.Changes[1];
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Remove,
+                Path = $"/fields/{CustomField}",
+                Value = null
+            };
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+        }
+
+        [Fact]
+        public void AssignDestinationFieldAndSourceFieldIsNull()
+        {
+            const string CustomField = "My.Custom";
+            int sourceWorkItemId = 42;
+            var sourceWorkItem = new WorkItem
+            {
+                Id = sourceWorkItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "User Story" },
+                                                 { "System.Title", "The Parent" },
+                                                 { CustomField, null },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{sourceWorkItemId}"
+            };
+            var sourceWrapper = new WorkItemWrapper(context, sourceWorkItem);
+            int destWorkItemId = 43;
+            var destWorkItem = new WorkItem
+            {
+                Id = destWorkItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Task" },
+                                                 { "System.Title", "The Child" },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
+            };
+            var destWrapper = new WorkItemWrapper(context, destWorkItem);
+
+            destWrapper[CustomField] = sourceWrapper[CustomField];
+
+            // first is the /test op
+            Assert.Equal(2, destWrapper.Changes.Count);
+            var actual = destWrapper.Changes[1];
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Remove,
+                Path = $"/fields/{CustomField}",
+                Value = null
+            };
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+        }
+
+        [Fact]
+        public void AssignDestinationFieldAndSourceFieldHasValidValue()
+        {
+            const string CustomField = "My.Custom";
+            int sourceWorkItemId = 42;
+            var sourceWorkItem = new WorkItem
+            {
+                Id = sourceWorkItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "User Story" },
+                                                 { "System.Title", "The Parent" },
+                                                 { CustomField, true },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{sourceWorkItemId}"
+            };
+            var sourceWrapper = new WorkItemWrapper(context, sourceWorkItem);
+            int destWorkItemId = 43;
+            var destWorkItem = new WorkItem
+            {
+                Id = destWorkItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Task" },
+                                                 { "System.Title", "The Child" },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
+            };
+            var destWrapper = new WorkItemWrapper(context, destWorkItem);
+
+            destWrapper[CustomField] = sourceWrapper[CustomField];
+
+            // first is the /test op
+            Assert.Equal(2, destWrapper.Changes.Count);
+            var actual = destWrapper.Changes[1];
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Add,
+                Path = $"/fields/{CustomField}",
+                Value = true
+            };
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+        }
+
+        [Fact]
+        public void FieldHasNoValueAndIsNulled()
+        {
+            const string CustomField = "My.Custom";
+            int workItemId = 42;
+            var workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Task" },
+                                                 { "System.Title", "The Child" },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+            var wrapper = new WorkItemWrapper(context, workItem);
+
+            wrapper[CustomField] = null;
+
+            // first is the /test op
+            Assert.Equal(2, wrapper.Changes.Count);
+            var actual = wrapper.Changes[1];
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Remove,
+                Path = $"/fields/{CustomField}",
+                Value = null
+            };
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+        }
+
+        [Fact]
+        public void FieldHasValueAndIsNulled()
+        {
+            const string CustomField = "My.Custom";
+            int workItemId = 42;
+            var workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Task" },
+                                                 { "System.Title", "The Child" },
+                                                 { CustomField, "Some value" }
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+            var wrapper = new WorkItemWrapper(context, workItem);
+
+            wrapper[CustomField] = null;
+
+            // first is the /test op
+            Assert.Equal(2, wrapper.Changes.Count);
+            var actual = wrapper.Changes[1];
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Remove,
+                Path = $"/fields/{CustomField}",
+                Value = null
+            };
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+        }
+
+
+
         public static IEnumerable<object[]> AssignSameValueShouldNotInvalidateIsDirty_AdditionalTestData
         {
             get
@@ -262,5 +458,6 @@ namespace unittests_ruleng
             Assert.Equal("/fields/System.Reason", actual.Path);
             Assert.Equal("New reason - again", actual.Value);
         }
+
     }
 }
