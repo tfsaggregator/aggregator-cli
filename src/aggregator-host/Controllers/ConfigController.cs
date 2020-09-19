@@ -52,7 +52,7 @@ namespace aggregator_host.Controllers
             string userManagedPassword = _configuration.GetValue<string>(MagicConstants.EnvironmentVariable_SharedSecret);
             if (string.IsNullOrEmpty(userManagedPassword))
             {
-                throw new ApplicationException($"{MagicConstants.EnvironmentVariable_SharedSecret} environment variable is required by CLI");
+                throw new InvalidOperationException($"{MagicConstants.EnvironmentVariable_SharedSecret} environment variable is required by CLI");
             }
 
             if (proof == SharedSecret.DeriveFromPassword(userManagedPassword))

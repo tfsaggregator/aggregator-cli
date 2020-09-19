@@ -98,7 +98,7 @@ namespace aggregator.cli
                 string userManagedPassword = Environment.GetEnvironmentVariable(MagicConstants.EnvironmentVariable_SharedSecret);
                 if (string.IsNullOrEmpty(userManagedPassword))
                 {
-                    throw new ApplicationException($"{MagicConstants.EnvironmentVariable_SharedSecret} environment variable is required for this command");
+                    throw new InvalidOperationException($"{MagicConstants.EnvironmentVariable_SharedSecret} environment variable is required for this command");
                 }
 
                 string proof = SharedSecret.DeriveFromPassword(userManagedPassword);
@@ -133,7 +133,7 @@ namespace aggregator.cli
 
                 if (string.IsNullOrEmpty(apiKey) || apiKey == MagicConstants.InvalidApiKey)
                 {
-                    throw new ApplicationException("Unable to retrieve API Key, please check Shared secret configuration");
+                    throw new InvalidOperationException("Unable to retrieve API Key, please check Shared secret configuration");
                 }
 
                 var b = new UriBuilder(targetUrl);

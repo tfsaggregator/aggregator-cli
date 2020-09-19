@@ -379,57 +379,57 @@ namespace aggregator.Engine
             }
 
             IsDirty = true;
+        }
 
-            void SetExistingFieldValue(string field, object value)
+        void SetExistingFieldValue(string field, object value)
+        {
+            _item.Fields[field] = value;
+            // do we have a previous op for this field?
+            var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
+            if (value == null)
             {
-                _item.Fields[field] = value;
-                // do we have a previous op for this field?
-                var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
-                if (value == null)
+                if (op != null)
                 {
-                    if (op != null)
-                    {
-                        op.Operation = Operation.Remove;
-                        op.Value = null;
-                    }
-                    else
-                    {
-                        Changes.Add(new JsonPatchOperation()
-                        {
-                            Operation = Operation.Remove,
-                            Path = "/fields/" + field,
-                            Value = null
-                        });
-                    }
+                    op.Operation = Operation.Remove;
+                    op.Value = null;
                 }
                 else
                 {
-                    if (op != null)
+                    Changes.Add(new JsonPatchOperation()
                     {
-                        op.Value = TranslateValue(value);
-                    }
-                    else
-                    {
-                        Changes.Add(new JsonPatchOperation()
-                        {
-                            Operation = Operation.Replace,
-                            Path = "/fields/" + field,
-                            Value = TranslateValue(value)
-                        });
-                    }
-                }//if null value
+                        Operation = Operation.Remove,
+                        Path = "/fields/" + field,
+                        Value = null
+                    });
+                }
             }
-
-            void SetFieldValueFirstTime(string field, object value)
+            else
             {
-                _item.Fields.Add(field, value);
-                Changes.Add(new JsonPatchOperation()
+                if (op != null)
                 {
-                    Operation = value == null ? Operation.Remove : Operation.Add,
-                    Path = "/fields/" + field,
-                    Value = TranslateValue(value)
-                });
-            }
+                    op.Value = TranslateValue(value);
+                }
+                else
+                {
+                    Changes.Add(new JsonPatchOperation()
+                    {
+                        Operation = Operation.Replace,
+                        Path = "/fields/" + field,
+                        Value = TranslateValue(value)
+                    });
+                }
+            }//if null value
+        }
+
+        void SetFieldValueFirstTime(string field, object value)
+        {
+            _item.Fields.Add(field, value);
+            Changes.Add(new JsonPatchOperation()
+            {
+                Operation = value == null ? Operation.Remove : Operation.Add,
+                Path = "/fields/" + field,
+                Value = TranslateValue(value)
+            });
         }
 
         private static object TranslateValue(object value)

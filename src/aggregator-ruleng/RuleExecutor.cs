@@ -51,7 +51,7 @@ namespace aggregator.Engine
                 if (ex.InnerException != null) {
                     logger.WriteError(ex.InnerException.Message);
                 }
-                throw ex;
+                throw;
             }
             using var clientsContext = new AzureDevOpsClientsContext(devops);
             var engine = new RuleEngine(logger, configuration.SaveMode, configuration.DryRun);
