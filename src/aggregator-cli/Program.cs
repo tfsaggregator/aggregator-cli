@@ -61,7 +61,7 @@ namespace aggregator.cli
                 bool versionCheckEnabled = !EnvironmentVariables.GetAsBool("AGGREGATOR_NEW_VERSION_CHECK_DISABLED", false);
                 if (versionCheckEnabled)
                 {
-                    var tempLogger = new ConsoleLogger(true);
+                    var tempLogger = new ConsoleLogger(false);
                     var verChecker = new FunctionRuntimePackage(tempLogger);
                     (bool upgrade, string newversion) = verChecker.IsCliUpgradable().Result;
                     if (upgrade)
