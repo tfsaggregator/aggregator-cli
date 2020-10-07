@@ -22,6 +22,7 @@ namespace aggregator.cli
             var context = await Context
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
+            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             if (string.IsNullOrEmpty(Instance)
                 && string.IsNullOrEmpty(Project))
             {

@@ -18,6 +18,7 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
+            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;

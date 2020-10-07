@@ -45,6 +45,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{F0E724
 		win-x64.Dockerfile = win-x64.Dockerfile
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{72427DCE-8A20-45E5-A5E4-781E7E4C1A34}"
+	ProjectSection(SolutionItems) = preProject
+		..\Next-Release-ChangeLog.md = ..\Next-Release-ChangeLog.md
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
