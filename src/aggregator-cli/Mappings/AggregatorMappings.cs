@@ -22,6 +22,13 @@ namespace aggregator.cli
         Failed = 1
     }
 
+    internal enum UpdateOutcome
+    {
+        Succeeded = 0,
+        NotFound = 2,
+        Failed = 1
+    }
+
     internal class AggregatorMappings
     {
         private readonly VssConnection devops;
@@ -65,15 +72,83 @@ namespace aggregator.cli
                 {
                     continue;
                 }
-                // HACK need to factor the URL<->rule_name
                 Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", MagicConstants.MissingUrl));
-                string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
-                string ruleFullName = $"{naming.FromFunctionAppUrl(ruleUrl).PlainName}/{ruleName}";
+                string ruleFullName = GetRuleFullName(ruleUrl);
                 result.Add(
                     new MappingOutputData(instance, ruleFullName, ruleUrl.IsImpersonationEnabled(), foundProject.Name, subscription.EventType, subscription.Status.ToString())
                     );
             }
             return result;
+        }
+
+        private string GetRuleFullName(Uri ruleUri)
+        {
+            // HACK need to factor the URL<->rule_name
+            string ruleName = ruleUri.Segments.LastOrDefault() ?? string.Empty;
+            string ruleFullName = $"{naming.FromFunctionAppUrl(ruleUri).PlainName}/{ruleName}";
+            return ruleFullName;
+        }
+
+        internal async Task<UpdateOutcome> RemapAsync(InstanceName sourceInstance, InstanceName destInstance, string projectName, CancellationToken cancellationToken)
+        {
+            logger.WriteVerbose($"Searching aggregator mappings in Azure DevOps...");
+            var serviceHooksClient = devops.GetClient<ServiceHooksPublisherHttpClient>();
+            var subscriptions = await serviceHooksClient.QuerySubscriptionsAsync();
+            var filteredSubs = subscriptions.Where(s
+                        => s.PublisherId == DevOpsEvents.PublisherId
+                        && s.ConsumerInputs.GetValue("url", "").StartsWith(
+                            sourceInstance.FunctionAppUrl, StringComparison.OrdinalIgnoreCase));
+            var projectClient = devops.GetClient<ProjectHttpClient>();
+            var projects = await projectClient.GetProjects();
+            var projectsDict = projects.ToDictionary(p => p.Id);
+
+            int processedCount = 0;
+            int succeededCount = 0;
+
+            foreach (var subscription in filteredSubs)
+            {
+                var foundProject = projectsDict[
+                    new Guid(subscription.PublisherInputs["projectId"])
+                    ];
+                if (!string.IsNullOrEmpty(projectName) && foundProject.Name != projectName)
+                {
+                    logger.WriteInfo($"Skipping mapping {subscription.Id} in project {projectName}");
+                    continue;
+                }
+                if (subscription.Status != SubscriptionStatus.Enabled && subscription.Status != SubscriptionStatus.OnProbation)
+                {
+                    logger.WriteInfo($"Skipping mapping {subscription.Id} because has status {subscription.Status.ToString()}");
+                    continue;
+                }
+
+                processedCount++;
+
+                Uri ruleUrl = new Uri(subscription.ConsumerInputs.GetValue("url", MagicConstants.MissingUrl));
+                string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
+
+                var rules = new AggregatorRules(azure, logger);
+                var destRuleUrl = await rules.GetInvocationUrlAndKey(destInstance, ruleName, cancellationToken);
+
+                // PATCH the object
+                subscription.Url = destRuleUrl.url.AbsoluteUri;
+                subscription.ConsumerInputs["httpHeaders"] = $"{MagicConstants.AzureFunctionKeyHeaderName}:{destRuleUrl.key}";
+
+                logger.WriteVerbose($"Replacing {subscription.EventType} mapping from {ruleUrl.AbsoluteUri} to {subscription.Url}...");
+                try
+                {
+                    var newSubscription = await serviceHooksClient.UpdateSubscriptionAsync(subscription);
+                    logger.WriteInfo($"Event subscription {newSubscription.Id} updated.");
+                    succeededCount++;
+                }
+                catch (Exception ex)
+                {
+                    logger.WriteError($"Failed updating subscription {subscription.Id}: {ex.Message}.");
+                }
+            }
+
+            return processedCount == 0 ? UpdateOutcome.NotFound
+                : (processedCount > succeededCount) ? UpdateOutcome.Failed
+                : UpdateOutcome.Succeeded;
         }
 
         internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
@@ -84,7 +159,7 @@ namespace aggregator.cli
                 return await rules.GetInvocationUrlAndKey(instance, _ruleName, _cancellationToken);
             }
 
-            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, RetrieveAzureFunctionUrl, "x-functions-key", cancellationToken);
+            return await CoreAddAsync(projectName, @event, filters, ruleName, impersonateExecution, RetrieveAzureFunctionUrl, MagicConstants.AzureFunctionKeyHeaderName, cancellationToken);
         }
 
         internal async Task<Guid> AddFromUrlAsync(string projectName, string @event, EventFilters filters, Uri targetUrl, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)
