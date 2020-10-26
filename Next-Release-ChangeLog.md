@@ -2,8 +2,9 @@ Fixes version.
 
 CLI Commands and Options
 ========================
-- Removed annoying messages about new version check
-- Decprecation warning on missing `--resourceGroup` option.
+- Removed annoying messages about new version check.
+- Deprecation warning on missing `--resourceGroup` option.
+- Changed `IDataProtectionProvider.CreateProtector` purpose string to prevent clashes.
 
 
 Docker and Azure Function Hosting

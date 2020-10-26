@@ -9,7 +9,7 @@ namespace aggregator.cli
         // the 'provider' parameter is provided by DI
         public MyProtector(IDataProtectionProvider provider)
         {
-            _protector = provider.CreateProtector("Contoso.MyClass.v1");
+            _protector = provider.CreateProtector("Aggregator.CLI.Logon.Protector.v1");
         }
 
         public string Encrypt(string input) => _protector.Protect(input);
