@@ -127,23 +127,30 @@ namespace aggregator.cli
                 string ruleName = ruleUrl.Segments.LastOrDefault() ?? string.Empty;
 
                 var rules = new AggregatorRules(azure, logger);
-                var destRuleUrl = await rules.GetInvocationUrlAndKey(destInstance, ruleName, cancellationToken);
-
-                // PATCH the object
-                subscription.Url = destRuleUrl.url.AbsoluteUri;
-                subscription.ConsumerInputs["httpHeaders"] = $"{MagicConstants.AzureFunctionKeyHeaderName}:{destRuleUrl.key}";
-
-                logger.WriteVerbose($"Replacing {subscription.EventType} mapping from {ruleUrl.AbsoluteUri} to {subscription.Url}...");
                 try
                 {
-                    var newSubscription = await serviceHooksClient.UpdateSubscriptionAsync(subscription);
-                    logger.WriteInfo($"Event subscription {newSubscription.Id} updated.");
-                    succeededCount++;
+                    var destRuleTarget = await rules.GetInvocationUrlAndKey(destInstance, ruleName, cancellationToken);
+                    // PATCH the object
+                    subscription.ConsumerInputs["url"] = destRuleTarget.url.AbsoluteUri;
+                    subscription.ConsumerInputs["httpHeaders"] = $"{MagicConstants.AzureFunctionKeyHeaderName}:{destRuleTarget.key}";
+
+                    logger.WriteVerbose($"Replacing {subscription.EventType} mapping from {ruleUrl.AbsoluteUri} to {subscription.Url}...");
+                    try
+                    {
+                        var newSubscription = await serviceHooksClient.UpdateSubscriptionAsync(subscription);
+                        logger.WriteInfo($"Event subscription {newSubscription.Id} updated.");
+                        succeededCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.WriteError($"Failed updating subscription {subscription.Id}: {ex.Message}.");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    logger.WriteError($"Failed updating subscription {subscription.Id}: {ex.Message}.");
+                    logger.WriteError($"Destination rule {destInstance.PlainName}/{ruleName} does not exists or cannot retrieve key: {ex.Message}.");
                 }
+
             }
 
             return processedCount == 0 ? UpdateOutcome.NotFound
