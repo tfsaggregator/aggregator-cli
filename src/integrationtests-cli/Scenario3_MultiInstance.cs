@@ -53,6 +53,7 @@ namespace integrationtests.cli
         [Theory, Order(4)]
         [InlineData("my45", "test4", "test4.rule")]
         [InlineData("MyMixedCase54", "TestRule5", "test5.rule")]
+        [InlineData("MyMixedCase54", "test4", "test4.rule")] // this is for remap test
         void AddRules(string instancePrefix, string ruleName, string ruleFile)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -65,6 +66,7 @@ namespace integrationtests.cli
         [Theory, Order(5)]
         [InlineData("my45", "test4")]
         [InlineData("MyMixedCase54", "TestRule5")]
+        [InlineData("MyMixedCase54", "test4")] // this is for remap test
         void ListRules(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
@@ -103,6 +105,31 @@ namespace integrationtests.cli
         [Theory, Order(101)]
         [InlineData("my45", "test4")]
         void CreateWorkItemAndCheckTrigger(string instancePrefix, string rule)
+        {
+            string instance = instancePrefix + TestLogonData.UniqueSuffix;
+            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instance} --project \"{TestLogonData.ProjectName}\" ");
+            Assert.Equal(0, rc);
+            // Sample output from rule:
+            //  Returning 'Hello Task #118 from Rule 5!' from 'TestRule5'
+            Assert.Contains($"Returning 'Hello Task #", output);
+            Assert.Contains($"!' from '{rule}'", output);
+            Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Fact, Order(110)]
+        void RemapRules()
+        {
+            string sourceInstance = "my45" + TestLogonData.UniqueSuffix;
+            string destInstance = "MyMixedCase54" + TestLogonData.UniqueSuffix;
+            (int rc, string output) = RunAggregatorCommand($"update.mappings --verbose --resourceGroup {TestLogonData.ResourceGroup} --sourceInstance {sourceInstance} --destInstance {destInstance}");
+
+            Assert.Equal(0, rc);
+            Assert.DoesNotContain("] Failed!", output);
+        }
+
+        [Theory, Order(120)]
+        [InlineData("MyMixedCase54", "TestRule5")]
+        void CreateAnotherWorkItemAndCheckTrigger(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
             (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instance} --project \"{TestLogonData.ProjectName}\" ");

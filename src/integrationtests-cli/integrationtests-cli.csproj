@@ -28,7 +28,7 @@
 
   <ItemGroup>
     <None Update="logon-data.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="scenario4-namingtemplate.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
