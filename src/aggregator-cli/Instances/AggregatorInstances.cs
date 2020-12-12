@@ -338,7 +338,9 @@ namespace aggregator.cli
                 var entry = archive.Entries
                                    .Single(e => string.Equals("aggregator-function.dll", e.Name, StringComparison.OrdinalIgnoreCase));
 
+#pragma warning disable S5042 // Make sure that decompressing this archive file is safe
                 using (var assemblyStream = entry.Open())
+#pragma warning restore S5042 // Make sure that decompressing this archive file is safe
                 {
                     await uploadFiles.AddFunctionDefaultFiles(assemblyStream);
                 }

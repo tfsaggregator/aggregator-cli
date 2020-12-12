@@ -153,9 +153,11 @@ namespace aggregator.cli
 
             }
 
+#pragma warning disable S3358 // Extract this nested ternary operation into an independent statement
             return processedCount == 0 ? UpdateOutcome.NotFound
                 : (processedCount > succeededCount) ? UpdateOutcome.Failed
                 : UpdateOutcome.Succeeded;
+#pragma warning restore S3358 // Extract this nested ternary operation into an independent statement
         }
 
         internal async Task<Guid> AddAsync(string projectName, string @event, EventFilters filters, InstanceName instance, string ruleName, bool impersonateExecution, CancellationToken cancellationToken)

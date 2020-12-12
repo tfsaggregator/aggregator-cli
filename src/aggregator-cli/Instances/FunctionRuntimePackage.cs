@@ -329,7 +329,9 @@ namespace aggregator.cli
             using (var zip = ZipFile.OpenRead(runtimePackageFile))
             {
                 var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
+#pragma warning disable S5042 // Make sure that decompressing this archive file is safe
                 using (var byteStream = manifestEntry.Open())
+#pragma warning restore S5042 // Make sure that decompressing this archive file is safe
                 using (var reader = new StreamReader(byteStream))
                 {
                     var content = await reader.ReadToEndAsync();

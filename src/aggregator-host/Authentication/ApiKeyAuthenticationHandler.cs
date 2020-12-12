@@ -37,7 +37,9 @@ namespace aggregator_host
             }
 
             var claims = new[] { new Claim("apikey", apiKey) };
+#pragma warning disable S4834 // Make sure that permissions are controlled safely here
             var identity = new ClaimsIdentity(claims, nameof(ApiKeyAuthenticationHandler));
+#pragma warning restore S4834 // Make sure that permissions are controlled safely here
             var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), this.Scheme.Name);
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }
