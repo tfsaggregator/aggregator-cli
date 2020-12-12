@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="3.7.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="3.8.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="3.1.6" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.153.0" />
