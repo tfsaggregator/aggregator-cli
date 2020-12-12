@@ -16,12 +16,14 @@ namespace aggregator.cli
 
         private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")
         {
+#pragma warning disable S2245 // Make sure that using this pseudorandom number generator is safe here
             var randomGen = new Random((int)DateTime.Now.Ticks);
             return new string(
                 Enumerable.Range(0, size)
                 .Select(x => allowedChars[randomGen.Next(0, allowedChars.Length)])
                 .ToArray()
                 );
+#pragma warning restore S2245 // Make sure that using this pseudorandom number generator is safe here
         }
 
         private class InstanceCreateNamesImpl : InstanceCreateNames

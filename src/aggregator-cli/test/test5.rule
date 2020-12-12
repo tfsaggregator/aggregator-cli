@@ -1,0 +1,10 @@
+.language=Csharp
+
+// assume self is a 'User Story'
+var allTests = new List<string>();
+foreach(var testedByLink in self.RelationLinks.Where(link => link.Rel == "Microsoft.VSTS.Common.TestedBy-Forward"))
+{
+    var testCase = store.GetWorkItem(testedByLink);
+    allTests.Add( $"{testCase.Id.Value} - {testCase.Title}" );
+}
+return String.Join(",\r\n", allTests);

@@ -61,7 +61,7 @@ namespace aggregator.cli
                 bool versionCheckEnabled = !EnvironmentVariables.GetAsBool("AGGREGATOR_NEW_VERSION_CHECK_DISABLED", false);
                 if (versionCheckEnabled)
                 {
-                    var tempLogger = new ConsoleLogger(true);
+                    var tempLogger = new ConsoleLogger(false);
                     var verChecker = new FunctionRuntimePackage(tempLogger);
                     (bool upgrade, string newversion) = verChecker.IsCliUpgradable().Result;
                     if (upgrade)
@@ -85,7 +85,7 @@ namespace aggregator.cli
                     typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
                     typeof(ListRulesCommand), typeof(AddRuleCommand), typeof(RemoveRuleCommand),
                     typeof(ConfigureRuleCommand), typeof(UpdateRuleCommand), typeof(InvokeRuleCommand),
-                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand),
+                    typeof(ListMappingsCommand), typeof(MapRuleCommand), typeof(UnmapRuleCommand), typeof(UpdateMappingsCommand),
                     typeof(MapLocalRuleCommand)
                 };
                 var parserResult = parser.ParseArguments(args, types);
@@ -112,6 +112,7 @@ namespace aggregator.cli
                     .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                    .WithParsed<UpdateMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithParsed<MapLocalRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
                     .WithNotParsed(errs =>
                     {

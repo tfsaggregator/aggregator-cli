@@ -39,12 +39,12 @@ jobs:
       run: echo ::set-output name=tag_name::${GITHUB_REF/refs\/tags\//}
       shell: bash
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.4
+      uses: gittools/actions/gitversion/setup@v0.9.7
       with:
-          versionSpec: '5.3.x'
+          versionSpec: '5.5.x'
     - name: Use GitVersion
       id: gitversion # step id used as reference for output values
-      uses: gittools/actions/gitversion/execute@v0.9.4
+      uses: gittools/actions/gitversion/execute@v0.9.7
     - name: 'Set version in aggregator-manifest.ini'
       run: 'sed -E -i "s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/" ${GITHUB_WORKSPACE}/src/aggregator-function/aggregator-manifest.ini'
       shell: bash

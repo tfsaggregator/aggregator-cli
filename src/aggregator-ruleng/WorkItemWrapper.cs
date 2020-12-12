@@ -371,9 +371,40 @@ namespace aggregator.Engine
                     return;
                 }
 
-                _item.Fields[field] = value;
-                // do we have a previous op for this field?
-                var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
+                SetExistingFieldValue(field, value);
+            }
+            else
+            {
+                SetFieldValueFirstTime(field, value);
+            }
+
+            IsDirty = true;
+        }
+
+        void SetExistingFieldValue(string field, object value)
+        {
+            _item.Fields[field] = value;
+            // do we have a previous op for this field?
+            var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
+            if (value == null)
+            {
+                if (op != null)
+                {
+                    op.Operation = Operation.Remove;
+                    op.Value = null;
+                }
+                else
+                {
+                    Changes.Add(new JsonPatchOperation()
+                    {
+                        Operation = Operation.Remove,
+                        Path = "/fields/" + field,
+                        Value = null
+                    });
+                }
+            }
+            else
+            {
                 if (op != null)
                 {
                     op.Value = TranslateValue(value);
@@ -387,19 +418,18 @@ namespace aggregator.Engine
                         Value = TranslateValue(value)
                     });
                 }
-            }
-            else
-            {
-                _item.Fields.Add(field, value);
-                Changes.Add(new JsonPatchOperation()
-                {
-                    Operation = Operation.Add,
-                    Path = "/fields/" + field,
-                    Value = TranslateValue(value)
-                });
-            }
+            }//if null value
+        }
 
-            IsDirty = true;
+        void SetFieldValueFirstTime(string field, object value)
+        {
+            _item.Fields.Add(field, value);
+            Changes.Add(new JsonPatchOperation()
+            {
+                Operation = value == null ? Operation.Remove : Operation.Add,
+                Path = "/fields/" + field,
+                Value = TranslateValue(value)
+            });
         }
 
         private static object TranslateValue(object value)

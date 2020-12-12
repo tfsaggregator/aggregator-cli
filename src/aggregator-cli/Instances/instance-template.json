@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "functionAppName": {
@@ -84,11 +84,14 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[parameters('storageAccountName')]",
-      "apiVersion": "2016-12-01",
+      "apiVersion": "2019-06-01",
       "location": "[parameters('webLocation')]",
       "kind": "Storage",
       "sku": {
         "name": "[parameters('storageAccountType')]"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": true
       },
       "tags": {
         "aggregatorVersion": "[parameters('aggregatorVersion')]"
@@ -111,7 +114,7 @@
     },
     {
       "type": "Microsoft.Web/serverfarms",
-      "apiVersion": "2016-09-01",
+      "apiVersion": "2019-08-01",
       "name": "[parameters('hostingPlanName')]",
       "location": "[parameters('webLocation')]",
       "properties": {
@@ -125,7 +128,7 @@
       }
     },
     {
-      "apiVersion": "2015-08-01",
+      "apiVersion": "2019-08-01",
       "type": "Microsoft.Web/sites",
       "name": "[parameters('functionAppName')]",
       "location": "[parameters('webLocation')]",
@@ -195,7 +198,8 @@
               "value": "Files"
             }
           ]
-        }
+        },
+        "httpsOnly": true
       }
     }
   ]

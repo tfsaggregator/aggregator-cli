@@ -32,6 +32,7 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
+            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             bool ok = DevOpsEvents.IsValidEvent(Event) || Event == "*";
             if (!ok)
             {

@@ -67,6 +67,7 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon() // need the token, so we can save it in the app settings
                 .BuildAsync(cancellationToken);
+            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var instance = context.Naming.GetInstanceCreateNames(Name, ResourceGroup);
             bool ok = await instances.AddAsync(instance, Location, RequiredVersion, SourceUrl, tuning, cancellationToken);

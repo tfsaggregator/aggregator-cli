@@ -8,3 +8,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Critical Code Smell", "S3966:Objects should not be disposed more than once", Justification = "We dispose only BCL objects and we trust how they implemented Dispose()")]
 [assembly: SuppressMessage("Info Code Smell", "S1135:Track uses of \"TODO\" tags", Justification = "Leave markers")]
 [assembly: SuppressMessage("Major Code Smell", "S125:Sections of code should not be commented out", Justification = "THey are TODOs")]
+[assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "Do not warn")]

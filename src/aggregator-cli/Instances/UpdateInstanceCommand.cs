@@ -27,6 +27,7 @@ namespace aggregator.cli.Instances
             var context = await Context
                                 .WithAzureLogon()
                                 .BuildAsync(cancellationToken);
+            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
 
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var instance = context.Naming.Instance(Instance, ResourceGroup);

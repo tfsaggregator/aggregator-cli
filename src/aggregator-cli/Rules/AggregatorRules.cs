@@ -500,7 +500,7 @@ namespace aggregator.cli
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                client.DefaultRequestHeaders.Add("x-functions-key", ruleKey);
+                client.DefaultRequestHeaders.Add(MagicConstants.AzureFunctionKeyHeaderName, ruleKey);
                 var content = new StringContent(body, Encoding.UTF8, "application/json");
 
                 using (var response = await client.PostAsync(ruleUrl, content, cancellationToken))
