@@ -155,6 +155,8 @@ namespace aggregator.Engine
 
             foreach (var workItem in changedWorkItems)
             {
+                // emit JsonPatchOperation for this field even if the value is unchanged
+                workItem.ChangedBy = null;
                 workItem.ChangedBy = _triggerIdentity;
             }
         }
