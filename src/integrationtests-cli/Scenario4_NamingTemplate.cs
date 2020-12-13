@@ -108,7 +108,7 @@ namespace integrationtests.cli
         void CreateWorkItemAndCheckTrigger(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;
-            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --namingTemplate {TemplateFile} --resourceGroup {ResourceGroupName} --instance {instance} --project \"{TestLogonData.ProjectName}\" ");
+            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --namingTemplate {TemplateFile} --resourceGroup {ResourceGroupName} --instance {instance} --project \"{TestLogonData.ProjectName}\" --rule {rule} ");
             Assert.Equal(0, rc);
             // Sample output from rule:
             //  Returning 'Hello Task #118 from Rule 5!' from 'test5'

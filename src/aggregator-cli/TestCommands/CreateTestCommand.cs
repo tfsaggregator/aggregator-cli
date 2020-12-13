@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 
@@ -19,8 +20,10 @@ namespace aggregator.cli
         [Option('t', "title", Required = false, Default = "Aggregator CLI Test Task", HelpText = "Title for new Work Item.")]
         public string Title { get; set; }
 
-        [Option('l', "lastLinePattern", Required = false, Default = @"Executed \'Functions\.", HelpText = "RegEx Pattern identifying last line of logs.")]
-        public string LastLinePattern { get; set; }
+        //[Option('l', "lastLinePattern", Required = false, Default = @"Executed \'Functions\.", HelpText = "RegEx Pattern identifying last line of logs.")]
+        //public string LastLinePattern { get; set; }
+        [Option('r', "rule", Required = true, HelpText = "Aggregator rule name.")]
+        public string RuleName { get; set; }
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
@@ -32,9 +35,13 @@ namespace aggregator.cli
             var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
             var boards = new Boards(context.Devops, context.Logger);
 
-            var streamTask = instances.StreamLogsAsync(instance, lastLinePattern: this.LastLinePattern, cancellationToken: cancellationToken);
             int id = await boards.CreateWorkItemAsync(this.Project, this.Title, cancellationToken);
-            streamTask.Wait(cancellationToken);
+
+            // wait for the Event to be processed in AzDO, sent via WebHooks, and the Function to run
+            Thread.Sleep(new TimeSpan(0, 2, 0));
+
+            await instances.ReadLogAsync(instance, this.RuleName, -1, cancellationToken: cancellationToken);
+
             return id > 0 ? 0 : 1;
         }
     }

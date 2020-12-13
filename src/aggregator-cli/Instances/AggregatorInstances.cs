@@ -306,6 +306,19 @@ namespace aggregator.cli
             return true;
         }
 
+        internal async Task<string> ReadLogAsync(InstanceName instance, string functionName, int logIndex, CancellationToken cancellationToken)
+        {
+            var kudu = GetKudu(instance);
+            logger.WriteVerbose($"Connecting to {instance.PlainName}...");
+
+            // Main takes care of resetting color
+            Console.ForegroundColor = ConsoleColor.Green;
+
+            string logData = await kudu.ReadApplicationLogAsync(functionName, logIndex, cancellationToken);
+            Console.Write(logData);
+            return logData;
+        }
+
         internal async Task<bool> UpdateAsync(InstanceName instance, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
             // update runtime package

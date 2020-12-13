@@ -30,6 +30,7 @@ Build, Test, Documentation
 ========================
 - Terraform and PowerShell scripts to setup a dev VM.
 - Use latest GitVersion.
+- Drop log streaming in favour of reading the application log file: integration tests should become more reliable.
 
 
 File Hashes

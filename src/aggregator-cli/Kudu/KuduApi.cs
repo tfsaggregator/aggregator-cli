@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,6 +87,48 @@ namespace aggregator.cli
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
             request.Headers.Authorization = await GetAuthenticationHeader(cancellationToken);
             return request;
+        }
+
+        public class ListingEntry
+        {
+            public string name { get; set; }
+            public string href { get; set; }
+        }
+
+        internal async Task<string> ReadApplicationLogAsync(string functionName, int logIndex, CancellationToken cancellationToken)
+        {
+            const string FunctionLogPath = "api/vfs/LogFiles/Application/Functions/Function";
+
+            logger.WriteVerbose($"Listing application logs for {functionName}");
+            using (var client = new HttpClient())
+            {
+                ListingEntry[] listingResult = null;
+
+                using (var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken))
+                {
+                    var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
+                    var listingStream = await listingResponse.Content.ReadAsStreamAsync();
+                    if (listingResponse.IsSuccessStatusCode)
+                    {
+                        listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
+                    }
+                }
+
+                if (logIndex < 0) logIndex = listingResult.Length - 1;
+                string logName = listingResult[logIndex].name;
+
+                using (var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken))
+                {
+                    var logResponse = await client.SendAsync(logRequest, cancellationToken);
+                    string logData = await logResponse.Content.ReadAsStringAsync();
+                    if (!logResponse.IsSuccessStatusCode)
+                    {
+                        logger.WriteError($"Cannot list {functionName}'s {logName} log: {logResponse.ReasonPhrase}");
+                        return null;
+                    }
+                    return logData;
+                }
+            }
         }
 
         internal async Task StreamLogsAsync(TextWriter output, string lastLinePattern, CancellationToken cancellationToken)

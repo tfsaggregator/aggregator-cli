@@ -73,7 +73,7 @@ namespace integrationtests.cli
         [Fact, Order(40)]
         void CreateWorkItemAndCheckTrigger()
         {
-            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instanceName} --project \"{TestLogonData.ProjectName}\" ");
+            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instanceName} --project \"{TestLogonData.ProjectName}\"  --rule {ruleName} ");
             Assert.Equal(0, rc);
             // Sample output from rule:
             //  Returning 'Hello Task #118 from Rule 5!' from 'TestRule5'
