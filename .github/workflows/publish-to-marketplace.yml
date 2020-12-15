@@ -19,7 +19,7 @@ jobs:
       - name: Get Latest Release
         if: github.event_name == 'push'
         id: latest_version
-        uses: abatilo/release-info-action@v1.2.0
+        uses: abatilo/release-info-action@v1.3.0
         with:
           owner: tfsaggregator
           repo: aggregator-cli        
