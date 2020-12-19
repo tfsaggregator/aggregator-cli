@@ -52,6 +52,11 @@ jobs:
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '${{ env.DOTNETSDK_VERSION }}'
+    - name: Use Java 11 (required by SonarCloud)
+      uses: actions/setup-java@v1
+      with:
+        java-version: '11'
+        java-package: jre
     - name: Install dotnet tools
       run: dotnet tool restore
     - name: SonarCloud Setup
