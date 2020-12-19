@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "dotnet-sonarscanner": {
-      "version": "4.10.0",
+      "version": "5.0.4",
       "commands": [
         "dotnet-sonarscanner"
       ]
@@ -15,7 +15,7 @@
       ]
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "4.6.4",
+      "version": "4.8.2",
       "commands": [
         "reportgenerator"
       ]
