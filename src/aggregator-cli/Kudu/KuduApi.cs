@@ -42,7 +42,7 @@ namespace aggregator.cli
                 }
                 catch (Exception)
                 {
-                    logger.WriteError($"Instance {instance.PlainName} not found.");
+                    logger.WriteError($"Instance {instance.PlainName} not found (Kudu publish credentials).");
                     throw;
                 }
 
