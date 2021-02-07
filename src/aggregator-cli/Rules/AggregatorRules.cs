@@ -164,7 +164,7 @@ namespace aggregator.cli
             if (preprocessedRule.Impersonate)
             {
                 _logger.WriteInfo($"Configure {ruleName} to execute impersonated.");
-                ok &= await ConfigureAsync(instance, ruleName, impersonate: true, bypassrules: true, cancellationToken: cancellationToken);
+                ok &= await ConfigureAsync(instance, ruleName, impersonate: true, bypassrules: false, cancellationToken: cancellationToken);
                 if (ok)
                 {
                     _logger.WriteInfo($"Updated {ruleName} configuration successfully.");
