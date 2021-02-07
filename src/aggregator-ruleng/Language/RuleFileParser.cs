@@ -56,6 +56,7 @@ namespace aggregator.Engine.Language
 
         (IPreprocessedRule preprocessedRule, bool parseSuccess) Parse(string[] ruleCode)
         {
+            logger.WriteVerbose("start Parse");
 
             var directiveLineIndex = 0;
             var preprocessedRule = new PreprocessedRule()
@@ -63,10 +64,14 @@ namespace aggregator.Engine.Language
                 Language = RuleLanguage.Csharp
             };
 
+            logger.WriteVerbose("start Parse while");
+
             while (directiveLineIndex < ruleCode.Length
                 && ruleCode[directiveLineIndex].Length > 0
                 && ruleCode[directiveLineIndex][0] == '.')
             {
+                logger.WriteVerbose("inside Parse while");
+
                 string directive = ruleCode[directiveLineIndex][1..];
                 // stop at first '=' or ' '
                 int endVerb = directive.IndexOfAny(new char[] { '=', ' ' });
@@ -90,6 +95,7 @@ namespace aggregator.Engine.Language
             preprocessedRule.RuleCode.AddRange(ruleCode.Skip(preprocessedRule.FirstCodeLine));
 
             var parseSuccessful = !parsingIssues;
+            logger.WriteVerbose("end Parse");
             return (preprocessedRule, parseSuccessful);
 
         }
@@ -123,7 +129,10 @@ namespace aggregator.Engine.Language
                 case "impersonate":
                     ParseImpersonateDirective(preprocessedRule, directive, arguments);
                     break;
-
+                case "bypassrules":
+                    logger.WriteVerbose("bypassrules");
+                    ParseBypassRulesDirective(preprocessedRule, directive, arguments);
+                    break;
                 case "check":
                     ParseCheckDirective(preprocessedRule, directive, arguments);
                     break;
@@ -214,6 +223,18 @@ namespace aggregator.Engine.Language
             }
         }
 
+        private void ParseBypassRulesDirective(PreprocessedRule preprocessedRule, string directive, string arguments)
+        {
+            if (string.IsNullOrWhiteSpace(arguments))
+            {
+                FailParsingWithMessage($"Invalid bypassrules directive {directive}");
+            }
+            else
+            {
+                preprocessedRule.BypassRules = string.Equals("true", arguments.TrimEnd(), StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         private void ParseCheckDirective(PreprocessedRule preprocessedRule, string directive, string arguments)
         {
             if (string.IsNullOrWhiteSpace(arguments))
@@ -278,6 +299,11 @@ namespace aggregator.Engine.Language
             if (preprocessedRule.Impersonate)
             {
                 content.Add($".impersonate=onBehalfOfInitiator");
+            }
+
+            if (preprocessedRule.BypassRules)
+            {
+                content.Add($".bypassrules=true");
             }
 
             content.AddRange(preprocessedRule.References.Select(reference => $".reference={reference}"));

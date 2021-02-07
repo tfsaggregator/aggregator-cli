@@ -13,5 +13,6 @@ namespace aggregator.Model
         public string RuleName { get; }
         public bool IsDisabled { get; set; }
         public bool Impersonate { get; set; }
+        public bool BypassRules { get; set; }
     }
 }
