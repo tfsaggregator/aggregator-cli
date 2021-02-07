@@ -56,22 +56,16 @@ namespace aggregator.Engine.Language
 
         (IPreprocessedRule preprocessedRule, bool parseSuccess) Parse(string[] ruleCode)
         {
-            logger.WriteVerbose("start Parse");
-
             var directiveLineIndex = 0;
             var preprocessedRule = new PreprocessedRule()
             {
                 Language = RuleLanguage.Csharp
             };
 
-            logger.WriteVerbose("start Parse while");
-
             while (directiveLineIndex < ruleCode.Length
                 && ruleCode[directiveLineIndex].Length > 0
                 && ruleCode[directiveLineIndex][0] == '.')
             {
-                logger.WriteVerbose("inside Parse while");
-
                 string directive = ruleCode[directiveLineIndex][1..];
                 // stop at first '=' or ' '
                 int endVerb = directive.IndexOfAny(new char[] { '=', ' ' });
@@ -95,7 +89,6 @@ namespace aggregator.Engine.Language
             preprocessedRule.RuleCode.AddRange(ruleCode.Skip(preprocessedRule.FirstCodeLine));
 
             var parseSuccessful = !parsingIssues;
-            logger.WriteVerbose("end Parse");
             return (preprocessedRule, parseSuccessful);
 
         }
@@ -130,7 +123,6 @@ namespace aggregator.Engine.Language
                     ParseImpersonateDirective(preprocessedRule, directive, arguments);
                     break;
                 case "bypassrules":
-                    logger.WriteVerbose("bypassrules");
                     ParseBypassRulesDirective(preprocessedRule, directive, arguments);
                     break;
                 case "check":
