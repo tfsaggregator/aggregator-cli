@@ -448,7 +448,6 @@ namespace aggregator.cli
                     {
                         ImpersonateExecution = impersonateExecution
                     };
-                    _logger.WriteVerbose("Test 1");
 
                     var engineLogger = new EngineWrapperLogger(_logger);
                     var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);
