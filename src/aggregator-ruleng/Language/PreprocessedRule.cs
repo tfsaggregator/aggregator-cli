@@ -8,6 +8,7 @@ namespace aggregator.Engine.Language
     {
         public PreprocessedRule()
         {
+            BypassRules = false;
             Impersonate = false;
             Settings = new RuleSettings();
             Language = RuleLanguage.Unknown;
@@ -19,6 +20,8 @@ namespace aggregator.Engine.Language
         }
 
         public bool Impersonate { get; set; }
+
+        public bool BypassRules { get; set; }
 
         public IRuleSettings Settings { get; private set; }
 

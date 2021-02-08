@@ -165,7 +165,7 @@ namespace unittests_ruleng
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = await sut.SaveChanges(SaveMode.Default, false, false, CancellationToken.None);
+            var save = await sut.SaveChanges(SaveMode.Default, false, false, false, CancellationToken.None);
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);
@@ -320,7 +320,7 @@ namespace unittests_ruleng
             var wrapper = sut.GetWorkItem(workItemId);
             wrapper.Title = "Replaced title";
 
-            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, default);
+            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, bypassrules: false, default);
 
             Assert.Equal(0, result.created);
             Assert.Equal(1, result.updated);
@@ -362,7 +362,7 @@ namespace unittests_ruleng
             var wrapper = sut.GetWorkItem(workItemId);
             wrapper.Title = "Replaced title";
 
-            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, default);
+            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, bypassrules: false, default);
 
             Assert.Equal(0, result.created);
             Assert.Equal(1, result.updated);
