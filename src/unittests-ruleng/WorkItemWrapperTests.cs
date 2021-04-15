@@ -122,6 +122,7 @@ namespace unittests_ruleng
                                              {
                                                  { "System.WorkItemType", "Task" },
                                                  { "System.Title", "The Child" },
+                                                 { CustomField, "Some value" },
                                              },
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
             };
@@ -166,6 +167,7 @@ namespace unittests_ruleng
                                              {
                                                  { "System.WorkItemType", "Task" },
                                                  { "System.Title", "The Child" },
+                                                 { CustomField, "Some value" },
                                              },
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
             };
@@ -246,18 +248,9 @@ namespace unittests_ruleng
             };
             var wrapper = new WorkItemWrapper(context, workItem);
 
+            Assert.False(wrapper.IsDirty);
             wrapper[CustomField] = null;
-
-            // first is the /test op
-            Assert.Equal(2, wrapper.Changes.Count);
-            var actual = wrapper.Changes[1];
-            var expected = new JsonPatchOperation
-            {
-                Operation = Operation.Remove,
-                Path = $"/fields/{CustomField}",
-                Value = null
-            };
-            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+            Assert.False(wrapper.IsDirty);
         }
 
         [Fact]
