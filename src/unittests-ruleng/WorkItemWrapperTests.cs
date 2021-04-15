@@ -397,8 +397,10 @@ namespace unittests_ruleng
             Assert.Equal("Replaced title", actual.Value);
         }
 
-        [Fact]
-        public void ChangingAPulledFieldTwiceHasASingleReplaceOperation()
+        [Theory]
+        [InlineData("Replaced Title")]
+        [InlineData(null)]
+        public void ChangingAPulledFieldTwiceHasASingleReplaceOperation(string firstValue)
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
@@ -418,7 +420,7 @@ namespace unittests_ruleng
             };
 
             var wrapper = new WorkItemWrapper(context, workItem);
-            wrapper.Title = "Replaced title";
+            wrapper.Title = firstValue;
             wrapper.Title = "Replaced title - again";
 
             Assert.Single(wrapper.Changes);
@@ -428,8 +430,10 @@ namespace unittests_ruleng
             Assert.Equal("Replaced title - again", actual.Value);
         }
 
-        [Fact]
-        public void ChangingANewFieldTwiceHasASingleAddOperation()
+        [Theory]
+        [InlineData("New Reason")]
+        [InlineData(null)]
+        public void ChangingANewFieldTwiceHasASingleAddOperation(string firstValue)
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
@@ -449,7 +453,7 @@ namespace unittests_ruleng
             };
 
             var wrapper = new WorkItemWrapper(context, workItem);
-            wrapper.Reason = "New reason";
+            wrapper.Reason = firstValue;
             wrapper.Reason = "New reason - again";
 
             Assert.Single(wrapper.Changes);
