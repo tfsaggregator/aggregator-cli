@@ -132,7 +132,6 @@ namespace aggregator.Engine
             workItem.RecycleStatus = toRecycleStatus;
 
             var updated = previousStatus != workItem.RecycleStatus;
-            workItem.IsDirty = updated || workItem.IsDirty;
             return updated;
         }
 

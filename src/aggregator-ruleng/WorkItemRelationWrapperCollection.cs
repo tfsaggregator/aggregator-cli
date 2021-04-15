@@ -49,8 +49,6 @@ namespace aggregator.Engine
                         : null
                 }
             });
-
-            _pivotWorkItem.IsDirty = true;
         }
 
         private bool RemoveRelation(WorkItemRelationWrapper item)
@@ -68,7 +66,6 @@ namespace aggregator.Engine
                     Path = "/relations/-",
                     Value = _original.IndexOf(item)
                 });
-                _pivotWorkItem.IsDirty = true;
                 return true;
             }
 

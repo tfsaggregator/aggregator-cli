@@ -345,7 +345,9 @@ namespace aggregator.Engine
 
         public bool IsNew => Id is TemporaryWorkItemId;
 
-        public bool IsDirty { get; internal set; }
+        public bool IsDirty =>
+            RecycleStatus != RecycleStatus.NoChange ||
+            Changes.Any(op => op.Operation != Operation.Test);
 
         internal RecycleStatus RecycleStatus { get; set; } = RecycleStatus.NoChange;
 
@@ -399,7 +401,6 @@ namespace aggregator.Engine
             if (newOp != null)
             {
                 Changes.Add(newOp);
-                IsDirty = true;
             }
         }
 
