@@ -357,7 +357,7 @@ namespace aggregator.Engine
             set => SetFieldValue(field, value);
         }
 
-        private void SetFieldValue(string field, object value)
+        private void SetFieldValue(string field, object value, bool force = false)
         {
             if (IsReadOnly)
             {
@@ -371,19 +371,19 @@ namespace aggregator.Engine
 
             JsonPatchOperation newOp = (originalValue, value) switch
             {
-                (null, null) => null,
+                (null, null) when force is false => null,
+                (_, null) => new JsonPatchOperation
+                {
+                    Operation = Operation.Remove,
+                    Path = path,
+                },
                 (null, { }) => new JsonPatchOperation
                 {
                     Operation = Operation.Add,
                     Path = path,
                     Value = TranslateValue(value),
                 },
-                ({ }, null) => new JsonPatchOperation
-                {
-                    Operation = Operation.Remove,
-                    Path = path,
-                },
-                ({ }, { }) => originalValue.Equals(value)
+                ({ }, { }) => !force && originalValue.Equals(value)
                     ? null
                     : new JsonPatchOperation
                     {
@@ -475,6 +475,11 @@ namespace aggregator.Engine
                     patch.url = newUrl.ToString();
                 }
             }
+        }
+
+        internal void ForceSetFieldValue(string field, object value)
+        {
+            SetFieldValue(field, value, force: true);
         }
     }
 

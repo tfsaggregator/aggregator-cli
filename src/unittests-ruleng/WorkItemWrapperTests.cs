@@ -254,6 +254,37 @@ namespace unittests_ruleng
         }
 
         [Fact]
+        public void FieldHasNoValueAndIsNulledByForce()
+        {
+            const string CustomField = "My.Custom";
+            int workItemId = 42;
+            var workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Task" },
+                    { "System.Title", "The Child" },
+                },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
+            };
+            var wrapper = new WorkItemWrapper(context, workItem);
+
+            wrapper.ForceSetFieldValue(CustomField, null);
+
+            // first is the /test op
+            Assert.Equal(2, wrapper.Changes.Count);
+            var actual = wrapper.Changes[1];
+            var expected = new JsonPatchOperation
+            {
+                Operation = Operation.Remove,
+                Path = $"/fields/{CustomField}",
+                Value = null
+            };
+            Assert.True(expected.Operation == actual.Operation && expected.Path == actual.Path && expected.Value?.ToString() == actual.Value?.ToString() && expected.From == actual.From);
+        }
+
+        [Fact]
         public void FieldHasValueAndIsNulled()
         {
             const string CustomField = "My.Custom";
@@ -323,6 +354,32 @@ namespace unittests_ruleng
 
             wrapper[testKey] = testValue;
             Assert.False(wrapper.IsDirty);
+        }
+
+        [Fact]
+        public void AssignSameValueByForceShouldResultInChange()
+        {
+            WorkItem workItem = new WorkItem
+            {
+                Id = 11,
+                Fields = new Dictionary<string, object>
+                                             {
+                                                 { "System.WorkItemType", "Bug" },
+                                                 { "System.Title", "Hello" },
+                                             },
+                Url = $"{clientsContext.WorkItemsBaseUrl}/11"
+            };
+
+            var wrapper = new WorkItemWrapper(context, workItem);
+
+            wrapper.ForceSetFieldValue("System.Title", "Hello");
+            
+            // first is the /test op
+            Assert.Equal(2, wrapper.Changes.Count);
+            var actual = wrapper.Changes[1];
+            Assert.Equal(Operation.Replace, actual.Operation);
+            Assert.Equal("/fields/System.Title", actual.Path);
+            Assert.Equal("Hello", actual.Value);
         }
 
 
