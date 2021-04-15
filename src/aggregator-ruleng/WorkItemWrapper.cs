@@ -12,6 +12,7 @@ namespace aggregator.Engine
     {
         private readonly EngineContext _context;
         private readonly WorkItem _item;
+        private Dictionary<string, object> _originalFieldValues;
 
         internal WorkItemWrapper(EngineContext context, WorkItem item)
         {
@@ -363,73 +364,43 @@ namespace aggregator.Engine
                 throw new InvalidOperationException("Work item is read-only.");
             }
 
-            if (_item.Fields.ContainsKey(field))
-            {
-                if (_item.Fields[field]?.Equals(value) ?? false)
-                {
-                    // if new value does not differ from existing value, just ignore change
-                    return;
-                }
+            string path = "/fields/" + field;
 
-                SetExistingFieldValue(field, value);
-            }
-            else
-            {
-                SetFieldValueFirstTime(field, value);
-            }
+            _originalFieldValues ??= _item.Fields.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            _originalFieldValues.TryGetValue(field, out var originalValue);
 
-            IsDirty = true;
-        }
-
-        void SetExistingFieldValue(string field, object value)
-        {
-            _item.Fields[field] = value;
-            // do we have a previous op for this field?
-            var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
-            if (value == null)
+            JsonPatchOperation newOp = (originalValue, value) switch
             {
-                if (op != null)
+                (null, null) => null,
+                (null, { }) => new JsonPatchOperation
                 {
-                    op.Operation = Operation.Remove;
-                    op.Value = null;
-                }
-                else
+                    Operation = Operation.Add,
+                    Path = path,
+                    Value = TranslateValue(value),
+                },
+                ({ }, null) => new JsonPatchOperation
                 {
-                    Changes.Add(new JsonPatchOperation()
-                    {
-                        Operation = Operation.Remove,
-                        Path = "/fields/" + field,
-                        Value = null
-                    });
-                }
-            }
-            else
-            {
-                if (op != null)
-                {
-                    op.Value = TranslateValue(value);
-                }
-                else
-                {
-                    Changes.Add(new JsonPatchOperation()
+                    Operation = Operation.Remove,
+                    Path = path,
+                },
+                ({ }, { }) => originalValue.Equals(value)
+                    ? null
+                    : new JsonPatchOperation
                     {
                         Operation = Operation.Replace,
-                        Path = "/fields/" + field,
-                        Value = TranslateValue(value)
-                    });
-                }
-            }//if null value
-        }
+                        Path = path,
+                        Value = TranslateValue(value),
+                    }
+            };
 
-        void SetFieldValueFirstTime(string field, object value)
-        {
-            _item.Fields.Add(field, value);
-            Changes.Add(new JsonPatchOperation()
+            _item.Fields[field] = value;
+
+            Changes.RemoveAll(op => op.Path == path);
+            if (newOp != null)
             {
-                Operation = value == null ? Operation.Remove : Operation.Add,
-                Path = "/fields/" + field,
-                Value = TranslateValue(value)
-            });
+                Changes.Add(newOp);
+                IsDirty = true;
+            }
         }
 
         private static object TranslateValue(object value)
