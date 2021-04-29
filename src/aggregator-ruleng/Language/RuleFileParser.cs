@@ -280,6 +280,11 @@ namespace aggregator.Engine.Language
                 content.Add($".impersonate=onBehalfOfInitiator");
             }
 
+            if (!preprocessedRule.Settings.EnableRevisionCheck)
+            {
+                content.Add($".check revision false");
+            }
+
             content.AddRange(preprocessedRule.References.Select(reference => $".reference={reference}"));
             content.AddRange(preprocessedRule.Imports.Select(import => $".import={import}"));
             content.AddRange(preprocessedRule.Events.Select(evnt => $".event={evnt}"));
