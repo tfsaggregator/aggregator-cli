@@ -3,34 +3,35 @@ This release fixes a number of issues and introduce an additional CLI command.
 
 CLI Commands and Options
 ========================
-- Removed annoying messages about new version check.
-- Deprecation warning on missing `--resourceGroup` option.
-- Changed `IDataProtectionProvider.CreateProtector` purpose string to prevent clashes.
-- New `update.mappings` command.
+TODO 
+```
+I am seeing the following odd message on running any command, however:
+
+A new version (v1.0.1) of Aggregator CLI is available, please upgrade.
+aggregator-cli v1.0.1 (build: 1.0.1.0 Release) (c) Copyright © TFS Aggregator Team
+
+As you can see, the CLI identifies itself as 1.0.1, but still says I should upgrade to 1.0.1.
+```
 
 
 Docker and Azure Function Hosting
 ========================
-- Retry after Http 429 using Polly, address #71.
-- Harden Azure resources (see #225).
+No changes.
 
 
 Rule Language
 ========================
-No changes.
+- Added support for `.bypassrules` directive (#83, #228).
 
 
 Rule Interpreter Engine
 ========================
-- Address #185 by removing field when set to null value.
-- Impersonation does not work when a rule updates the same work item bug (#206).
+TODO - Updating a work item is failing when using impersonation (#229).
 
 
 Build, Test, Documentation
 ========================
-- Terraform and PowerShell scripts to setup a dev VM.
-- Use latest GitVersion.
-- Drop log streaming in favour of reading the application log file: integration tests should become more reliable.
+- SonarCloud now requires Java 11.
 
 
 File Hashes
