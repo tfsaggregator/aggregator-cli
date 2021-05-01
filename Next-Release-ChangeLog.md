@@ -26,7 +26,8 @@ Rule Language
 
 Rule Interpreter Engine
 ========================
-TODO - Updating a work item is failing when using impersonation (#229).
+- Fixes #229 (Updating a work item field with impersonation enabled fails with the message: _Remove requires Value to be null_)
+- Fixes #234 (_Object reference not set_ when removing a work item link).
 
 
 Build, Test, Documentation

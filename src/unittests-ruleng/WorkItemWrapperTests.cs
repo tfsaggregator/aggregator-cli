@@ -122,6 +122,7 @@ namespace unittests_ruleng
                                              {
                                                  { "System.WorkItemType", "Task" },
                                                  { "System.Title", "The Child" },
+                                                 { CustomField, "Some value" },
                                              },
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
             };
@@ -166,6 +167,7 @@ namespace unittests_ruleng
                                              {
                                                  { "System.WorkItemType", "Task" },
                                                  { "System.Title", "The Child" },
+                                                 { CustomField, "Some value" },
                                              },
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{destWorkItemId}"
             };

@@ -12,11 +12,13 @@ namespace aggregator.Engine
     {
         private readonly EngineContext _context;
         private readonly WorkItem _item;
+        private readonly IDictionary<string,object> _originalValues;
 
         internal WorkItemWrapper(EngineContext context, WorkItem item)
         {
             _context = context;
             _item = item;
+            _originalValues = new Dictionary<string, object>(item.Fields);
             Relations = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             if (item.Id.HasValue)
@@ -49,6 +51,7 @@ namespace aggregator.Engine
         {
             _context = context;
             _item = item;
+            _originalValues = new Dictionary<string, object>(item.Fields);
             Relations = new WorkItemRelationWrapperCollection(this, _item.Relations);
 
             Id = new PermanentWorkItemId(item.Id.Value);
@@ -363,6 +366,15 @@ namespace aggregator.Engine
                 throw new InvalidOperationException("Work item is read-only.");
             }
 
+            if (_originalValues.TryGetValue(field, out object originalValue))
+            {
+                if (originalValue == value)
+                {
+                    ResetValueOfExistingField(field, value);
+                    IsDirty = false;
+                    return;
+                }
+            }
             if (_item.Fields.ContainsKey(field))
             {
                 if (_item.Fields[field]?.Equals(value) ?? false)
@@ -370,58 +382,52 @@ namespace aggregator.Engine
                     // if new value does not differ from existing value, just ignore change
                     return;
                 }
-
-                SetExistingFieldValue(field, value);
+                SetValueOfExistingField(field, value);
             }
             else
             {
-                SetFieldValueFirstTime(field, value);
+                SetValueOfNewField(field, value);
             }
 
             IsDirty = true;
         }
 
-        void SetExistingFieldValue(string field, object value)
+        private void ResetValueOfExistingField(string field, object value)
+        {
+            _item.Fields[field] = value;
+            Changes.RemoveAll(op => op.Path == "/fields/" + field);
+        }
+
+        void SetValueOfExistingField(string field, object value)
         {
             _item.Fields[field] = value;
             // do we have a previous op for this field?
             var op = Changes.FirstOrDefault(op => op.Path == "/fields/" + field);
-            if (value == null)
+            if (op == null)
             {
-                if (op != null)
+                Changes.Add(new JsonPatchOperation()
+                {
+                    Operation = value == null ? Operation.Remove : Operation.Replace,
+                    Path = "/fields/" + field,
+                    Value = TranslateValue(value)
+                });
+            }
+            else
+            {
+                if (value == null)
                 {
                     op.Operation = Operation.Remove;
                     op.Value = null;
                 }
                 else
                 {
-                    Changes.Add(new JsonPatchOperation()
-                    {
-                        Operation = Operation.Remove,
-                        Path = "/fields/" + field,
-                        Value = null
-                    });
-                }
-            }
-            else
-            {
-                if (op != null)
-                {
+                    op.Operation = _originalValues.ContainsKey(field) ? Operation.Replace : Operation.Add;
                     op.Value = TranslateValue(value);
                 }
-                else
-                {
-                    Changes.Add(new JsonPatchOperation()
-                    {
-                        Operation = Operation.Replace,
-                        Path = "/fields/" + field,
-                        Value = TranslateValue(value)
-                    });
-                }
-            }//if null value
+            }
         }
 
-        void SetFieldValueFirstTime(string field, object value)
+        void SetValueOfNewField(string field, object value)
         {
             _item.Fields.Add(field, value);
             Changes.Add(new JsonPatchOperation()
