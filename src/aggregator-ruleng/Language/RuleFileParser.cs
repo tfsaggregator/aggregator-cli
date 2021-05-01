@@ -292,7 +292,10 @@ namespace aggregator.Engine.Language
             {
                 content.Add($".impersonate=onBehalfOfInitiator");
             }
-
+            if (!preprocessedRule.Settings.EnableRevisionCheck)
+            {
+                content.Add($".check revision false");
+            }
             if (preprocessedRule.BypassRules)
             {
                 content.Add($".bypassrules=true");

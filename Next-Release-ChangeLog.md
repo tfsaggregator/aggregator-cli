@@ -22,11 +22,12 @@ No changes.
 Rule Language
 ========================
 - Added support for `.bypassrules` directive (#83, #228).
+- Fixes #231 (Directive check revision false missing after `update.rule`).
 
 
 Rule Interpreter Engine
 ========================
-- Fixes #229 (Updating a work item field with impersonation enabled fails with the message: _Remove requires Value to be null_)
+- Fixes #229 (Updating a work item field with impersonation enabled fails with the message: _Remove requires Value to be null_).
 - Fixes #234 (_Object reference not set_ when removing a work item link).
 
 
