@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.Services.Common;
 using Xunit.Abstractions;
 
@@ -23,7 +24,7 @@ namespace integrationtests.cli
             _output = output;
         }
 
-        protected (int rc, string output) RunAggregatorCommand(string commandLine, IEnumerable<(string, string)> env = default)
+        protected async Task<(int rc, string output)> RunAggregatorCommand(string commandLine, IEnumerable<(string, string)> env = default)
         {
             // see https://stackoverflow.com/a/14655145/100864
             var args = Regex.Matches(commandLine, @"[\""](?<a>.+?)[\""]|(?<a>[^ ]+)")
@@ -46,7 +47,7 @@ namespace integrationtests.cli
                 });
             }
 
-            var rc = aggregator.cli.Program.Main(args);
+            var rc = await aggregator.cli.Program.Main(args);
 
             Console.SetOut(saveOut);
             Console.SetError(saveErr);
