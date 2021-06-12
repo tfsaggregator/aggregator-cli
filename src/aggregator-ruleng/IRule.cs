@@ -18,6 +18,13 @@ namespace aggregator.Engine
         /// <remarks>Setter public for CLI</remarks>
         bool ImpersonateExecution { get; set; }
 
+        /// <summary>
+        /// WorkItem creation/updates will bypass rules
+        /// Assumes PAT or Account Permission is high enough
+        /// </summary>
+        /// <remarks>Setter public for CLI</remarks>
+        bool BypassRules { get; set; }
+
         ///<summary>
         /// Configuration data picked by the directive parser that may influence a rule behaviour.
         ///</summary>

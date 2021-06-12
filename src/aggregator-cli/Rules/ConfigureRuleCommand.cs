@@ -44,7 +44,7 @@ namespace aggregator.cli
             var disable = GetDisableStatus(Disable, Enable);
             var impersonate = GetEnableStatus(DisableImpersonateExecution, EnableImpersonateExecution);
 
-            var ok = await rules.ConfigureAsync(instance, Name, disable, impersonate, cancellationToken);
+            var ok = await rules.ConfigureAsync(instance, Name, disable, impersonate, false, cancellationToken);
             return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
 

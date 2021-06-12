@@ -5,13 +5,13 @@ using CommandLine;
 namespace aggregator.cli
 {
 
-    [Verb("update.mappings", HelpText = "Updates existing mappings from old to new Aggrergator Instance.")]
+    [Verb("update.mappings", HelpText = "Updates existing mappings from old to new Aggregator Instance.")]
     class UpdateMappingsCommand : CommandBase
     {
         [Option('s', "sourceInstance", Required = true, HelpText = "Source Aggregator instance name.")]
         public string SourceInstance { get; set; }
 
-        [Option('d', "destInstance", Required = true, HelpText = "Destionation Aggregator instance name.")]
+        [Option('d', "destInstance", Required = true, HelpText = "Destination Aggregator instance name.")]
         public string DestInstance { get; set; }
 
         [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]

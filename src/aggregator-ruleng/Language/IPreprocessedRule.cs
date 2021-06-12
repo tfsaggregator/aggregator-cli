@@ -5,6 +5,7 @@ namespace aggregator.Engine.Language
 {
     public interface IPreprocessedRule
     {
+        bool BypassRules { get; set; }
         bool Impersonate { get; set; }
         IRuleSettings Settings { get; }
         RuleLanguage Language { get; }

@@ -3,34 +3,29 @@ This release fixes a number of issues and introduce an additional CLI command.
 
 CLI Commands and Options
 ========================
-- Removed annoying messages about new version check.
-- Deprecation warning on missing `--resourceGroup` option.
-- Changed `IDataProtectionProvider.CreateProtector` purpose string to prevent clashes.
-- New `update.mappings` command.
+- Fixes spurious upgrade message noted in #225.
 
 
 Docker and Azure Function Hosting
 ========================
-- Retry after Http 429 using Polly, address #71.
-- Harden Azure resources (see #225).
+No changes.
 
 
 Rule Language
 ========================
-No changes.
+- Added support for `.bypassrules` directive (#83, #228).
+- Fixes #231 (Directive check revision false missing after `update.rule`).
 
 
 Rule Interpreter Engine
 ========================
-- Address #185 by removing field when set to null value.
-- Impersonation does not work when a rule updates the same work item bug (#206).
+- Fixes #229 (Updating a work item field with impersonation enabled fails with the message: _Remove requires Value to be null_).
+- Fixes #234 (_Object reference not set_ when removing a work item link).
 
 
 Build, Test, Documentation
 ========================
-- Terraform and PowerShell scripts to setup a dev VM.
-- Use latest GitVersion.
-- Drop log streaming in favour of reading the application log file: integration tests should become more reliable.
+- SonarCloud now requires Java 11.
 
 
 File Hashes

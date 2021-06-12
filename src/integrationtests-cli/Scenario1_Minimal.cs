@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Threading.Tasks;
+using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
 
@@ -27,13 +28,13 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(1)]
-        void Logon()
+        async Task Logon()
         {
-            (int rc, string output) = RunAggregatorCommand(
+            (int rc, string output) = await RunAggregatorCommand(
                 $"logon.azure --subscription {TestLogonData.SubscriptionId} --client {TestLogonData.ClientId} --password {TestLogonData.ClientSecret} --tenant {TestLogonData.TenantId}");
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
-            (int rc2, string output2) = RunAggregatorCommand(
+            (int rc2, string output2) = await RunAggregatorCommand(
                 $"logon.ado --url {TestLogonData.DevOpsUrl} --mode PAT --token {TestLogonData.PAT}");
             Assert.Equal(0, rc2);
             Assert.DoesNotContain("] Failed!", output2);
@@ -41,9 +42,9 @@ namespace integrationtests.cli
 
 
         [Fact, Order(10)]
-        void InstallInstances()
+        async Task InstallInstances()
         {
-            (int rc, string output) = RunAggregatorCommand($"install.instance --verbose --name {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
+            (int rc, string output) = await RunAggregatorCommand($"install.instance --verbose --name {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
                 + (string.IsNullOrWhiteSpace(TestLogonData.RuntimeSourceUrl)
                 ? string.Empty
                 : $" --sourceUrl {TestLogonData.RuntimeSourceUrl}"));
@@ -53,27 +54,27 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(20)]
-        void AddRules()
+        async Task AddRules()
         {
-            (int rc, string output) = RunAggregatorCommand($"add.rule --verbose --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --name {ruleName} --file {ruleFile}");
+            (int rc, string output) = await RunAggregatorCommand($"add.rule --verbose --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --name {ruleName} --file {ruleFile}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
         }
 
         [Fact, Order(30)]
-        void MapRules()
+        async Task MapRules()
         {
-            (int rc, string output) = RunAggregatorCommand($"map.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --rule {ruleName}");
+            (int rc, string output) = await RunAggregatorCommand($"map.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --rule {ruleName}");
 
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
         }
 
         [Fact, Order(40)]
-        void CreateWorkItemAndCheckTrigger()
+        async Task CreateWorkItemAndCheckTrigger()
         {
-            (int rc, string output) = RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instanceName} --project \"{TestLogonData.ProjectName}\"  --rule {ruleName} ");
+            (int rc, string output) = await RunAggregatorCommand($"test.create --verbose --resourceGroup {TestLogonData.ResourceGroup} --instance {instanceName} --project \"{TestLogonData.ProjectName}\"  --rule {ruleName} ");
             Assert.Equal(0, rc);
             // Sample output from rule:
             //  Returning 'Hello Task #118 from Rule 5!' from 'TestRule5'
@@ -83,10 +84,10 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(99)]
-        void FinalCleanUp()
+        async Task FinalCleanUp()
         {
-            (_, _) = RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup}");
-            (int rc, _) = RunAggregatorCommand($"test.cleanup --verbose --resourceGroup {TestLogonData.ResourceGroup} ");
+            (_, _) = await RunAggregatorCommand($"unmap.rule --verbose --project \"{TestLogonData.ProjectName}\" --event * --rule * --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup}");
+            (int rc, _) = await RunAggregatorCommand($"test.cleanup --verbose --resourceGroup {TestLogonData.ResourceGroup} ");
             Assert.Equal(0, rc);
         }
     }

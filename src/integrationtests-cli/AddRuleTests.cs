@@ -1,5 +1,5 @@
-using System;
-
+﻿using System;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using XUnitPriorityOrderer;
@@ -16,26 +16,26 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(1)]
-        void Logon()
+        async Task Logon()
         {
-            (int rc, string output) = RunAggregatorCommand(
+            (int rc, string output) = await RunAggregatorCommand(
                 $"logon.azure --subscription {TestLogonData.SubscriptionId} --client {TestLogonData.ClientId} --password {TestLogonData.ClientSecret} --tenant {TestLogonData.TenantId}");
             Assert.Equal(0, rc);
             Assert.DoesNotContain("] Failed!", output);
-            (int rc2, string output2) = RunAggregatorCommand(
+            (int rc2, string output2) = await RunAggregatorCommand(
                 $"logon.ado --url {TestLogonData.DevOpsUrl} --mode PAT --token {TestLogonData.PAT}");
             Assert.Equal(0, rc2);
             Assert.DoesNotContain("] Failed!", output2);
         }
 
         [Fact, Order(2)]
-        public void GivenAnInvalidRuleFile_WhenAddingThisRule_ThenTheProcessing_ShouldBeAborted()
+        public async Task GivenAnInvalidRuleFile_WhenAddingThisRule_ThenTheProcessing_ShouldBeAborted()
         {
             //Given
             const string invalidRuleFileName = "invalid_rule1.rule";
 
             //When
-            (int rc, string output) = RunAggregatorCommand(FormattableString.Invariant($"add.rule --verbose --instance foobar --resourceGroup foobar --name foobar --file {invalidRuleFileName}"));
+            (int rc, string output) = await RunAggregatorCommand(FormattableString.Invariant($"add.rule --verbose --instance foobar --resourceGroup foobar --name foobar --file {invalidRuleFileName}"));
 
             //Then
             Assert.Equal(1, rc);

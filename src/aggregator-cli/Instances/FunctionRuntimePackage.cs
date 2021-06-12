@@ -57,8 +57,8 @@ namespace aggregator.cli
             logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub.");
 
             SemVersion.TryParse(gitHubVersion.Name.Substring(1), out var latest);
-            var current = new SemVersion(
-                Assembly.GetEntryAssembly().GetName().Version);
+            var asmVer = Assembly.GetEntryAssembly().GetName().Version;
+            var current = new SemVersion(asmVer.Major, asmVer.Minor, asmVer.Build);
 
             bool upgrade = latest.CompareTo(current) > 0;
             return upgrade

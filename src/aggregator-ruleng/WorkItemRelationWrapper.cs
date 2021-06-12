@@ -49,7 +49,7 @@ namespace aggregator.Engine
 
         //TODO: quick filter for work item relations only
         internal static bool IsWorkItemRelation(WorkItemRelation relation) => IsWorkItemRelation(relation.Url);
-        internal static bool IsWorkItemRelation(RelationPatch relationPatch) => IsWorkItemRelation(relationPatch.url);
+        internal static bool IsWorkItemRelation(RelationPatch relationPatch) => IsWorkItemRelation(relationPatch?.url);
         private static bool IsWorkItemRelation(string url) => url?.Contains("/_apis/wit/workItems/", StringComparison.OrdinalIgnoreCase) ?? false;
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using aggregator.cli.Instances;
 using CommandLine;
 using CommandLine.Text;
@@ -35,7 +36,7 @@ namespace aggregator.cli
     */
     public static class Program
     {
-        public static int Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             var mainTimer = new Stopwatch();
             mainTimer.Start();
@@ -63,7 +64,7 @@ namespace aggregator.cli
                 {
                     var tempLogger = new ConsoleLogger(false);
                     var verChecker = new FunctionRuntimePackage(tempLogger);
-                    (bool upgrade, string newversion) = verChecker.IsCliUpgradable().Result;
+                    (bool upgrade, string newversion) = await verChecker.IsCliUpgradable();
                     if (upgrade)
                     {
                         // bug user
