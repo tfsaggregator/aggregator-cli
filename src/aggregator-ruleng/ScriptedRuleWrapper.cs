@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace aggregator.Engine
     /// </summary>
     public class ScriptedRuleWrapper : IRule
     {
+        private static readonly ConcurrentDictionary<string, Script<string>> _scriptCache = new();
+
         private Script<string> _roslynScript;
         private readonly IAggregatorLogger _logger;
         private readonly bool? _ruleFileParseSuccess;
@@ -76,21 +79,10 @@ namespace aggregator.Engine
             ImpersonateExecution = RuleDirectives.Impersonate;
             Settings = preprocessedRule.Settings;
 
-            var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(RuleDirectives.LoadAssemblyReferences()));
-            var imports = new HashSet<string>(DefaultImports().Concat(RuleDirectives.Imports));
-
-            var scriptOptions = ScriptOptions.Default
-                .WithEmitDebugInformation(true)
-                .WithReferences(references)
-                // Add namespaces
-                .WithImports(imports);
-
             if (RuleDirectives.IsCSharp())
             {
-                _roslynScript = CSharpScript.Create<string>(
-                    code: RuleDirectives.GetRuleCode(),
-                    options: scriptOptions,
-                    globalsType: typeof(RuleExecutionContext));
+                string ruleKey = string.Join("/n", RuleFileParser.Write(RuleDirectives));
+                _roslynScript = _scriptCache.GetOrAdd(ruleKey, CreateRoslynScript, RuleDirectives);
             }
             else
             {
@@ -124,6 +116,26 @@ namespace aggregator.Engine
             };
 
             return imports;
+        }
+
+        private static Script<string> CreateRoslynScript(string key, IPreprocessedRule rule)
+        {
+            var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(rule.LoadAssemblyReferences()));
+            var imports = new HashSet<string>(DefaultImports().Concat(rule.Imports));
+
+            var scriptOptions = ScriptOptions.Default
+                .WithEmitDebugInformation(true)
+                .WithReferences(references)
+                // Add namespaces
+                .WithImports(imports);
+
+            var script = CSharpScript.Create<string>(
+                code: rule.GetRuleCode(),
+                options: scriptOptions,
+                globalsType: typeof(RuleExecutionContext));
+            script.Compile();
+
+            return script;
         }
 
         /// <inheritdoc />
