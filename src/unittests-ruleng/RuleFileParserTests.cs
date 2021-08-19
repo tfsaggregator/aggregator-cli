@@ -157,16 +157,23 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
             Assert.False(parsingSuccess);
         }
 
-        [Fact]
-        public void RuleLanguageReadWrite_Succeeds()
-        {
-            string ruleCode = @".language=C#
+        [Theory]
+        [InlineData(@".language=C#
 .reference=System.Xml.XDocument
 .import=System.Diagnostics
 
 return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
-";
+")]
+        [InlineData(@".language=C#
+.check revision false
+.reference=System.Xml.XDocument
+.import=System.Diagnostics
 
+return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
+")]
+
+        public void RuleLanguageReadWrite_Succeeds(string ruleCode)
+        {
             var mincedCode = ruleCode.Mince();
             (IPreprocessedRule ppRule, _) = RuleFileParser.Read(mincedCode);
 

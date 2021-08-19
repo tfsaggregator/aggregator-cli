@@ -164,7 +164,7 @@ namespace aggregator.cli
             if (preprocessedRule.Impersonate)
             {
                 _logger.WriteInfo($"Configure {ruleName} to execute impersonated.");
-                ok &= await ConfigureAsync(instance, ruleName, impersonate: true, cancellationToken: cancellationToken);
+                ok &= await ConfigureAsync(instance, ruleName, impersonate: true, bypassrules: false, cancellationToken: cancellationToken);
                 if (ok)
                 {
                     _logger.WriteInfo($"Updated {ruleName} configuration successfully.");
@@ -339,7 +339,7 @@ namespace aggregator.cli
             return true;
         }
 
-        internal async Task<bool> ConfigureAsync(InstanceName instance, string name, bool? disable = null, bool? impersonate = null, CancellationToken cancellationToken = default)
+        internal async Task<bool> ConfigureAsync(InstanceName instance, string name, bool? disable = null, bool? impersonate = null, bool? bypassrules = null, CancellationToken cancellationToken = default)
         {
             var webFunctionApp = await GetWebApp(instance, cancellationToken);
             var configuration = await AggregatorConfiguration.ReadConfiguration(webFunctionApp);
@@ -353,6 +353,11 @@ namespace aggregator.cli
             if (impersonate.HasValue)
             {
                 ruleConfig.Impersonate = impersonate.Value;
+            }
+
+            if (bypassrules.HasValue)
+            {
+                ruleConfig.BypassRules = impersonate.Value;
             }
 
             ruleConfig.WriteConfiguration(webFunctionApp);

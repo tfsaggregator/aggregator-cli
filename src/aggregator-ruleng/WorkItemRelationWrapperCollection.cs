@@ -65,8 +65,7 @@ namespace aggregator.Engine
                 _pivotWorkItem.Changes.Add(new JsonPatchOperation()
                 {
                     Operation = Operation.Remove,
-                    Path = "/relations/-",
-                    Value = _original.IndexOf(item)
+                    Path = $"/relations/{_original.IndexOf(item)}"
                 });
                 _pivotWorkItem.IsDirty = true;
                 return true;

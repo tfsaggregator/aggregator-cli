@@ -162,7 +162,7 @@ namespace aggregator.Engine
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Sonar Code Smell", "S907:\"goto\" statement should not be used")]
-        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, CancellationToken cancellationToken)
+        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             if (impersonate)
             {
@@ -175,20 +175,20 @@ namespace aggregator.Engine
                     _context.Logger.WriteVerbose($"No save mode specified, assuming {SaveMode.TwoPhases}.");
                     goto case SaveMode.TwoPhases;
                 case SaveMode.Item:
-                    var resultItem = await SaveChanges_ByItem(commit, impersonate, cancellationToken);
+                    var resultItem = await SaveChanges_ByItem(commit, impersonate, bypassrules, cancellationToken);
                     return resultItem;
                 case SaveMode.Batch:
-                    var resultBatch = await SaveChanges_Batch(commit, impersonate, cancellationToken);
+                    var resultBatch = await SaveChanges_Batch(commit, impersonate, bypassrules, cancellationToken);
                     return resultBatch;
                 case SaveMode.TwoPhases:
-                    var resultTwoPhases = await SaveChanges_TwoPhases(commit, impersonate, cancellationToken);
+                    var resultTwoPhases = await SaveChanges_TwoPhases(commit, impersonate, bypassrules, cancellationToken);
                     return resultTwoPhases;
                 default:
                     throw new InvalidOperationException($"Unsupported save mode: {mode}.");
             }
         }
 
-        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, bool impersonate, CancellationToken cancellationToken)
+        private async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             int createdCounter = 0;
             int updatedCounter = 0;
@@ -203,7 +203,7 @@ namespace aggregator.Engine
                         item.Changes,
                         _context.ProjectName,
                         item.WorkItemType,
-                        bypassRules: impersonate,
+                        bypassRules: impersonate || bypassrules,
                         cancellationToken: cancellationToken
                     );
                 }
@@ -236,7 +236,7 @@ namespace aggregator.Engine
                     _ = await _clients.WitClient.UpdateWorkItemAsync(
                         item.Changes,
                         item.Id,
-                        bypassRules: impersonate,
+                        bypassRules: impersonate || bypassrules,
                         cancellationToken: cancellationToken
                     );
                 }
@@ -251,7 +251,7 @@ namespace aggregator.Engine
             return (createdCounter, updatedCounter);
         }
 
-        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit, bool impersonate, CancellationToken cancellationToken)
+        private async Task<(int created, int updated)> SaveChanges_Batch(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
@@ -280,7 +280,7 @@ namespace aggregator.Engine
 
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
-                                                                            bypassRules: impersonate,
+                                                                            bypassRules: impersonate || bypassrules,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }
@@ -309,7 +309,7 @@ namespace aggregator.Engine
 
         //TODO no error handling here? SaveChanges_Batch has at least the DryRun support and error handling
         //TODO Improve complex handling with ReplaceIdAndResetChanges and RemapIdReferences
-        private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit, bool impersonate, CancellationToken cancellationToken)
+        private async Task<(int created, int updated)> SaveChanges_TwoPhases(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1
@@ -337,7 +337,7 @@ namespace aggregator.Engine
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(_context.ProjectName,
                                                                             item.WorkItemType,
                                                                             document,
-                                                                            bypassRules: impersonate,
+                                                                            bypassRules: impersonate || bypassrules,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }
@@ -366,10 +366,11 @@ namespace aggregator.Engine
                     continue;
                 }
                 _context.Logger.WriteInfo($"Found a request to update workitem {item.Id} in {_context.ProjectName}");
+                _context.Logger.WriteVerbose(JsonConvert.SerializeObject(item.Changes));
 
                 var request = _clients.WitClient.CreateWorkItemBatchRequest(item.Id,
                                                                             item.Changes,
-                                                                            bypassRules: impersonate,
+                                                                            bypassRules: impersonate || bypassrules,
                                                                             suppressNotifications: false);
                 batchRequests.Add(request);
             }

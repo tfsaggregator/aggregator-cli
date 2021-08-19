@@ -33,6 +33,7 @@ namespace aggregator.Engine
         internal IPreprocessedRule RuleDirectives { get; private set; }
 
         public IRuleSettings Settings { get; private set; }
+        public bool BypassRules { get; set; }
 
         private ScriptedRuleWrapper(string ruleName, IAggregatorLogger logger)
         {
@@ -75,8 +76,11 @@ namespace aggregator.Engine
 
         private void Initialize(IPreprocessedRule preprocessedRule)
         {
+
             RuleDirectives = preprocessedRule;
             ImpersonateExecution = RuleDirectives.Impersonate;
+            BypassRules = RuleDirectives.BypassRules;
+
             Settings = preprocessedRule.Settings;
 
             if (RuleDirectives.IsCSharp())
