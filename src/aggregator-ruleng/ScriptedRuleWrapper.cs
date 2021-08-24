@@ -37,7 +37,7 @@ namespace aggregator.Engine
 
         private ScriptedRuleWrapper(string ruleName, IAggregatorLogger logger)
         {
-            _logger = logger;
+            _logger = logger ?? new NullLogger();
             Name = ruleName;
         }
 
@@ -46,7 +46,7 @@ namespace aggregator.Engine
         /// </summary>
         /// <param name="ruleName"></param>
         /// <param name="ruleCode"></param>
-        internal ScriptedRuleWrapper(string ruleName, string[] ruleCode) : this(ruleName, new NullLogger())
+        internal ScriptedRuleWrapper(string ruleName, string[] ruleCode, IAggregatorLogger logger = null) : this(ruleName, logger)
         {
             (IPreprocessedRule preprocessedRule, bool parseSuccess) = RuleFileParser.Read(ruleCode);
             _ruleFileParseSuccess = parseSuccess;
@@ -85,7 +85,11 @@ namespace aggregator.Engine
 
             if (RuleDirectives.IsCSharp())
             {
-                string ruleKey = string.Join("/n", RuleFileParser.Write(RuleDirectives));
+                string ruleKey = string.Join('\n', RuleFileParser.Write(RuleDirectives));
+#if DEBUG
+                bool cached = _scriptCache.ContainsKey(ruleKey);                
+                _logger.WriteVerbose(cached ? $"Rule {Name} found in cache": $"Rule {Name} was not in cache: compiling");
+#endif
                 _roslynScript = _scriptCache.GetOrAdd(ruleKey, CreateRoslynScript, RuleDirectives);
             }
             else

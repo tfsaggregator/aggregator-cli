@@ -6,11 +6,10 @@ namespace unittests_ruleng
     public class ScriptedRuleWrapperTests
     {
         [Fact]
-        public void GivenAnValidRule_WhenTheRuleIsVerified_ThenTheResult_ShouldBeSuccessfull()
+        public void GivenAValidRule_WhenTheRuleIsVerified_ThenTheResult_ShouldBeSuccessfull()
         {
             //Given
             var rule = new ScriptedRuleWrapper("dummy", new[] { "" });
-
 
             //When
             var (success, diagnostics) = rule.Verify();
@@ -26,7 +25,6 @@ namespace unittests_ruleng
             //Given
             var rule = new ScriptedRuleWrapper("dummy", new[] { "(" });
 
-
             //When
             var (success, diagnostics) = rule.Verify();
 
@@ -40,7 +38,6 @@ namespace unittests_ruleng
         {
             //Given
             var rule = new ScriptedRuleWrapper("dummy", new[] { ".invalid=directive" });
-
 
             //When
             var (success, diagnostics) = rule.Verify();
