@@ -383,6 +383,7 @@ namespace aggregator.cli
         public string Type { get; set; }
         public string Tag { get; set; }
         public IEnumerable<string> Fields { get; set; }
+        public bool OnlyLinks { get; set; }
     }
 
     internal static class EventFiltersExtension
@@ -411,6 +412,11 @@ namespace aggregator.cli
             {
                 // Filter events to include only work items with the specified field(s) changed
                 yield return new KeyValuePair<string, string>("changedFields", string.Join(',', filters.Fields));
+            }
+            if (filters.OnlyLinks)
+            {
+                // Filter events to include only work items with added or removed links
+                yield return new KeyValuePair<string, string>("linksChanged", "true");
             }
         }
 
