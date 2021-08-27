@@ -3,12 +3,13 @@ This release TODO.
 
 CLI Commands and Options
 ========================
-No changes.
+New `--filterOnlyLinks` option to `map.rule` command; coincide with the _Links are added or removed_ filter of the Azure DevOps subscription (#244).
 
 
 Docker and Azure Function Hosting
 ========================
-No changes.
+Fix an off-by-one error when getting unique name from the string (#243).
+Fix invalid cast exception when the `IdentityRef` could not be parsed (#243).
 
 
 Rule Language
@@ -24,6 +25,7 @@ Improved performance and memory profile through caching compiled rules (#242).
 Build, Test, Documentation
 ========================
 No changes.
+
 
 File Hashes
 ------------------------
