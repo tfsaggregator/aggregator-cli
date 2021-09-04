@@ -108,12 +108,10 @@ namespace aggregator
                     return null;
                 }
 
-                var uniqueNameLength = uniqueNameEndIndex - uniqueNameStartIndex + 1;
-
                 return new IdentityRef()
                 {
-                    DisplayName = input.Substring(0, uniqueNameStartIndex).Trim(),
-                    UniqueName = new string(input.Skip(uniqueNameStartIndex + 1).Take(uniqueNameLength).ToArray())
+                    DisplayName = input[0..uniqueNameStartIndex].Trim(),
+                    UniqueName = input[(uniqueNameStartIndex + 1)..uniqueNameEndIndex]
                 };
             }
 
@@ -125,13 +123,15 @@ namespace aggregator
 
             foreach (var identityField in workItem.Fields.Where(field => identityFieldReferenceNameEndings.Any(name => field.Key.EndsWith(name))).ToList())
             {
-                if (identityField.Value is string identityString)
+                IdentityRef identityRef = identityField.Value switch
                 {
-                    workItem.Fields[identityField.Key] = ConvertOrDefault(identityString) ?? identityField.Value;
-                }
-                else if (identityField.Value is JsonElement identityElement)
+                    string identityString => ConvertOrDefault(identityString),
+                    JsonElement identityElement => ConvertOrDefault(identityElement.GetString()),
+                    _ => null
+                };
+                if (identityRef != null)
                 {
-                    workItem.Fields[identityField.Key] = ConvertOrDefault(identityElement.GetString()) ?? identityField.Value;
+                    workItem.Fields[identityField.Key] = identityRef;
                 }
             }
         }

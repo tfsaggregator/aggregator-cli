@@ -28,13 +28,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="3.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="3.11.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="3.1.6" />
-    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.153.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.153.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.ExtensionManagement.WebApi" Version="16.153.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="5.0.1" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="16.170.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.ExtensionManagement.WebApi" Version="16.170.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>

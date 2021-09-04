@@ -42,6 +42,9 @@ namespace aggregator.cli
         [ShowInTelemetry]
         [Option("filterFields", Required = false, HelpText = "Filter Azure DevOps event to include only work items with the specified Field(s) changed.")]
         public IEnumerable<string> FilterFields { get; set; }
+        [ShowInTelemetry]
+        [Option("filterOnlyLinks", Required = false, HelpText = "Filter Azure DevOps event to include only work items with links added or removed.")]
+        public bool FilterOnlyLinks { get; set; }
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
         {
@@ -63,7 +66,8 @@ namespace aggregator.cli
                 AreaPath = FilterAreaPath,
                 Type = FilterType,
                 Tag = FilterTag,
-                Fields = FilterFields
+                Fields = FilterFields,
+                OnlyLinks = FilterOnlyLinks,
             };
 
             var instance = context.Naming.Instance(Instance, ResourceGroup);

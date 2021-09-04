@@ -1,31 +1,30 @@
-This release fixes a number of issues and introduce an additional CLI command.
+This release has a few fixes and a new feature.
 
 
 CLI Commands and Options
 ========================
-- Fixes spurious upgrade message noted in #225.
+New `--filterOnlyLinks` option to `map.rule` command; coincide with the _Links are added or removed_ filter of the Azure DevOps subscription (#244).
 
 
 Docker and Azure Function Hosting
 ========================
-No changes.
+Fix an off-by-one error when getting unique name from the string (#243).
+Fix invalid cast exception when the `IdentityRef` could not be parsed (#243).
 
 
 Rule Language
 ========================
-- Added support for `.bypassrules` directive (#83, #228).
-- Fixes #231 (Directive check revision false missing after `update.rule`).
+No changes.
 
 
 Rule Interpreter Engine
 ========================
-- Fixes #229 (Updating a work item field with impersonation enabled fails with the message: _Remove requires Value to be null_).
-- Fixes #234 (_Object reference not set_ when removing a work item link).
+Improved performance and memory profile through caching compiled rules (#242).
 
 
 Build, Test, Documentation
 ========================
-- SonarCloud now requires Java 11.
+Updated NuGet dependencies.
 
 
 File Hashes

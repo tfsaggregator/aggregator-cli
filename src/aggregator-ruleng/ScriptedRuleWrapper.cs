@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace aggregator.Engine
     /// </summary>
     public class ScriptedRuleWrapper : IRule
     {
+        private static readonly ConcurrentDictionary<string, Script<string>> _scriptCache = new ConcurrentDictionary<string, Script<string>>();
+
         private Script<string> _roslynScript;
         private readonly IAggregatorLogger _logger;
         private readonly bool? _ruleFileParseSuccess;
@@ -34,7 +37,7 @@ namespace aggregator.Engine
 
         private ScriptedRuleWrapper(string ruleName, IAggregatorLogger logger)
         {
-            _logger = logger;
+            _logger = logger ?? new NullLogger();
             Name = ruleName;
         }
 
@@ -43,7 +46,7 @@ namespace aggregator.Engine
         /// </summary>
         /// <param name="ruleName"></param>
         /// <param name="ruleCode"></param>
-        internal ScriptedRuleWrapper(string ruleName, string[] ruleCode) : this(ruleName, new NullLogger())
+        internal ScriptedRuleWrapper(string ruleName, string[] ruleCode, IAggregatorLogger logger = null) : this(ruleName, logger)
         {
             (IPreprocessedRule preprocessedRule, bool parseSuccess) = RuleFileParser.Read(ruleCode);
             _ruleFileParseSuccess = parseSuccess;
@@ -80,21 +83,14 @@ namespace aggregator.Engine
 
             Settings = preprocessedRule.Settings;
 
-            var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(RuleDirectives.LoadAssemblyReferences()));
-            var imports = new HashSet<string>(DefaultImports().Concat(RuleDirectives.Imports));
-
-            var scriptOptions = ScriptOptions.Default
-                .WithEmitDebugInformation(true)
-                .WithReferences(references)
-                // Add namespaces
-                .WithImports(imports);
-
             if (RuleDirectives.IsCSharp())
             {
-                _roslynScript = CSharpScript.Create<string>(
-                    code: RuleDirectives.GetRuleCode(),
-                    options: scriptOptions,
-                    globalsType: typeof(RuleExecutionContext));
+                string ruleKey = string.Join('\n', RuleFileParser.Write(RuleDirectives));
+#if DEBUG
+                bool cached = _scriptCache.ContainsKey(ruleKey);                
+                _logger.WriteVerbose(cached ? $"Rule {Name} found in cache": $"Rule {Name} was not in cache: compiling");
+#endif
+                _roslynScript = _scriptCache.GetOrAdd(ruleKey, CreateRoslynScript, RuleDirectives);
             }
             else
             {
@@ -128,6 +124,26 @@ namespace aggregator.Engine
             };
 
             return imports;
+        }
+
+        private static Script<string> CreateRoslynScript(string key, IPreprocessedRule rule)
+        {
+            var references = new HashSet<Assembly>(DefaultAssemblyReferences().Concat(rule.LoadAssemblyReferences()));
+            var imports = new HashSet<string>(DefaultImports().Concat(rule.Imports));
+
+            var scriptOptions = ScriptOptions.Default
+                .WithEmitDebugInformation(true)
+                .WithReferences(references)
+                // Add namespaces
+                .WithImports(imports);
+
+            var script = CSharpScript.Create<string>(
+                code: rule.GetRuleCode(),
+                options: scriptOptions,
+                globalsType: typeof(RuleExecutionContext));
+            script.Compile();
+
+            return script;
         }
 
         /// <inheritdoc />
