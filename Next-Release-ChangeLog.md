@@ -1,4 +1,4 @@
-This release TODO.
+This release has a few fixes and a new feature.
 
 
 CLI Commands and Options
@@ -24,7 +24,7 @@ Improved performance and memory profile through caching compiled rules (#242).
 
 Build, Test, Documentation
 ========================
-No changes.
+Updated NuGet dependencies.
 
 
 File Hashes
