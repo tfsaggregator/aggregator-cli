@@ -25,7 +25,9 @@ namespace aggregator.Engine
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "In this case it is bogus data")]
         public static bool IsTestEvent(this WorkItemEventContext eventContext)
         {
+#pragma warning disable S5332 //Using http protocol is insecure
             const string TEST_EVENT_COLLECTION_URL = "http://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/";
+#pragma warning restore S5332 //Using http protocol is insecure
 
             var workItem = eventContext.WorkItemPayload.WorkItem;
             return workItem.Url.StartsWith(TEST_EVENT_COLLECTION_URL, StringComparison.OrdinalIgnoreCase);

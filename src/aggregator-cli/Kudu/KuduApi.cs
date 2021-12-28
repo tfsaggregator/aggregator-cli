@@ -111,12 +111,18 @@ namespace aggregator.cli
                     if (listingResponse.IsSuccessStatusCode)
                     {
                         listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
+                        logger.WriteVerbose($"Listing retrieved");
+                    }
+                    else
+                    {
+                        logger.WriteError($"Cannot get listing for {functionName}: {listingResponse.ReasonPhrase}");
                     }
                 }
 
                 if (logIndex < 0) logIndex = listingResult.Length - 1;
                 string logName = listingResult[logIndex].name;
 
+                logger.WriteVerbose($"Retrieving {logName} log");
                 using (var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken))
                 {
                     var logResponse = await client.SendAsync(logRequest, cancellationToken);
@@ -126,6 +132,7 @@ namespace aggregator.cli
                         logger.WriteError($"Cannot list {functionName}'s {logName} log: {logResponse.ReasonPhrase}");
                         return null;
                     }
+                    logger.WriteVerbose($"Log data retrieved");
                     return logData;
                 }
             }
