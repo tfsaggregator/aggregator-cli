@@ -104,18 +104,23 @@ namespace aggregator.cli
             {
                 ListingEntry[] listingResult = null;
 
-                using (var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken))
+                for (int attempt = 1; attempt <= 3; attempt++)
                 {
-                    var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
-                    var listingStream = await listingResponse.Content.ReadAsStreamAsync();
-                    if (listingResponse.IsSuccessStatusCode)
+                    using (var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken))
                     {
-                        listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
-                        logger.WriteVerbose($"Listing retrieved");
-                    }
-                    else
-                    {
-                        logger.WriteError($"Cannot get listing for {functionName}: {listingResponse.ReasonPhrase}");
+                        var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
+                        var listingStream = await listingResponse.Content.ReadAsStreamAsync();
+                        if (listingResponse.IsSuccessStatusCode)
+                        {
+                            listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
+                            logger.WriteVerbose($"Listing retrieved");
+                            break;
+                        }
+                        else
+                        {
+                            logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt}): {listingResponse.ReasonPhrase}");
+                            Thread.Sleep(300);
+                        }
                     }
                 }
 
