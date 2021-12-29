@@ -103,21 +103,21 @@ namespace integrationtests.cli
 
         async Task ListInstancesAfterLogonEnv()
         {
-            ListInstances();
+            await ListInstances();
         }
 
         [Fact, Order(37)]
         [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Code shared")]
         async Task ListMappingsAfterLogonEnv()
         {
-            ListMappings();
+            await ListMappings();
         }
 
         [Fact, Order(39)]
         [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Code shared")]
         async Task LogoffAfterLogonEnv()
         {
-            Logoff();
+            await Logoff();
         }
     }
 }
