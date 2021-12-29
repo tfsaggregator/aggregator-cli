@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 
 namespace aggregator.cli
 {
+    // used in tests only
     internal class Boards
     {
         private readonly VssConnection devops;

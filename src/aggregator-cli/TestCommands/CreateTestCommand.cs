@@ -40,6 +40,7 @@ namespace aggregator.cli
             // wait for the Event to be processed in AzDO, sent via WebHooks, and the Function to run
             await Task.Delay(new TimeSpan(0, 2, 0), cancellationToken);
 
+            // no need to use the output, it is checked by user or test
             await instances.ReadLogAsync(instance, this.RuleName, -1, cancellationToken: cancellationToken);
 
             return id > 0 ? 0 : 1;
