@@ -120,7 +120,7 @@ namespace aggregator.cli
                         else
                         {
                             logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt+1}): {listingResponse.ReasonPhrase}");
-                            Thread.Sleep(delay[attempt]);
+                            await Task.Delay(delay[attempt]);
                         }
                     }
                 }
