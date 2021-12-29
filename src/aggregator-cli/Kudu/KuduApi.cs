@@ -104,7 +104,8 @@ namespace aggregator.cli
             {
                 ListingEntry[] listingResult = null;
 
-                for (int attempt = 1; attempt <= 3; attempt++)
+                int[] delay = { 300, 700, 1000, 1200, 1500, 2000 };
+                for (int attempt = 0; attempt < delay.Length; attempt++)
                 {
                     using (var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken))
                     {
@@ -118,14 +119,16 @@ namespace aggregator.cli
                         }
                         else
                         {
-                            logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt}): {listingResponse.ReasonPhrase}");
-                            Thread.Sleep(300);
+                            logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt+1}): {listingResponse.ReasonPhrase}");
+                            Thread.Sleep(delay[attempt]);
                         }
                     }
                 }
 
                 if (logIndex < 0) logIndex = listingResult.Length - 1;
+                logger.WriteVerbose($"Retrivining log #{logIndex}");
                 string logName = listingResult[logIndex].name;
+                logger.WriteVerbose($"Retrivining log '{logName}'");
 
                 logger.WriteVerbose($"Retrieving {logName} log");
                 using (var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken))
