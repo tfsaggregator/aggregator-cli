@@ -38,7 +38,7 @@ namespace aggregator.cli
             int id = await boards.CreateWorkItemAsync(this.Project, this.Title, cancellationToken);
 
             // wait for the Event to be processed in AzDO, sent via WebHooks, and the Function to run
-            Thread.Sleep(new TimeSpan(0, 2, 0));
+            await Task.Delay(new TimeSpan(0, 2, 0), cancellationToken);
 
             await instances.ReadLogAsync(instance, this.RuleName, -1, cancellationToken: cancellationToken);
 

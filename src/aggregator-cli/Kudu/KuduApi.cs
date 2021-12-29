@@ -135,9 +135,9 @@ namespace aggregator.cli
                 }
 
                 if (logIndex < 0) logIndex = listingResult.Length - 1;
-                logger.WriteVerbose($"Retrivining log #{logIndex}");
+                logger.WriteVerbose($"Retrieving log #{logIndex}");
                 string logName = listingResult[logIndex].name;
-                logger.WriteVerbose($"Retrivining log '{logName}'");
+                logger.WriteVerbose($"Retrieving log '{logName}'");
 
                 logger.WriteVerbose($"Retrieving {logName} log");
                 using (var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken))
