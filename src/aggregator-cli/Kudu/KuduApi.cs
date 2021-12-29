@@ -95,6 +95,9 @@ namespace aggregator.cli
             public string href { get; set; }
         }
 
+        /*
+         * This code is used only in Integration tests
+         */
         internal async Task<string> ReadApplicationLogAsync(string functionName, int logIndex, CancellationToken cancellationToken)
         {
             const string FunctionLogPath = "api/vfs/LogFiles/Application/Functions/Function";
@@ -104,7 +107,13 @@ namespace aggregator.cli
             {
                 ListingEntry[] listingResult = null;
 
-                int[] delay = { 300, 700, 1000, 1200, 1500, 2000 };
+                TimeSpan[] delay = {
+                    new TimeSpan(0, 0, 30),
+                    new TimeSpan(0, 1, 00),
+                    new TimeSpan(0, 1, 30),
+                    new TimeSpan(0, 2, 00),
+                    new TimeSpan(0, 3, 00),
+                };
                 for (int attempt = 0; attempt < delay.Length; attempt++)
                 {
                     using (var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken))
@@ -120,7 +129,7 @@ namespace aggregator.cli
                         else
                         {
                             logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt+1}): {listingResponse.ReasonPhrase}");
-                            await Task.Delay(delay[attempt]);
+                            await Task.Delay(delay[attempt], cancellationToken);
                         }
                     }
                 }
