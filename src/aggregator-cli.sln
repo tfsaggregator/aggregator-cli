@@ -17,9 +17,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "unittests-ruleng", "unittes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{020591FD-B34A-49E6-98E5-D8DD2A838997}"
 	ProjectSection(SolutionItems) = preProject
+		.build-trigger = .build-trigger
 		..\.github\workflows\build-and-deploy.yml = ..\.github\workflows\build-and-deploy.yml
+		..\.config\dotnet-tools.json = ..\.config\dotnet-tools.json
 		global.json = global.json
+		..\build\local-build.ps1 = ..\build\local-build.ps1
+		..\build\local-build.sh = ..\build\local-build.sh
 		..\.github\workflows\publish-to-marketplace.yml = ..\.github\workflows\publish-to-marketplace.yml
+		..\build\sonarqube-create-project-guids.ps1 = ..\build\sonarqube-create-project-guids.ps1
 		..\.github\workflows\tweet-release.yml = ..\.github\workflows\tweet-release.yml
 	EndProjectSection
 EndProject
