@@ -103,56 +103,56 @@ namespace aggregator.cli
             const string FunctionLogPath = "api/vfs/LogFiles/Application/Functions/Function";
 
             logger.WriteVerbose($"Listing application logs for {functionName}");
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            ListingEntry[] listingResult = null;
+
+            TimeSpan[] delay = {
+                new TimeSpan(0, 0, 10),
+                new TimeSpan(0, 0, 30),
+                new TimeSpan(0, 0, 50),
+                new TimeSpan(0, 1, 10),
+                new TimeSpan(0, 2, 00),
+            };
+            for (int attempt = 0; attempt < delay.Length; attempt++)
             {
-                ListingEntry[] listingResult = null;
-
-                TimeSpan[] delay = {
-                    new TimeSpan(0, 0, 30),
-                    new TimeSpan(0, 1, 00),
-                    new TimeSpan(0, 1, 30),
-                    new TimeSpan(0, 2, 00),
-                    new TimeSpan(0, 3, 00),
-                };
-                for (int attempt = 0; attempt < delay.Length; attempt++)
+                using var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken);
+                var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
+                var listingStream = await listingResponse.Content.ReadAsStreamAsync(cancellationToken);
+                if (listingResponse.IsSuccessStatusCode)
                 {
-                    using (var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken))
-                    {
-                        var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
-                        var listingStream = await listingResponse.Content.ReadAsStreamAsync();
-                        if (listingResponse.IsSuccessStatusCode)
-                        {
-                            listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
-                            logger.WriteVerbose($"Listing retrieved");
-                            break;
-                        }
-                        else
-                        {
-                            logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt+1}): {listingResponse.ReasonPhrase}");
-                            await Task.Delay(delay[attempt], cancellationToken);
-                        }
-                    }
+                    listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
+                    logger.WriteVerbose($"Listing retrieved");
+                    break;
                 }
-
-                if (logIndex < 0) logIndex = listingResult.Length - 1;
-                logger.WriteVerbose($"Retrieving log #{logIndex}");
-                string logName = listingResult[logIndex].name;
-                logger.WriteVerbose($"Retrieving log '{logName}'");
-
-                logger.WriteVerbose($"Retrieving {logName} log");
-                using (var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken))
+                else
                 {
-                    var logResponse = await client.SendAsync(logRequest, cancellationToken);
-                    string logData = await logResponse.Content.ReadAsStringAsync();
-                    if (!logResponse.IsSuccessStatusCode)
-                    {
-                        logger.WriteError($"Cannot list {functionName}'s {logName} log: {logResponse.ReasonPhrase}");
-                        return null;
-                    }
-                    logger.WriteVerbose($"Log data retrieved");
-                    return logData;
+                    logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt + 1}): {listingResponse.ReasonPhrase}");
+                    await Task.Delay(delay[attempt], cancellationToken);
                 }
             }
+
+            if (listingResult is null)
+            {
+                logger.WriteVerbose("No logs retrieved");
+                return String.Empty;
+            }
+
+            if (logIndex < 0) logIndex = listingResult.Length - 1;
+            logger.WriteVerbose($"Retrieving log #{logIndex}");
+            string logName = listingResult[logIndex].name;
+            logger.WriteVerbose($"Retrieving log '{logName}'");
+
+            logger.WriteVerbose($"Retrieving {logName} log");
+            using var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken);
+            var logResponse = await client.SendAsync(logRequest, cancellationToken);
+            string logData = await logResponse.Content.ReadAsStringAsync();
+            if (!logResponse.IsSuccessStatusCode)
+            {
+                logger.WriteError($"Cannot list {functionName}'s {logName} log: {logResponse.ReasonPhrase}");
+                return null;
+            }
+            logger.WriteVerbose($"Log data retrieved");
+            return logData;
         }
 
         internal async Task StreamLogsAsync(TextWriter output, string lastLinePattern, CancellationToken cancellationToken)
