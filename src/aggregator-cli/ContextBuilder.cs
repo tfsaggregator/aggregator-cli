@@ -100,20 +100,15 @@ namespace aggregator.cli
             return new CommandContext(logger, azure, devops, naming);
         }
 
-        private string TranslateResult(LogonResult reason)
+        private static string TranslateResult(LogonResult reason)
         {
-            switch (reason)
+            return reason switch
             {
-                case LogonResult.Succeeded:
-                    // this should never happen!!!
-                    return "Valid credential, logon succeeded";
-                case LogonResult.NoLogonData:
-                    return "No cached {0} credential: run the {1} command.";
-                case LogonResult.LogonExpired:
-                    return "Cached {0} credential expired: run the {1} command.";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(reason));
-            }
+                LogonResult.Succeeded => "Valid credential, logon succeeded",// this should never happen!!!
+                LogonResult.NoLogonData => "No cached {0} credential: run the {1} command.",
+                LogonResult.LogonExpired => "Cached {0} credential expired: run the {1} command.",
+                _ => throw new ArgumentOutOfRangeException(nameof(reason)),
+            };
         }
     }
 }

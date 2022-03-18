@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using Semver;
 
@@ -21,7 +21,7 @@ namespace aggregator.cli
                 var isVersionLine = line.StartsWith(VersionPrefix, false, CultureInfo.InvariantCulture);
                 if (isVersionLine)
                 {
-                    var version = SemVersion.Parse(line.Substring(VersionPrefix.Length));
+                    var version = SemVersion.Parse(line[VersionPrefix.Length..]);
                     return new ManifestInfo(version);
                 }
             }

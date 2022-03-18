@@ -15,13 +15,11 @@ namespace aggregator.cli
                     case TelemetryDisplayMode.AsIs:
                         if (value == null)
                             return "";
-                        switch (value)
+                        return value switch
                         {
-                            case IEnumerable<string> listValue:
-                                return string.Join(";", listValue.ToArray());
-                            default:
-                                return value.ToString();
-                        }
+                            IEnumerable<string> listValue => string.Join(";", listValue.ToArray()),
+                            _ => value.ToString(),
+                        };
                     case TelemetryDisplayMode.Presence:
                         return value != null ? "set" : "unset";
                     case TelemetryDisplayMode.MaskOthersUrl:

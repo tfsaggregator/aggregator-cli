@@ -81,7 +81,7 @@ namespace unittests_ruleng
             Assert.Contains(wis, (x) => x.Id.Value == 99);
         }
 
-        List<WorkItem> GenerateWorkItems(int startId, int count = 200)
+        static List<WorkItem> GenerateWorkItems(int startId, int count = 200)
         {
             return Enumerable
                 .Range(startId, count)
@@ -286,10 +286,9 @@ namespace unittests_ruleng
         }
 
         [Fact]
-        async public void UpdateWorkItem_WithRevisionCheck_Enabled_Succeeds()
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1117:Local variables should not shadow class fields", Justification = "<Pending>")]
+        public async Task UpdateWorkItem_WithRevisionCheck_Enabled_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var clientsContext = new TestClientsContext();
             var witClient = clientsContext.WitClient;
             witClient
                 .When(x => x.CreateWorkItemBatchRequest(
@@ -328,10 +327,9 @@ namespace unittests_ruleng
         }
 
         [Fact]
-        async public void UpdateWorkItem_WithRevisionCheck_Disabled_Succeeds()
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1117:Local variables should not shadow class fields", Justification = "<Pending>")]
+        public async Task UpdateWorkItem_WithRevisionCheck_Disabled_Succeeds()
         {
-            var logger = Substitute.For<IAggregatorLogger>();
-            var clientsContext = new TestClientsContext();
             var witClient = clientsContext.WitClient;
             witClient
                 .When(x => x.CreateWorkItemBatchRequest(

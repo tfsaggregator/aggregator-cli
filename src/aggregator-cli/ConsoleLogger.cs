@@ -11,7 +11,7 @@ namespace aggregator.cli
             this.verbose = verbose;
         }
 
-        protected void WriteMessagePrefix(System.IO.TextWriter w)
+        protected static void WriteMessagePrefix(System.IO.TextWriter w)
         {
             Console.ForegroundColor
                 = Console.BackgroundColor == ConsoleColor.Black

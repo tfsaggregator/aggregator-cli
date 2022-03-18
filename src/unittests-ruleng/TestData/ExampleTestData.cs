@@ -19,13 +19,9 @@ namespace unittests_ruleng.TestData
                                    .SingleOrDefault(str => str.EndsWith(resourceName)) ?? throw new FileNotFoundException("EmbeddedResource Not Found - Wrong name, or forget to set resource file Build Action to 'Embedded resource'");
 
             string fileContent;
-            using (Stream stream = assembly.GetManifestResourceStream(fullName))
-            {
-                using (StreamReader source = new StreamReader(stream))
-                {
-                    fileContent = source.ReadToEnd();
-                }
-            }
+            using var stream = assembly.GetManifestResourceStream(fullName);
+            using StreamReader source = new StreamReader(stream);
+            fileContent = source.ReadToEnd();
 
             return fileContent;
         }

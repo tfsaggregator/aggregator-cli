@@ -117,7 +117,7 @@ namespace aggregator.cli
                 }
                 if (subscription.Status != SubscriptionStatus.Enabled && subscription.Status != SubscriptionStatus.OnProbation)
                 {
-                    logger.WriteInfo($"Skipping mapping {subscription.Id} because has status {subscription.Status.ToString()}");
+                    logger.WriteInfo($"Skipping mapping {subscription.Id} because has status {subscription.Status}");
                     continue;
                 }
 
@@ -129,10 +129,10 @@ namespace aggregator.cli
                 var rules = new AggregatorRules(azure, logger);
                 try
                 {
-                    var destRuleTarget = await rules.GetInvocationUrlAndKey(destInstance, ruleName, cancellationToken);
+                    var (destRuleUrl, destRuleKey) = await rules.GetInvocationUrlAndKey(destInstance, ruleName, cancellationToken);
                     // PATCH the object
-                    subscription.ConsumerInputs["url"] = destRuleTarget.url.AbsoluteUri;
-                    subscription.ConsumerInputs["httpHeaders"] = $"{MagicConstants.AzureFunctionKeyHeaderName}:{destRuleTarget.key}";
+                    subscription.ConsumerInputs["url"] = destRuleUrl.AbsoluteUri;
+                    subscription.ConsumerInputs["httpHeaders"] = $"{MagicConstants.AzureFunctionKeyHeaderName}:{destRuleKey}";
 
                     logger.WriteVerbose($"Replacing {subscription.EventType} mapping from {ruleUrl.AbsoluteUri} to {subscription.Url}...");
                     try
@@ -204,7 +204,7 @@ namespace aggregator.cli
                         {
                             case HttpStatusCode.OK:
                                 logger.WriteVerbose($"Connection to {targetUrl} succeded");
-                                apiKey = await response.Content.ReadAsStringAsync();
+                                apiKey = await response.Content.ReadAsStringAsync(_cancellationToken);
                                 logger.WriteInfo($"Configuration retrieved.");
                                 break;
 

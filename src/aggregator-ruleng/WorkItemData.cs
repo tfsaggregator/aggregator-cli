@@ -16,6 +16,6 @@ namespace aggregator.Engine
 
         public WorkItemUpdate WorkItemUpdate { get; }
 
-        public static implicit operator WorkItemData(WorkItem workItem) => new WorkItemData(workItem);
+        public static implicit operator WorkItemData(WorkItem workItem) => new(workItem);
     }
 }

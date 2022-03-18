@@ -336,6 +336,7 @@ namespace unittests_ruleng
 
 
         [Fact]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1117:Local variables should not shadow class fields", Justification = "<Pending>")]
         public void ChangingAFieldWithEnableRevisionCheckOnAddsTestOperation()
         {
             var logger = Substitute.For<IAggregatorLogger>();
@@ -370,6 +371,7 @@ namespace unittests_ruleng
         }
 
         [Fact]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1117:Local variables should not shadow class fields", Justification = "<Pending>")]
         public void ChangingAFieldWithEnableRevisionCheckOffHasNoTestOperation()
         {
             var logger = Substitute.For<IAggregatorLogger>();
@@ -402,6 +404,7 @@ namespace unittests_ruleng
         [Theory]
         [InlineData("Replaced Title")]
         [InlineData(null)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1117:Local variables should not shadow class fields", Justification = "<Pending>")]
         public void ChangingAPulledFieldTwiceHasASingleReplaceOperation(string firstValue)
         {
             var logger = Substitute.For<IAggregatorLogger>();
@@ -435,6 +438,7 @@ namespace unittests_ruleng
         [Theory]
         [InlineData("New Reason")]
         [InlineData(null)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1117:Local variables should not shadow class fields", Justification = "<Pending>")]
         public void ChangingANewFieldTwiceHasASingleAddOperation(string firstValue)
         {
             var logger = Substitute.For<IAggregatorLogger>();

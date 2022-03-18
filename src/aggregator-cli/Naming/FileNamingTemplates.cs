@@ -13,7 +13,7 @@ namespace aggregator.cli
             affixes = JsonConvert.DeserializeObject<NamingAffixes>(jsonData);
         }
 
-        private class InstanceCreateNamesImpl : InstanceCreateNames
+        private sealed class InstanceCreateNamesImpl : InstanceCreateNames
         {
             internal InstanceCreateNamesImpl(string name, string resourceGroup, bool isCustom, string functionAppName, NamingAffixes affixes)
                 : base(name, resourceGroup, isCustom, functionAppName)
@@ -49,10 +49,10 @@ namespace aggregator.cli
                ? rg.Name.StartsWith(affixes.ResourceGroupPrefix)
                : rg.Name.EndsWith(affixes.ResourceGroupSuffix);
 
-        protected string StripAffixes(string pfx, string stuffedName, string sfx)
+        protected static string StripAffixes(string pfx, string stuffedName, string sfx)
         {
-            pfx = pfx ?? "";
-            sfx = sfx ?? "";
+            pfx ??= "";
+            sfx ??= "";
             string name = stuffedName.Remove(0, pfx.Length);
             name = name.Remove(name.Length - sfx.Length, sfx.Length);
             return name;
@@ -82,7 +82,7 @@ namespace aggregator.cli
         public InstanceName FromFunctionAppUrl(Uri url)
         {
             string host = url.Host;
-            host = host.Substring(0, host.IndexOf('.'));
+            host = host[..host.IndexOf('.')];
             return Instance(StripAffixes(affixes.FunctionAppPrefix, host, affixes.FunctionAppSuffix), null);
         }
 

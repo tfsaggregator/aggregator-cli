@@ -18,7 +18,7 @@ namespace aggregator.Engine
     /// </summary>
     public class ScriptedRuleWrapper : IRule
     {
-        private static readonly ConcurrentDictionary<string, Script<string>> _scriptCache = new ConcurrentDictionary<string, Script<string>>();
+        private static readonly ConcurrentDictionary<string, Script<string>> _scriptCache = new();
 
         private Script<string> _roslynScript;
         private readonly IAggregatorLogger _logger;

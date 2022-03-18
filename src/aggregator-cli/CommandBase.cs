@@ -19,7 +19,7 @@ namespace aggregator.cli
         [Option("namingTemplate", Default = "", HelpText = "Define template-set for generating names of Azure Resources.")]
         public string NamingTemplate { get; set; }
 
-        protected ContextBuilder Context => new ContextBuilder(Logger, this.NamingTemplate);
+        protected ContextBuilder Context => new(Logger, this.NamingTemplate);
 
         internal ILogger Logger { get; private set; }
 

@@ -10,7 +10,7 @@ namespace aggregator.Engine
 {
     public class WorkItemUpdateWrapper
     {
-        private static readonly WorkItemUpdate _noUpdate = new WorkItemUpdate();
+        private static readonly WorkItemUpdate _noUpdate = new();
         private readonly WorkItemUpdate _workItemUpdate;
 
         public WorkItemUpdateWrapper(WorkItemUpdate workItemUpdate)

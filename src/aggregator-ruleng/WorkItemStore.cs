@@ -482,13 +482,13 @@ namespace aggregator.Engine
                     ReferenceName = backlog.ReferenceName
                 };
 
-                foreach (var workItemType in backlog.WorkItemTypes)
+                foreach (var workItemTypeName in backlog.WorkItemTypes.Select(wt=>wt.Name))
                 {
-                    var states = await _clients.WitClient.GetWorkItemTypeStatesAsync(_context.ProjectName, workItemType.Name);
+                    var states = await _clients.WitClient.GetWorkItemTypeStatesAsync(_context.ProjectName, workItemTypeName);
 
                     var itemTypeStates = new BacklogWorkItemTypeStates()
                     {
-                        Name = workItemType.Name,
+                        Name = workItemTypeName,
                         Backlog = backlogInfo,
                         StateCategoryStateNames = states.ToLookup(state => state.Category)
                                                         .ToDictionary(kvp => kvp.Key,

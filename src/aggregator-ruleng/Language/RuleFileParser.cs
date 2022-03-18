@@ -73,7 +73,7 @@ namespace aggregator.Engine.Language
                 {
                     FailParsingWithMessage($"Invalid language directive {directive}");
                 }
-                string verb = directive.Substring(0, endVerb);
+                string verb = directive[..endVerb];
                 string arguments = directive[(endVerb + 1)..];
 
                 ParseDirective(preprocessedRule, directive, verb, arguments);

@@ -15,7 +15,7 @@ namespace aggregator.cli
         public DevOpsTokenType Mode { get; set; }
         public string Token { get; set; }
 
-        public void Clear()
+        public static void Clear()
         {
             new LogonDataStore(LogonDataTag).Clear();
         }
@@ -33,18 +33,12 @@ namespace aggregator.cli
 
         public async Task<VssConnection> LogonAsync(CancellationToken cancellationToken)
         {
-            VssCredentials clientCredentials;
-            switch (Mode)
+            var clientCredentials = Mode switch
             {
-                case DevOpsTokenType.Integrated:
-                    clientCredentials = new VssCredentials();
-                    break;
-                case DevOpsTokenType.PAT:
-                    clientCredentials = new VssBasicCredential("pat", Token);
-                    break;
-                default:
-                    throw new InvalidOperationException($"BUG: Unexpected value {Mode} for {nameof(Mode)}");
-            }
+                DevOpsTokenType.Integrated => new VssCredentials(),
+                DevOpsTokenType.PAT => new VssBasicCredential("pat", Token),
+                _ => throw new InvalidOperationException($"BUG: Unexpected value {Mode} for {nameof(Mode)}"),
+            };
 
             // see https://rules.sonarsource.com/csharp/RSPEC-4457
             return await LocalAsyncImpl(clientCredentials, cancellationToken);

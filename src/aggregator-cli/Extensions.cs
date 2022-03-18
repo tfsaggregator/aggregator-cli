@@ -18,10 +18,8 @@ namespace aggregator.cli
             string content;
             using (var stream = assembly.GetManifestResourceStream(fullName))
             {
-                using (var source = new StreamReader(stream))
-                {
-                    content = await source.ReadToEndAsync();
-                }
+                using var source = new StreamReader(stream);
+                content = await source.ReadToEndAsync();
             }
 
             return content;
@@ -48,7 +46,7 @@ namespace aggregator.cli
             await AddFileFromResource(uploadFiles, assembly, "function.json");
             await AddFileFromResource(uploadFiles, assembly, "run.csx");
 
-            async Task AddFileFromResource(IDictionary<string, string> _uploadFiles, Assembly _assembly, string filename)
+            static async Task AddFileFromResource(IDictionary<string, string> _uploadFiles, Assembly _assembly, string filename)
             {
                 var content = await _assembly.GetEmbeddedResourceContent(filename);
                 _uploadFiles.Add(filename, content);

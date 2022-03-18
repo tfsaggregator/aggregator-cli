@@ -366,14 +366,11 @@ namespace aggregator.Engine
                 throw new InvalidOperationException("Work item is read-only.");
             }
 
-            if (_originalValues.TryGetValue(field, out object originalValue))
+            if (_originalValues.TryGetValue(field, out object originalValue) && originalValue == value)
             {
-                if (originalValue == value)
-                {
-                    ResetValueOfExistingField(field, value);
-                    IsDirty = false;
-                    return;
-                }
+                ResetValueOfExistingField(field, value);
+                IsDirty = false;
+                return;
             }
             if (_item.Fields.ContainsKey(field))
             {

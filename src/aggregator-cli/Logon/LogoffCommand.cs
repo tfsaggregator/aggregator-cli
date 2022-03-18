@@ -12,8 +12,8 @@ namespace aggregator.cli
             var context = await Context.BuildAsync(cancellationToken);
 
             context.Logger.WriteVerbose($"Clearing cached credentials");
-            new AzureLogon().Clear();
-            new DevOpsLogon().Clear();
+            AzureLogon.Clear();
+            DevOpsLogon.Clear();
 
             return ExitCodes.Success;
         }

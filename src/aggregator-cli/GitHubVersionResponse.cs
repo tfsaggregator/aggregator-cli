@@ -9,7 +9,7 @@ namespace aggregator.cli
             LocalAppData.GetPath("githubresponse.cache");
 
 
-        private readonly TimeSpan _cacheExpiration = new TimeSpan(1, 0, 0, 0);
+        private readonly TimeSpan _cacheExpiration = new(1, 0, 0, 0);
 
         public string Tag { get; set; }
         public string Name { get; set; }

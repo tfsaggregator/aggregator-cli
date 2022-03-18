@@ -56,7 +56,11 @@ namespace aggregator.cli
             }
             logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub.");
 
-            SemVersion.TryParse(gitHubVersion.Name.Substring(1), out var latest);
+            if (!SemVersion.TryParse(gitHubVersion.Name[1..], out var latest))
+            {
+                logger.WriteError($"Failed to parse GitHub version.");
+                return new(false, "unknown");
+            }
             var asmVer = Assembly.GetEntryAssembly().GetName().Version;
             var current = new SemVersion(asmVer.Major, asmVer.Minor, asmVer.Build);
 
@@ -141,39 +145,35 @@ namespace aggregator.cli
         {
             DateTimeOffset? cachedLastWrite = GetLastWriteAtCachedRuntime();
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
             // HACK assume that source URL does not require authentication!
             // note: HEAD verb does not work with GitHub, so we use a GET with a 0-bytes range
-            using (var request = new HttpRequestMessage(HttpMethod.Get, sourceUrl))
+            using var request = new HttpRequestMessage(HttpMethod.Get, sourceUrl);
+            if (cachedLastWrite.HasValue)
             {
-                if (cachedLastWrite.HasValue)
-                {
-                    request.Headers.IfModifiedSince = cachedLastWrite;
-                }
-                using (var response = await client.SendAsync(request, cancellationToken))
-                {
-                    switch (response.StatusCode)
-                    {
-                        case HttpStatusCode.OK:
-                            logger.WriteVerbose($"Downloading runtime package from {sourceUrl}");
-                            using (var fileStream = File.Create(RuntimePackageFile))
-                            {
-                                //TODO cancellationToken
-                                await response.Content.CopyToAsync(fileStream);
-                            }
-                            logger.WriteInfo($"Runtime package downloaded.");
-                            break;
-
-                        case HttpStatusCode.NotModified:
-                            logger.WriteInfo($"Runtime package at {sourceUrl} matches local cache.");
-                            break;
-
-                        default:
-                            logger.WriteError($"{sourceUrl} returned {response.ReasonPhrase}.");
-                            break;
-                    }//switch
-                }
+                request.Headers.IfModifiedSince = cachedLastWrite;
             }
+            using var response = await client.SendAsync(request, cancellationToken);
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.OK:
+                    logger.WriteVerbose($"Downloading runtime package from {sourceUrl}");
+                    using (var fileStream = File.Create(RuntimePackageFile))
+                    {
+                        //TODO cancellationToken
+                        await response.Content.CopyToAsync(fileStream, cancellationToken);
+                    }
+                    logger.WriteInfo($"Runtime package downloaded.");
+                    break;
+
+                case HttpStatusCode.NotModified:
+                    logger.WriteInfo($"Runtime package at {sourceUrl} matches local cache.");
+                    break;
+
+                default:
+                    logger.WriteError($"{sourceUrl} returned {response.ReasonPhrase}.");
+                    break;
+            }//switch
         }
 
         private DateTimeOffset? GetLastWriteAtCachedRuntime()
@@ -230,7 +230,7 @@ namespace aggregator.cli
             }
         }
 
-        string GitHubTagFromUserVersion(string requiredVersion)
+        static string GitHubTagFromUserVersion(string requiredVersion)
         {
             if (string.IsNullOrWhiteSpace(requiredVersion)
                 || requiredVersion == "latest")
@@ -265,7 +265,7 @@ namespace aggregator.cli
             }
             logger.WriteVerbose($"Found {gitHubVersion.Name} on {gitHubVersion.When} in GitHub .");
 
-            if (gitHubVersion.Name[0] == 'v') gitHubVersion.Name = gitHubVersion.Name.Substring(1);
+            if (gitHubVersion.Name[0] == 'v') gitHubVersion.Name = gitHubVersion.Name[1..];
             var requiredRuntimeVer = SemVersion.Parse(gitHubVersion.Name);
             logger.WriteVerbose($"Latest Runtime package version is {requiredRuntimeVer} (released on {gitHubVersion.When}).");
 
@@ -281,7 +281,7 @@ namespace aggregator.cli
             using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/aggregator-manifest.ini", cancellationToken))
             using (var response = await client.SendAsync(request, cancellationToken))
             {
-                string manifest = await response.Content.ReadAsStringAsync();
+                string manifest = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -305,7 +305,7 @@ namespace aggregator.cli
             using var client = new HttpClient();
             using var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/bin/aggregator-function.dll", cancellationToken);
             var response = await client.SendAsync(request, cancellationToken);
-            var stream = await response.Content.ReadAsStreamAsync();
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             if (response.IsSuccessStatusCode)
             {
                 return stream;
@@ -315,27 +315,23 @@ namespace aggregator.cli
             return null;
         }
 
-        private async Task<SemVersion> GetLocalPackageVersionAsync(string runtimePackageFile)
+        private static async Task<SemVersion> GetLocalPackageVersionAsync(string runtimePackageFile)
         {
             if (!File.Exists(runtimePackageFile))
             {
                 // this default allows SemVer to parse and compare
-                return new SemVersion(0, 0);
+                return new(0, 0);
             }
 
-            using (var zip = ZipFile.OpenRead(runtimePackageFile))
-            {
-                var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
+            using var zip = ZipFile.OpenRead(runtimePackageFile);
+            var manifestEntry = zip.GetEntry("aggregator-manifest.ini");
 #pragma warning disable S5042 // Make sure that decompressing this archive file is safe
-                using (var byteStream = manifestEntry.Open())
+            using var byteStream = manifestEntry.Open();
 #pragma warning restore S5042 // Make sure that decompressing this archive file is safe
-                using (var reader = new StreamReader(byteStream))
-                {
-                    var content = await reader.ReadToEndAsync();
-                    var info = ManifestParser.Parse(content);
-                    return info.Version;
-                }
-            }
+            using var reader = new StreamReader(byteStream);
+            var content = await reader.ReadToEndAsync();
+            var info = ManifestParser.Parse(content);
+            return info.Version;
         }
 
         private async Task<GitHubVersionResponse> FindVersionInGitHubAsync(string tag)
@@ -380,23 +376,17 @@ namespace aggregator.cli
             // POST /api/zipdeploy?isAsync=true
             // Deploy from zip asynchronously. The Location header of the response will contain a link to a pollable deployment status.
             var body = new ByteArrayContent(zipContent);
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromMinutes(60);
+            using var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy", cancellationToken);
+            request.Content = body;
+            using var response = await client.SendAsync(request, cancellationToken);
+            bool ok = response.IsSuccessStatusCode;
+            if (!ok)
             {
-                client.Timeout = TimeSpan.FromMinutes(60);
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/zipdeploy", cancellationToken))
-                {
-                    request.Content = body;
-                    using (var response = await client.SendAsync(request, cancellationToken))
-                    {
-                        bool ok = response.IsSuccessStatusCode;
-                        if (!ok)
-                        {
-                            logger.WriteError($"Upload failed with {response.ReasonPhrase}");
-                        }
-                        return ok;
-                    }
-                }
+                logger.WriteError($"Upload failed with {response.ReasonPhrase}");
             }
+            return ok;
         }
     }
 }

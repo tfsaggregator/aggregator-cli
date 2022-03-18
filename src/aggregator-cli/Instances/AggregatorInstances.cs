@@ -26,16 +26,19 @@ namespace aggregator.cli
         {
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
+            if (rgs is null) throw new InvalidOperationException("Azure API ResourceGroups.ListAsync failed");
             var filter = rgs
                 .Where(rg => naming.ResourceGroupMatches(rg));
             var result = new List<InstanceOutputData>();
             foreach (var rg in filter)
             {
                 var name = naming.FromResourceGroupName(rg.Name);
+                var runtimeVersion = await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken);
+                if (runtimeVersion is null) throw new InvalidOperationException("Could not retrieve deployed Runtime version");
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
-                    await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken))
+                    runtimeVersion)
                 );
             }
             return result;
@@ -45,6 +48,7 @@ namespace aggregator.cli
         {
             var runtime = new FunctionRuntimePackage(logger);
             var rgs = await azure.ResourceGroups.ListAsync(cancellationToken: cancellationToken);
+            if (rgs is null) throw new InvalidOperationException("Azure API ResourceGroups.ListAsync failed");
             var filter = rgs.Where(
                 rg => naming.ResourceGroupMatches(rg)
                 && string.Compare(rg.RegionName, location, StringComparison.Ordinal) == 0);
@@ -52,10 +56,12 @@ namespace aggregator.cli
             foreach (var rg in filter)
             {
                 var name = naming.FromResourceGroupName(rg.Name);
+                var runtimeVersion = await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken);
+                if (runtimeVersion is null) throw new InvalidOperationException("Could not retrieve deployed Runtime version");
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     rg.RegionName,
-                    await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken))
+                    runtimeVersion)
                 );
             }
             return result;
@@ -66,16 +72,19 @@ namespace aggregator.cli
             var runtime = new FunctionRuntimePackage(logger);
             string rgName = naming.GetResourceGroupName(resourceGroup);
             var apps = await azure.AppServices.FunctionApps.ListByResourceGroupAsync(rgName, cancellationToken: cancellationToken);
+            if (apps is null) throw new InvalidOperationException("Azure API FunctionApps.ListByResourceGroupAsync failed");
 
             var result = new List<InstanceOutputData>();
             foreach (var app in apps)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var name = naming.FromFunctionAppName(app.Name, resourceGroup);
+                var runtimeVersion = await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken);
+                if (runtimeVersion is null) throw new InvalidOperationException("Could not retrieve deployed Runtime version");
                 result.Add(new InstanceOutputData(
                     name.PlainName,
                     app.Region.Name,
-                    await runtime.GetDeployedRuntimeVersion(name, azure, cancellationToken))
+                    runtimeVersion)
                 );
             }
             return result;
@@ -352,11 +361,9 @@ namespace aggregator.cli
                                    .Single(e => string.Equals("aggregator-function.dll", e.Name, StringComparison.OrdinalIgnoreCase));
 
 #pragma warning disable S5042 // Make sure that decompressing this archive file is safe
-                using (var assemblyStream = entry.Open())
+                using var assemblyStream = entry.Open();
 #pragma warning restore S5042 // Make sure that decompressing this archive file is safe
-                {
-                    await uploadFiles.AddFunctionDefaultFiles(assemblyStream);
-                }
+                await uploadFiles.AddFunctionDefaultFiles(assemblyStream);
             }
             //TODO handle FileNotFound Exception when trying to get resource content, and resource not found
             return uploadFiles;

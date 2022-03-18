@@ -130,6 +130,7 @@ namespace integrationtests.cli
 
         [Theory, Order(120)]
         [InlineData("MyMixedCase54", "TestRule5")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S4144:Methods should not have identical implementations", Justification = "Same code but run at different time is a new test")]
         async Task CreateAnotherWorkItemAndCheckTrigger(string instancePrefix, string rule)
         {
             string instance = instancePrefix + TestLogonData.UniqueSuffix;

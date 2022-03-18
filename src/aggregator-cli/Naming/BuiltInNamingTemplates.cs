@@ -6,7 +6,7 @@ namespace aggregator.cli
 {
     internal class BuiltInNamingTemplates : INamingTemplates
     {
-        static readonly NamingAffixes affixes = new NamingAffixes
+        static readonly NamingAffixes affixes = new()
         {
             ResourceGroupPrefix = "aggregator-",
             ResourceGroupSuffix = "",
@@ -26,7 +26,7 @@ namespace aggregator.cli
 #pragma warning restore S2245 // Make sure that using this pseudorandom number generator is safe here
         }
 
-        private class InstanceCreateNamesImpl : InstanceCreateNames
+        private sealed class InstanceCreateNamesImpl : InstanceCreateNames
         {
             // keep unused parameter  for uniformity
 #pragma warning disable S1172,IDE0060 // Unused method parameters should be removed
@@ -76,7 +76,7 @@ namespace aggregator.cli
         public InstanceName FromFunctionAppUrl(Uri url)
         {
             string host = url.Host;
-            host = host.Substring(0, host.IndexOf('.'));
+            host = host[..host.IndexOf('.')];
             return Instance(host.Remove(host.Length - affixes.FunctionAppSuffix.Length), null);
         }
 

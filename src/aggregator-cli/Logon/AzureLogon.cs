@@ -16,7 +16,7 @@ namespace aggregator.cli
         public string ClientSecret { get; set; }
         public string TenantId { get; set; }
 
-        public void Clear()
+        public static void Clear()
         {
             new LogonDataStore(LogonDataTag).Clear();
         }

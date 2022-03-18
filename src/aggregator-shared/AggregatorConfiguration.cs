@@ -55,7 +55,7 @@ namespace aggregator
             static (string ruleName, string key) SplitRuleNameKey(string input)
             {
                 int idx = input.LastIndexOf('.');
-                return (input.Substring(0, idx), input[(idx + 1)..]);
+                return (input[..idx], input[(idx + 1)..]);
             }
 
             var settings = await webApp.GetAppSettingsAsync();

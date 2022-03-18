@@ -74,7 +74,7 @@ namespace aggregator.cli
                 client.DefaultRequestHeaders.Authorization = await GetAuthenticationHeader(cancellationToken);
 
                 var result = await client.GetAsync($"{kuduUrl}/functions/admin/token", cancellationToken);
-                JWT = await result.Content.ReadAsStringAsync(); //get  JWT for call function key
+                JWT = await result.Content.ReadAsStringAsync(cancellationToken); //get  JWT for call function key
                 JWT = JWT.Trim('"');
             }
             return JWT;
@@ -107,11 +107,11 @@ namespace aggregator.cli
             ListingEntry[] listingResult = null;
 
             TimeSpan[] delay = {
-                new TimeSpan(0, 0, 10),
-                new TimeSpan(0, 0, 30),
-                new TimeSpan(0, 0, 50),
-                new TimeSpan(0, 1, 10),
-                new TimeSpan(0, 2, 00),
+                new TimeSpan(0, 0,  5),
+                new TimeSpan(0, 0, 12),
+                new TimeSpan(0, 0, 25),
+                new TimeSpan(0, 0, 55),
+                new TimeSpan(0, 1, 30),
             };
             for (int attempt = 0; attempt < delay.Length; attempt++)
             {
@@ -120,13 +120,13 @@ namespace aggregator.cli
                 var listingStream = await listingResponse.Content.ReadAsStreamAsync(cancellationToken);
                 if (listingResponse.IsSuccessStatusCode)
                 {
-                    listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream);
+                    listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream, cancellationToken: cancellationToken);
                     logger.WriteVerbose($"Listing retrieved");
                     break;
                 }
                 else
                 {
-                    logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt + 1}): {listingResponse.ReasonPhrase}");
+                    logger.WriteWarning($"Cannot get listing for {functionName} (attempt #{attempt + 1}): {listingResponse.ReasonPhrase}. Waiting {delay[attempt]}");
                     await Task.Delay(delay[attempt], cancellationToken);
                 }
             }
@@ -145,7 +145,7 @@ namespace aggregator.cli
             logger.WriteVerbose($"Retrieving {logName} log");
             using var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken);
             var logResponse = await client.SendAsync(logRequest, cancellationToken);
-            string logData = await logResponse.Content.ReadAsStringAsync();
+            string logData = await logResponse.Content.ReadAsStringAsync(cancellationToken);
             if (!logResponse.IsSuccessStatusCode)
             {
                 logger.WriteError($"Cannot list {functionName}'s {logName} log: {logResponse.ReasonPhrase}");
@@ -160,29 +160,23 @@ namespace aggregator.cli
             var regex = new Regex(lastLinePattern);
 
             // see https://github.com/projectkudu/kudu/wiki/Diagnostic-Log-Stream
-            using (var client = new HttpClient())
-            using (var request = await GetRequestAsync(HttpMethod.Get, $"api/logstream/application", cancellationToken))
+            using var client = new HttpClient();
+            using var request = await GetRequestAsync(HttpMethod.Get, $"api/logstream/application", cancellationToken);
+            logger.WriteInfo($"Connected to {instance.PlainName} logs");
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            logger.WriteVerbose($"Streaming {instance.PlainName} logs...");
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+            using var reader = new StreamReader(stream);
+            while (!reader.EndOfStream)
             {
-                logger.WriteInfo($"Connected to {instance.PlainName} logs");
-                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
-                {
-                    logger.WriteVerbose($"Streaming {instance.PlainName} logs...");
-                    var stream = await response.Content.ReadAsStreamAsync();
+                //We are ready to read the stream
+                var line = await reader.ReadLineAsync();
 
-                    using (var reader = new StreamReader(stream))
-                    {
-                        while (!reader.EndOfStream)
-                        {
-                            //We are ready to read the stream
-                            var line = await reader.ReadLineAsync();
+                if (regex.IsMatch(line))
+                    break;
 
-                            if (regex.IsMatch(line))
-                                break;
-
-                            await output.WriteLineAsync(line);
-                        }
-                    }
-                }
+                await output.WriteLineAsync(line);
             }
         }
     }

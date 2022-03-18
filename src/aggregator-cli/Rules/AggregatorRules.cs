@@ -32,65 +32,58 @@ namespace aggregator.cli
             cancellationToken.ThrowIfCancellationRequested();
             var configuration = await AggregatorConfiguration.ReadConfiguration(webFunctionApp);
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            KuduFunction[] kuduFunctions;
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions", cancellationToken))
+            using (var response = await client.SendAsync(request, cancellationToken))
             {
-                KuduFunction[] kuduFunctions;
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/functions", cancellationToken))
-                using (var response = await client.SendAsync(request, cancellationToken))
+                var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    var stream = await response.Content.ReadAsStreamAsync();
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
-                        return Enumerable.Empty<RuleOutputData>();
-                    }
-
-                    using (var sr = new StreamReader(stream))
-                    using (var jtr = new JsonTextReader(sr))
-                    {
-                        var js = new JsonSerializer();
-                        kuduFunctions = js.Deserialize<KuduFunction[]>(jtr);
-                    }
+                    _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync(cancellationToken)}");
+                    return Enumerable.Empty<RuleOutputData>();
                 }
 
-                List<RuleOutputData> ruleData = new List<RuleOutputData>();
-                foreach (var kuduFunction in kuduFunctions)
-                {
-                    var ruleName = kuduFunction.Name;
-                    var ruleFileUrl = $"api/vfs/site/wwwroot/{ruleName}/{ruleName}.rule";
-                    _logger.WriteInfo($"Retrieving Function Rule Details {ruleName}...");
-
-                    using (var request = await kudu.GetRequestAsync(HttpMethod.Get, ruleFileUrl, cancellationToken))
-                    using (var response = await client.SendAsync(request, cancellationToken))
-                    {
-                        var stream = await response.Content.ReadAsStreamAsync();
-
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync()}");
-                            continue;
-                        }
-
-
-                        var ruleCode = new List<string>();
-                        using (var sr = new StreamReader(stream))
-                        {
-                            string line;
-                            while ((line = sr.ReadLine()) != null)
-                            {
-                                ruleCode.Add(line);
-                            }
-                        }
-
-                        var ruleConfiguration = configuration.GetRuleConfiguration(ruleName);
-                        var (preprocessedRule, _) = RuleFileParser.Read(ruleCode.ToArray());
-                        ruleData.Add(new RuleOutputData(instance, ruleConfiguration, preprocessedRule.LanguageAsString()));
-                    }
-                }
-
-                return ruleData;
+                using var sr = new StreamReader(stream);
+                using var jtr = new JsonTextReader(sr);
+                var js = new JsonSerializer();
+                kuduFunctions = js.Deserialize<KuduFunction[]>(jtr);
             }
+
+            List<RuleOutputData> ruleData = new List<RuleOutputData>();
+            foreach (var ruleName in kuduFunctions.Select(f => f.Name))
+            {
+                var ruleFileUrl = $"api/vfs/site/wwwroot/{ruleName}/{ruleName}.rule";
+                _logger.WriteInfo($"Retrieving Function Rule Details {ruleName}...");
+
+                using var request = await kudu.GetRequestAsync(HttpMethod.Get, ruleFileUrl, cancellationToken);
+                using var response = await client.SendAsync(request, cancellationToken);
+                var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.WriteError($"{response.ReasonPhrase} {await response.Content.ReadAsStringAsync(cancellationToken)}");
+                    continue;
+                }
+
+
+                var ruleCode = new List<string>();
+                using (var sr = new StreamReader(stream))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        ruleCode.Add(line);
+                    }
+                }
+
+                var ruleConfiguration = configuration.GetRuleConfiguration(ruleName);
+                var (preprocessedRule, _) = RuleFileParser.Read(ruleCode.ToArray());
+                ruleData.Add(new RuleOutputData(instance, ruleConfiguration, preprocessedRule.LanguageAsString()));
+            }
+
+            return ruleData;
         }
 
         internal static Uri GetInvocationUrl(InstanceName instance, string rule)
@@ -104,30 +97,24 @@ namespace aggregator.cli
             var kudu = GetKudu(instance);
 
             // see https://github.com/projectkudu/kudu/wiki/Functions-API
-            using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets", cancellationToken))
+            using var client = new HttpClient();
+            using var request = await kudu.GetRequestAsync(HttpMethod.Post, $"api/functions/{rule}/listsecrets", cancellationToken);
+            using var response = await client.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
             {
-                using (var response = await client.SendAsync(request, cancellationToken))
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        using (var stream = await response.Content.ReadAsStreamAsync())
-                        using (var sr = new StreamReader(stream))
-                        using (var jtr = new JsonTextReader(sr))
-                        {
-                            var js = new JsonSerializer();
-                            var secret = js.Deserialize<KuduSecret>(jtr);
+                using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var sr = new StreamReader(stream);
+                using var jtr = new JsonTextReader(sr);
+                var js = new JsonSerializer();
+                var secret = js.Deserialize<KuduSecret>(jtr);
 
-                            (Uri url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
-                            return invocation;
-                        }
-                    }
-
-                    string error = await response.Content.ReadAsStringAsync();
-                    _logger.WriteError($"Failed to retrieve function key: {error}");
-                    throw new InvalidOperationException("Failed to retrieve function key.");
-                }
+                (Uri url, string key) invocation = (GetInvocationUrl(instance, rule), secret.Key);
+                return invocation;
             }
+
+            string error = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.WriteError($"Failed to retrieve function key: {error}");
+            throw new InvalidOperationException("Failed to retrieve function key.");
         }
 
         internal async Task<bool> AddAsync(InstanceName instance, string ruleName, string filePath, CancellationToken cancellationToken)
@@ -232,64 +219,56 @@ namespace aggregator.cli
             var kudu = GetKudu(instance);
             var relativeUrl = $"api/vfs/site/wwwroot/{ruleName}/";
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            var exists = false;
+
+            // check if function already exists
+            using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl, cancellationToken))
             {
-                var exists = false;
-
-                // check if function already exists
-                using (var request = await kudu.GetRequestAsync(HttpMethod.Head, relativeUrl, cancellationToken))
-                {
-                    _logger.WriteVerbose($"Checking if function {ruleName} already exists in {instance.PlainName}...");
-                    using (var response = await client.SendAsync(request))
-                    {
-                        exists = response.IsSuccessStatusCode;
-                    }
-                }
-
-                if (!exists)
-                {
-                    _logger.WriteVerbose($"Creating function {ruleName} in {instance.PlainName}...");
-                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl, cancellationToken))
-                    {
-                        using (var response = await client.SendAsync(request, cancellationToken))
-                        {
-                            bool ok = response.IsSuccessStatusCode;
-                            if (!ok)
-                            {
-                                _logger.WriteError($"Upload failed with {response.ReasonPhrase}");
-                                return false;
-                            }
-                        }
-                    }
-
-                    _logger.WriteInfo($"Function {ruleName} created.");
-                }
-
-                foreach (var (fileName, fileContent) in uploadFiles)
-                {
-                    _logger.WriteVerbose($"Uploading {fileName} to {instance.PlainName}...");
-                    var fileUrl = $"{relativeUrl}{fileName}";
-                    using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl, cancellationToken))
-                    {
-                        //HACK -> request.Headers.IfMatch.Add(new EntityTagHeaderValue("*", false)); <- won't work
-                        request.Headers.Add("If-Match", "*");
-                        request.Content = new StringContent(fileContent);
-                        using (var response = await client.SendAsync(request, cancellationToken))
-                        {
-                            bool ok = response.IsSuccessStatusCode;
-                            if (!ok)
-                            {
-                                _logger.WriteError($"Failed uploading {fileName} with {response.ReasonPhrase}");
-                                return false;
-                            }
-                        }
-                    }
-
-                    _logger.WriteInfo($"{fileName} successfully uploaded to {instance.PlainName}.");
-                }//for
-
-                return await TriggerSyncing(client, instance, cancellationToken);
+                _logger.WriteVerbose($"Checking if function {ruleName} already exists in {instance.PlainName}...");
+                using var response = await client.SendAsync(request, cancellationToken);
+                exists = response.IsSuccessStatusCode;
             }
+
+            if (!exists)
+            {
+                _logger.WriteVerbose($"Creating function {ruleName} in {instance.PlainName}...");
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Put, relativeUrl, cancellationToken))
+                {
+                    using var response = await client.SendAsync(request, cancellationToken);
+                    bool ok = response.IsSuccessStatusCode;
+                    if (!ok)
+                    {
+                        _logger.WriteError($"Upload failed with {response.ReasonPhrase}");
+                        return false;
+                    }
+                }
+
+                _logger.WriteInfo($"Function {ruleName} created.");
+            }
+
+            foreach (var (fileName, fileContent) in uploadFiles)
+            {
+                _logger.WriteVerbose($"Uploading {fileName} to {instance.PlainName}...");
+                var fileUrl = $"{relativeUrl}{fileName}";
+                using (var request = await kudu.GetRequestAsync(HttpMethod.Put, fileUrl, cancellationToken))
+                {
+                    //HACK -> request.Headers.IfMatch.Add(new EntityTagHeaderValue("*", false)); <- won't work
+                    request.Headers.Add("If-Match", "*");
+                    request.Content = new StringContent(fileContent);
+                    using var response = await client.SendAsync(request, cancellationToken);
+                    bool ok = response.IsSuccessStatusCode;
+                    if (!ok)
+                    {
+                        _logger.WriteError($"Failed uploading {fileName} with {response.ReasonPhrase}");
+                        return false;
+                    }
+                }
+
+                _logger.WriteInfo($"{fileName} successfully uploaded to {instance.PlainName}.");
+            }//for
+
+            return await TriggerSyncing(client, instance, cancellationToken);
         }
 
         // see https://docs.microsoft.com/en-us/azure/azure-functions/functions-deployment-technologies#trigger-syncing
@@ -301,14 +280,12 @@ namespace aggregator.cli
             using (var content = new StringContent(string.Empty))
             {
                 string triggerSyncingUrl = $"{instance.FunctionAppUrl}/admin/host/synctriggers?code={masterKey}";
-                using (var response = await client.PostAsync(triggerSyncingUrl, content, cancellationToken))
+                using var response = await client.PostAsync(triggerSyncingUrl, content, cancellationToken);
+                bool ok = response.IsSuccessStatusCode;
+                if (!ok)
                 {
-                    bool ok = response.IsSuccessStatusCode;
-                    if (!ok)
-                    {
-                        _logger.WriteError($"Failed syncing triggers with {response.ReasonPhrase}");
-                        return false;
-                    }
+                    _logger.WriteError($"Failed syncing triggers with {response.ReasonPhrase}");
+                    return false;
                 }
             }
             return true;
@@ -426,39 +403,35 @@ namespace aggregator.cli
 #pragma warning restore S107 // Methods should not have too many parameters
         {
             string collectionUrl = devopsLogonData.Url;
-            using (var devops = new VssConnection(new Uri(collectionUrl), clientCredentials))
+            using var devops = new VssConnection(new Uri(collectionUrl), clientCredentials);
+            await devops.ConnectAsync(cancellationToken);
+            _logger.WriteInfo($"Connected to Azure DevOps");
+
+            Guid teamProjectId;
+            using (var projectClient = devops.GetClient<ProjectHttpClient>())
             {
-                await devops.ConnectAsync(cancellationToken);
-                _logger.WriteInfo($"Connected to Azure DevOps");
-
-                Guid teamProjectId;
-                using (var projectClient = devops.GetClient<ProjectHttpClient>())
-                {
-                    _logger.WriteVerbose($"Reading Azure DevOps project data...");
-                    var project = await projectClient.GetProject(projectName);
-                    _logger.WriteInfo($"Project {projectName} data read.");
-                    teamProjectId = project.Id;
-                }
-
-                using (var clientsContext = new AzureDevOpsClientsContext(devops))
-                {
-                    _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
-                    var (preprocessedRule, _) = await RuleFileParser.ReadFile(ruleFilePath, cancellationToken);
-                    var rule = new Engine.ScriptedRuleWrapper(Path.GetFileNameWithoutExtension(ruleFilePath), preprocessedRule)
-                    {
-                        ImpersonateExecution = impersonateExecution
-                    };
-
-                    var engineLogger = new EngineWrapperLogger(_logger);
-                    var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);
-
-                    var workItem = await clientsContext.WitClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
-                    string result = await engine.RunAsync(rule, teamProjectId, workItem, @event, clientsContext, cancellationToken);
-                    _logger.WriteInfo($"Rule returned '{result}'");
-
-                    return true;
-                }
+                _logger.WriteVerbose($"Reading Azure DevOps project data...");
+                var project = await projectClient.GetProject(projectName);
+                _logger.WriteInfo($"Project {projectName} data read.");
+                teamProjectId = project.Id;
             }
+
+            using var clientsContext = new AzureDevOpsClientsContext(devops);
+            _logger.WriteVerbose($"Rule code found at {ruleFilePath}");
+            var (preprocessedRule, _) = await RuleFileParser.ReadFile(ruleFilePath, cancellationToken);
+            var rule = new Engine.ScriptedRuleWrapper(Path.GetFileNameWithoutExtension(ruleFilePath), preprocessedRule)
+            {
+                ImpersonateExecution = impersonateExecution
+            };
+
+            var engineLogger = new EngineWrapperLogger(_logger);
+            var engine = new Engine.RuleEngine(engineLogger, saveMode, dryRun: dryRun);
+
+            var workItem = await clientsContext.WitClient.GetWorkItemAsync(projectName, workItemId, expand: WorkItemExpand.All, cancellationToken: cancellationToken);
+            string result = await engine.RunAsync(rule, teamProjectId, workItem, @event, clientsContext, cancellationToken);
+            _logger.WriteInfo($"Rule returned '{result}'");
+
+            return true;
         }
 
 #pragma warning disable S107 // Methods should not have too many parameters
@@ -502,25 +475,21 @@ namespace aggregator.cli
             _logger.WriteVerbose($"Request to {ruleName} is:");
             _logger.WriteVerbose(body);
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
+            client.DefaultRequestHeaders.Add(MagicConstants.AzureFunctionKeyHeaderName, ruleKey);
+            var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+            using var response = await client.PostAsync(ruleUrl, content, cancellationToken);
+            if (response.IsSuccessStatusCode)
             {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("aggregator", "3.0"));
-                client.DefaultRequestHeaders.Add(MagicConstants.AzureFunctionKeyHeaderName, ruleKey);
-                var content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                using (var response = await client.PostAsync(ruleUrl, content, cancellationToken))
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string result = await response.Content.ReadAsStringAsync();
-                        _logger.WriteInfo($"{result}");
-                        return true;
-                    }
-
-                    _logger.WriteError($"Failed with {response.ReasonPhrase}");
-                    return false;
-                }
+                string result = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.WriteInfo($"{result}");
+                return true;
             }
+
+            _logger.WriteError($"Failed with {response.ReasonPhrase}");
+            return false;
         }
     }
 }

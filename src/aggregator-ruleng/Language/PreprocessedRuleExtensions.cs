@@ -35,7 +35,9 @@ namespace aggregator.Engine.Language
             {
                 RuleLanguage.Csharp => "C#",
                 RuleLanguage.Unknown => "Unknown",
-                _ => throw new ArgumentOutOfRangeException($"BUG: {nameof(LanguageAsString)} misses {nameof(RuleLanguage)} enum value"),
+#pragma warning disable S3928 // The parameter name {0} is not declared in the argument list
+                _ => throw new ArgumentOutOfRangeException($"BUG: {nameof(LanguageAsString)} is not a valid {nameof(RuleLanguage)}"),
+#pragma warning restore S3928
             };
         }
 
