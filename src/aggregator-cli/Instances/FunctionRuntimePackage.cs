@@ -368,11 +368,10 @@ namespace aggregator.cli
 
         private async Task<string> DownloadAsync(string downloadUrl, CancellationToken cancellationToken)
         {
-            using (var httpClient = new WebClient())
-            using (cancellationToken.Register(httpClient.CancelAsync))
-            {
-                await httpClient.DownloadFileTaskAsync(downloadUrl, RuntimePackageFile);
-            }
+            using (var httpClient = new HttpClient())
+            using (var s = await httpClient.GetStreamAsync(downloadUrl, cancellationToken))
+            using (var fs = new FileStream(RuntimePackageFile, System.IO.FileMode.CreateNew))
+            await s.CopyToAsync(fs, cancellationToken);
 
             return RuntimePackageFile;
         }

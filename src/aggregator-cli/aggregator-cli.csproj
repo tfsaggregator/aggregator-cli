@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
     <RootNamespace>aggregator.cli</RootNamespace>
     <StartupObject>aggregator.cli.Program</StartupObject>
     <ApplicationIcon>../../art/Aggregator.ico</ApplicationIcon>
@@ -17,12 +18,10 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
     <CodeAnalysisRuleSet>aggregator-cli.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <CodeAnalysisRuleSet>aggregator-cli.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>

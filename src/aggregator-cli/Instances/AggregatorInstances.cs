@@ -206,9 +206,9 @@ namespace aggregator.cli
             // poll
             const int pollIntervalInSeconds = 3;
             int totalDelay = 0;
-            while (!(StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Succeeded") ||
-                    StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Failed") ||
-                    StringComparer.OrdinalIgnoreCase.Equals(deployment.ProvisioningState, "Cancelled")))
+            while (!(deployment.ProvisioningState == ProvisioningState.Succeeded ||
+                    deployment.ProvisioningState == ProvisioningState.Failed ||
+                    deployment.ProvisioningState == ProvisioningState.Canceled))
             {
                 SdkContext.DelayProvider.Delay(pollIntervalInSeconds * 1000);
                 totalDelay += pollIntervalInSeconds;
@@ -217,7 +217,7 @@ namespace aggregator.cli
             }
             logger.WriteInfo($"Deployment {deployment.ProvisioningState}");
 
-            return deployment.ProvisioningState == "Succeeded";
+            return deployment.ProvisioningState == ProvisioningState.Succeeded;
         }
 
         internal async Task<bool> ChangeAppSettingsAsync(InstanceName instance, DevOpsLogon devopsLogonData, SaveMode saveMode, CancellationToken cancellationToken)
