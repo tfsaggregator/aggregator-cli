@@ -27,10 +27,12 @@ namespace aggregator.cli
 
         internal int Run(CancellationToken cancellationToken)
         {
+            var thisCommandName = this.GetType().GetCustomAttribute<VerbAttribute>().Name;
+
             var eventStart = new EventTelemetry
             {
                 // use Reflection to capture Command and Options
-                Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} Start"
+                Name = $"{thisCommandName} Start"
             };
             this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ForEach(
                 prop =>
@@ -66,22 +68,22 @@ namespace aggregator.cli
 
                 var eventEnd = new EventTelemetry
                 {
-                    Name = $"{this.GetType().GetCustomAttribute<VerbAttribute>().Name} End"
+                    Name = $"{thisCommandName} End"
                 };
                 eventEnd.Properties["exitCode"] = rc.ToString();
                 Telemetry.TrackEvent(eventEnd);
 
                 if (rc == ExitCodes.Success)
                 {
-                    Logger.WriteSuccess("Succeeded");
+                    Logger.WriteSuccess($"{thisCommandName} Succeeded");
                 }
                 else if (rc == ExitCodes.NotFound)
                 {
-                    Logger.WriteWarning("Not found");
+                    Logger.WriteWarning($"{thisCommandName} Item Not found");
                 }
                 else
                 {
-                    Logger.WriteError("Failed!");
+                    Logger.WriteError($"{thisCommandName} Failed!");
                 }
                 return rc;
             }
