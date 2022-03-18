@@ -47,8 +47,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-webshared", "agg
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{F0E724A4-A159-4E56-849F-2FE51C9FA7DC}"
 	ProjectSection(SolutionItems) = preProject
-		linux-x64.Dockerfile = linux-x64.Dockerfile
-		win-x64.Dockerfile = win-x64.Dockerfile
+		..\docker\linux-x64.Dockerfile = ..\docker\linux-x64.Dockerfile
+		..\docker\win-x64.Dockerfile = ..\docker\win-x64.Dockerfile
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{72427DCE-8A20-45E5-A5E4-781E7E4C1A34}"
