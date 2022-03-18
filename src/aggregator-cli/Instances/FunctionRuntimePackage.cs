@@ -302,20 +302,17 @@ namespace aggregator.cli
         {
             logger.WriteVerbose($"Retrieving deployed aggregator-function.dll");
             var kudu = new KuduApi(instance, azure, logger);
-            using (var client = new HttpClient())
-            using (var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/bin/aggregator-function.dll", cancellationToken))
+            using var client = new HttpClient();
+            using var request = await kudu.GetRequestAsync(HttpMethod.Get, $"api/vfs/site/wwwroot/bin/aggregator-function.dll", cancellationToken);
+            var response = await client.SendAsync(request, cancellationToken);
+            var stream = await response.Content.ReadAsStreamAsync();
+            if (response.IsSuccessStatusCode)
             {
-                var response = await client.SendAsync(request, cancellationToken);
-                var stream = await response.Content.ReadAsStreamAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return stream;
-                }
-
-                logger.WriteError($"Cannot read aggregator-function.dll: {response.ReasonPhrase}");
-                return null;
+                return stream;
             }
+
+            logger.WriteError($"Cannot read aggregator-function.dll: {response.ReasonPhrase}");
+            return null;
         }
 
         private async Task<SemVersion> GetLocalPackageVersionAsync(string runtimePackageFile)

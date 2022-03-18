@@ -44,6 +44,7 @@ namespace aggregator.cli
             var save = Console.ForegroundColor;
 
             Telemetry.TrackEvent("CLI Start");
+            var tempLogger = new ConsoleLogger(false);
 
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
@@ -62,7 +63,6 @@ namespace aggregator.cli
                 bool versionCheckEnabled = !EnvironmentVariables.GetAsBool("AGGREGATOR_NEW_VERSION_CHECK_DISABLED", false);
                 if (versionCheckEnabled)
                 {
-                    var tempLogger = new ConsoleLogger(false);
                     var verChecker = new FunctionRuntimePackage(tempLogger);
                     (bool upgrade, string newversion) = await verChecker.IsCliUpgradable();
                     if (upgrade)
@@ -128,6 +128,7 @@ namespace aggregator.cli
                     new Dictionary<string, double> {
                         { "RunDuration", mainTimer.ElapsedMilliseconds }
                     });
+                tempLogger.WriteInfo($"Exiting with code {rc}");
 
                 Telemetry.Shutdown();
 
