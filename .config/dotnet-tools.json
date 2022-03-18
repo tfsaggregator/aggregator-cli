@@ -3,19 +3,19 @@
   "isRoot": true,
   "tools": {
     "dotnet-sonarscanner": {
-      "version": "5.0.4",
+      "version": "5.5.3",
       "commands": [
         "dotnet-sonarscanner"
       ]
     },
     "coverlet.console": {
-      "version": "1.7.2",
+      "version": "3.1.2",
       "commands": [
         "coverlet"
       ]
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "4.8.2",
+      "version": "5.1.2",
       "commands": [
         "reportgenerator"
       ]
