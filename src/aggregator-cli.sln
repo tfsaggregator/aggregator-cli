@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29025.244
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "aggregator-shared", "aggregator-shared\aggregator-shared.csproj", "{B024DF56-E474-4A1A-BEA9-03A87F6D00F3}"
 EndProject
@@ -18,6 +18,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{020591FD-B34A-49E6-98E5-D8DD2A838997}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\build-and-deploy.yml = ..\.github\workflows\build-and-deploy.yml
+		global.json = global.json
 		..\.github\workflows\publish-to-marketplace.yml = ..\.github\workflows\publish-to-marketplace.yml
 		..\.github\workflows\tweet-release.yml = ..\.github\workflows\tweet-release.yml
 	EndProjectSection
