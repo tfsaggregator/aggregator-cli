@@ -112,16 +112,12 @@ namespace aggregator.cli
             using var client = new HttpClient();
             ListingEntry[] listingResult = null;
 
-            TimeSpan[] delay = {
-                new TimeSpan(0, 0,  5),
-                new TimeSpan(0, 0, 12),
-                new TimeSpan(0, 0, 25),
-                new TimeSpan(0, 0, 55),
-                new TimeSpan(0, 1, 30),
-            };
-            for (int attempt = 0; attempt < delay.Length; attempt++)
+            string delayList = Environment.GetEnvironmentVariable("AGGREGATOR_KUDU_LOGRETRIEVE_ATTEMPTS")
+                ?? "0:0:5 0:0:12 0:0:25 0:0:55 0:1:30";
+            var delay = delayList.Split(' ').Select(s => TimeSpan.Parse(s)).ToList();
+            for (int attempt = 0; attempt < delay.Count; attempt++)
             {
-                logger.WriteVerbose($"Listing attempt #{attempt + 1})");
+                logger.WriteVerbose($"Attempt #{attempt + 1} to retrieve listing");
                 using var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken);
                 var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
                 var listingStream = await listingResponse.Content.ReadAsStreamAsync(cancellationToken);

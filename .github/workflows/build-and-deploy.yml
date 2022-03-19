@@ -23,6 +23,8 @@ jobs:
       CONFIGURATION: Release
       SONAR_ORG: 'tfsaggregator'
       SONAR_PROJECTKEY: 'tfsaggregator_aggregator-cli'
+      # list of TimeSpan controlling reading app logs from Kudu while running Integration tests
+      AGGREGATOR_KUDU_LOGRETRIEVE_ATTEMPTS: '0:0:30 0:1:00 0:1:30 0:2:00 0:3:00'
     outputs:
       dockerTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
       releaseTag: ${{ steps.get_git_tag.outputs.tag_name }}
