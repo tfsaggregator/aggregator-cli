@@ -38,6 +38,7 @@ namespace aggregator.cli
                 IFunctionApp webFunctionApp;
                 try
                 {
+                    logger.WriteVerbose($"Retrieving Kudu publish credentials for {instance.PlainName}.");
                     webFunctionApp = await azure.AppServices.FunctionApps.GetByResourceGroupAsync(rg, fn, cancellationToken);
                 }
                 catch (Exception)
@@ -52,6 +53,11 @@ namespace aggregator.cli
 
                 lastPublishCredentials = (username, password);
                 lastPublishCredentialsInstance = instance.PlainName;
+                logger.WriteVerbose($"Kudu publish credentials for {instance.PlainName} cached.");
+            }
+            else
+            {
+                logger.WriteVerbose($"Using cached Kudu publish credentials for {instance.PlainName}.");
             }
 
             return lastPublishCredentials;
@@ -115,13 +121,15 @@ namespace aggregator.cli
             };
             for (int attempt = 0; attempt < delay.Length; attempt++)
             {
+                logger.WriteVerbose($"Listing attempt #{attempt + 1})");
                 using var listingRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/", cancellationToken);
                 var listingResponse = await client.SendAsync(listingRequest, cancellationToken);
                 var listingStream = await listingResponse.Content.ReadAsStreamAsync(cancellationToken);
                 if (listingResponse.IsSuccessStatusCode)
                 {
+                    logger.WriteVerbose($"Got list of logs, deserializing response");
                     listingResult = await JsonSerializer.DeserializeAsync<ListingEntry[]>(listingStream, cancellationToken: cancellationToken);
-                    logger.WriteVerbose($"Listing retrieved");
+                    logger.WriteVerbose($"List of logs retrieved");
                     break;
                 }
                 else
@@ -133,24 +141,23 @@ namespace aggregator.cli
 
             if (listingResult is null)
             {
-                logger.WriteVerbose("No logs retrieved");
+                logger.WriteVerbose("No logs available");
                 return String.Empty;
             }
 
             if (logIndex < 0) logIndex = listingResult.Length - 1;
             logger.WriteVerbose($"Retrieving log #{logIndex}");
             string logName = listingResult[logIndex].name;
-            logger.WriteVerbose($"Retrieving log '{logName}'");
 
-            logger.WriteVerbose($"Retrieving {logName} log");
+            logger.WriteVerbose($"Retrieving log '{logName}'");
             using var logRequest = await GetRequestAsync(HttpMethod.Get, $"{FunctionLogPath}/{functionName}/{logName}", cancellationToken);
             var logResponse = await client.SendAsync(logRequest, cancellationToken);
-            string logData = await logResponse.Content.ReadAsStringAsync(cancellationToken);
             if (!logResponse.IsSuccessStatusCode)
             {
                 logger.WriteError($"Cannot list {functionName}'s {logName} log: {logResponse.ReasonPhrase}");
                 return null;
             }
+            string logData = await logResponse.Content.ReadAsStringAsync(cancellationToken);
             logger.WriteVerbose($"Log data retrieved");
             return logData;
         }
