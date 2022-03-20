@@ -60,7 +60,7 @@ jobs:
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13 # CHECK FOR UPDATES
       with:
-          versionSpec: '5.5.x'
+        versionSpec: '5.x' # CHECK FOR UPDATES
     - name: Use GitVersion
       id: gitversion # step id used as reference for output values
       uses: gittools/actions/gitversion/execute@v0.9.13 # CHECK FOR UPDATES
@@ -74,7 +74,7 @@ jobs:
     - name: Use Java 11 (required by SonarCloud)
       uses: actions/setup-java@v3 # CHECK FOR UPDATES
       with:
-        java-version: '11'
+        java-version: '11' # CHECK FOR UPDATES
         java-package: jre
     - name: Install dotnet tools
       run: dotnet tool restore
