@@ -5,11 +5,11 @@
       $DOWNLOADSECUREFILE_SECUREFILEPATH =  'C:\src\github.com\tfsaggregator\aggregator-cli\secrets\logon-data-ubuntu.json'
 
 echo "$CONFIGURATION $VER_MAJOR_MINOR_PATCH $VER_PRE_RELEASE_TAG $DOWNLOADSECUREFILE_SECUREFILEPATH"
-dotnet clean --configuration $CONFIGURATION src/aggregator-cli.sln
+dotnet clean --configuration $CONFIGURATION src/aggregator3.sln
 rm -R outputs/function
 
-dotnet restore src/aggregator-cli.sln
-dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=$VER_MAJOR_MINOR_PATCH /p:VersionSuffix=$VER_PRE_RELEASE_TAG # /flp:v=diag
+dotnet restore src/aggregator3.sln
+dotnet build --configuration $CONFIGURATION src/aggregator3.sln /p:VersionPrefix=$VER_MAJOR_MINOR_PATCH /p:VersionSuffix=$VER_PRE_RELEASE_TAG # /flp:v=diag
 
 mkdir -p outputs/function
 dotnet publish --runtime win-x64 --configuration $CONFIGURATION --output outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=$VER_MAJOR_MINOR_PATCH -p:VersionSuffix=$VER_PRE_RELEASE_TAG -p:PublishTrimmed=false -flp:v=diag

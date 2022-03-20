@@ -70,9 +70,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     - name: 'NuGet Restore'
-      run: 'dotnet restore src/aggregator-cli.sln'
+      run: 'dotnet restore src/aggregator3.sln'
     - name: 'Build solution'
-      run: 'dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} /p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}'
+      run: 'dotnet build --configuration $CONFIGURATION src/aggregator3.sln /p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} /p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}'
     - name: 'Unit tests with Code Coverage'
       run: |
         dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-core.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
