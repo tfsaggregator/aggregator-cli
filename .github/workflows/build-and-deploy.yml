@@ -29,8 +29,10 @@ jobs:
       run_integration_tests: '${{ env.run_integration_tests }}'
       release_new_version: '${{ env.release_new_version }}'
     steps:
-    - name: 'Dump vars'
-      run: 'echo "run_integration_tests=$run_integration_tests release_new_version=$release_new_version"'
+    - name: 'Print conditions'
+      run: |
+        echo "run_integration_tests = $run_integration_tests"
+        echo "release_new_version   = $release_new_version"
 
   build:
 
