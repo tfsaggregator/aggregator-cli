@@ -5,10 +5,12 @@ on:
     paths:
     - '.github/workflows/build-and-deploy.yml'
     - 'src/**'
+    - 'docker/**'
   pull_request:
     paths:
     - '.github/workflows/build-and-deploy.yml'
     - 'src/**'
+    - 'docker/**'
 
 env:
   docker_repo: tfsaggregator/aggregator3
@@ -32,7 +34,7 @@ jobs:
       majorMinorPatch: '${{ steps.gitversion.outputs.majorMinorPatch }}'
       preReleaseTag: '${{ steps.gitversion.outputs.preReleaseTag }}'
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3 # CHECK FOR UPDATES
     # versioning
     - name: Fetch Git history for GitVersion
       run: git fetch --prune --tags
@@ -41,21 +43,21 @@ jobs:
       run: echo ::set-output name=tag_name::${GITHUB_REF/refs\/tags\//}
       shell: bash
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.7
+      uses: gittools/actions/gitversion/setup@v0.9.13 # CHECK FOR UPDATES
       with:
           versionSpec: '5.5.x'
     - name: Use GitVersion
       id: gitversion # step id used as reference for output values
-      uses: gittools/actions/gitversion/execute@v0.9.7
+      uses: gittools/actions/gitversion/execute@v0.9.13 # CHECK FOR UPDATES
     - name: 'Set version in aggregator-manifest.ini'
       run: 'sed -E -i "s/version=.*/version=${{ steps.gitversion.outputs.fullSemVer }}/" ${GITHUB_WORKSPACE}/src/aggregator-function/aggregator-manifest.ini'
       shell: bash
     # compile and test
-    - uses: actions/setup-dotnet@v1
+    - uses: actions/setup-dotnet@v1 # CHECK FOR UPDATES
       with:
         dotnet-version: '${{ env.DOTNETSDK_VERSION }}'
     - name: Use Java 11 (required by SonarCloud)
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v3 # CHECK FOR UPDATES
       with:
         java-version: '11'
         java-package: jre
@@ -162,7 +164,7 @@ jobs:
     # everything in outputs can be used by other jobs
     - name: Upload artifacts
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3 # CHECK FOR UPDATES
       with:
         name: release_packages
         path: outputs/**
@@ -174,7 +176,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3 # CHECK FOR UPDATES
       with:
         name: release_packages
         path: outputs/
@@ -186,23 +188,23 @@ jobs:
         shasum -a 256 *.zip > SHA256.txt
     - name: Read git.log
       id: read_packages_sha
-      uses: juliangruber/read-file-action@v1
+      uses: juliangruber/read-file-action@v1 # CHECK FOR UPDATES
       with:
         path: outputs/SHA256.txt
     - name: Read git.log
       id: read_gitlog
-      uses: juliangruber/read-file-action@v1
+      uses: juliangruber/read-file-action@v1 # CHECK FOR UPDATES
       with:
         path: outputs/git.log
     - name: Read package.json
       id: read_changelog
-      uses: juliangruber/read-file-action@v1
+      uses: juliangruber/read-file-action@v1 # CHECK FOR UPDATES
       with:
         path: outputs/Next-Release-ChangeLog.md
     # Create Release in GitHub as Draft
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: actions/create-release@v1 # CHECK FOR UPDATES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -215,7 +217,7 @@ jobs:
         draft: true
         prerelease: false
     - name: Upload FunctionRuntime
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-release-asset@v1 # CHECK FOR UPDATES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -224,7 +226,7 @@ jobs:
         asset_name: FunctionRuntime.zip
         asset_content_type: application/zip
     - name: 'Upload aggregator-cli Windows'
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-release-asset@v1 # CHECK FOR UPDATES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -233,7 +235,7 @@ jobs:
         asset_name: aggregator-cli-win-x64.zip
         asset_content_type: application/zip
     - name: 'Upload aggregator-cli Linux'
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-release-asset@v1 # CHECK FOR UPDATES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -242,7 +244,7 @@ jobs:
         asset_name: aggregator-cli-linux-x64.zip
         asset_content_type: application/zip
     - name: 'Upload aggregator-cli OS/X'
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-release-asset@v1 # CHECK FOR UPDATES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -251,7 +253,7 @@ jobs:
         asset_name: aggregator-cli-osx-x64.zip
         asset_content_type: application/zip
     - name: 'Upload SHA256'
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-release-asset@v1 # CHECK FOR UPDATES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -273,10 +275,10 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3 # CHECK FOR UPDATES
     # the official docker/build-push-action@v1 does not support Windows!!!
     - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image to DockerHub
-      uses: mr-smithers-excellent/docker-build-push@v4
+      uses: mr-smithers-excellent/docker-build-push@v5 # CHECK FOR UPDATES
       with:
         image: ${{ env.docker_repo }}
         tag: ${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
@@ -286,7 +288,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: Build and push Docker ${{ fromJSON(env.map_os_to_rid)[matrix.os] }} image to GHCR
-      uses: mr-smithers-excellent/docker-build-push@v4
+      uses: mr-smithers-excellent/docker-build-push@v5 # CHECK FOR UPDATES
       with:
         image: ${{ env.docker_repo }}
         tag: ${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
@@ -299,7 +301,7 @@ jobs:
         mkdir tags
         echo . > tags/${{ needs.build.outputs.dockerTag }}-${{ fromJSON(env.map_os_to_rid)[matrix.os] }}
     - name: Upload tags
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3 # CHECK FOR UPDATES
       with:
         name: tags
         path: 'tags/*'
@@ -311,9 +313,9 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3 # CHECK FOR UPDATES
     - name: Download tags
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3 # CHECK FOR UPDATES
       with:
         name: tags
         path: 'tags/'
@@ -352,7 +354,7 @@ jobs:
       env:
         DOCKER_CLI_EXPERIMENTAL: enabled
     - name: Generate Docker Hub Description
-      uses: cuchi/jinja2-action@v1.2.0
+      uses: cuchi/jinja2-action@v1.2.0 # CHECK FOR UPDATES
       with:
         template: docker/README.md.j2
         output_file: docker/README.md
@@ -363,7 +365,7 @@ jobs:
         data_file: docker/older_tags.json
         data_format: json
     - name: Update Docker Hub Description
-      uses: peter-evans/dockerhub-description@v2
+      uses: peter-evans/dockerhub-description@v2 # CHECK FOR UPDATES
       env:
         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
