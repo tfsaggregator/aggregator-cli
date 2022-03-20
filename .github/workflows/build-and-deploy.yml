@@ -50,9 +50,11 @@ jobs:
       preReleaseTag: '${{ steps.gitversion.outputs.preReleaseTag }}'
     steps:
     - uses: actions/checkout@v3 # CHECK FOR UPDATES
+      with:
+        fetch-depth: 0
     # versioning
     - name: Fetch Git history for GitVersion
-      run: git fetch --prune --tags
+      run: git fetch --tags
     - name: Extract git tag
       id: get_git_tag
       run: echo ::set-output name=tag_name::${GITHUB_REF/refs\/tags\//}
