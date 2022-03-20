@@ -78,6 +78,7 @@ jobs:
       with:
         java-version: '11' # CHECK FOR UPDATES
         java-package: jre
+        distribution: 'temurin'
     - name: Install dotnet tools
       run: dotnet tool restore
     - name: SonarCloud Setup
