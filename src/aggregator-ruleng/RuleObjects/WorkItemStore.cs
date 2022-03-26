@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.TeamFoundation.Work.WebApi.Contracts;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
-using Newtonsoft.Json;
 
 
 namespace aggregator.Engine
