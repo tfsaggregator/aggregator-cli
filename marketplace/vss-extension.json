@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "aggregator-cli",
   "version": "0.0.1",
-  "name": "Aggregator CLI",
+  "name": "Aggregator 3 (aka aggregator CLI)",
   "description": "This is the successor to TFS Aggregator to support Azure DevOps Services and Azure.",
   "publisher": "tfsaggregatorteam",
   "targets": [

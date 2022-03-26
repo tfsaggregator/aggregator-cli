@@ -5,11 +5,11 @@ export VER_PRE_RELEASE_TAG=beta3.localdev1
 export DOWNLOADSECUREFILE_SECUREFILEPATH=/mnc/c/src/github.com/tfsaggregator/aggregator-cli/secrets/logon-data-ubuntu.json
 
 echo "$CONFIGURATION $VER_MAJOR_MINOR_PATCH $VER_PRE_RELEASE_TAG $DOWNLOADSECUREFILE_SECUREFILEPATH"
-dotnet clean --configuration $CONFIGURATION src/aggregator-cli.sln
+dotnet clean --configuration $CONFIGURATION src/aggregator3.sln
 rm -RIv outputs/function
 
-dotnet restore src/aggregator-cli.sln
-dotnet build --configuration $CONFIGURATION src/aggregator-cli.sln /p:VersionPrefix=$VER_MAJOR_MINOR_PATCH /p:VersionSuffix=$VER_PRE_RELEASE_TAG
+dotnet restore src/aggregator3.sln
+dotnet build --configuration $CONFIGURATION src/aggregator3.sln /p:VersionPrefix=$VER_MAJOR_MINOR_PATCH /p:VersionSuffix=$VER_PRE_RELEASE_TAG
 
 mkdir -p outputs/function
 dotnet publish --runtime linux-x64 --configuration $CONFIGURATION --output outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=$VER_MAJOR_MINOR_PATCH -p:VersionSuffix=$VER_PRE_RELEASE_TAG
