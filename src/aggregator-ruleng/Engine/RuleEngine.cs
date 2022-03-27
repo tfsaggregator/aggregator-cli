@@ -47,6 +47,7 @@ namespace aggregator.Engine
 
             var globals = new RuleExecutionContext
             {
+                ruleName = rule.Name,
                 self = self,
                 selfChanges = selfChanges,
                 store = store,
