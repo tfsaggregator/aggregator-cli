@@ -389,7 +389,7 @@ namespace aggregator.Engine
             IsDirty = true;
         }
 
-        private void ResetValueOfExistingField(string field, object value)
+        internal void ResetValueOfExistingField(string field, object value)
         {
             _item.Fields[field] = value;
             Changes.RemoveAll(op => op.Path == "/fields/" + field);

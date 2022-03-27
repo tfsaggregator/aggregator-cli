@@ -18,6 +18,7 @@ namespace aggregator.Engine
         private readonly IClientsContext _clients;
         private readonly Lazy<Task<IEnumerable<WorkItemTypeCategory>>> _lazyGetWorkItemCategories;
         private readonly Lazy<Task<IEnumerable<BacklogWorkItemTypeStates>>> _lazyGetBacklogWorkItemTypesAndStates;
+        private readonly IDictionary<string, WorkItemStateWorkflow> _stateWorkflows = new Dictionary<string, WorkItemStateWorkflow>();
 
         private readonly IdentityRef _triggerIdentity;
 
@@ -134,6 +135,94 @@ namespace aggregator.Engine
             return updated;
         }
 
+        public async Task<bool> TransitionToState(WorkItemWrapper workItem, string targetState, bool bypassrules, string comment)
+        {
+            // sanity checks
+            if (workItem.IsNew)
+            {
+                _context.Logger.WriteError($"WorkItem is new: TransitionToState works only for existing WorkItems");
+                return false;
+            }
+            if (workItem.IsDeleted)
+            {
+                _context.Logger.WriteError($"WorkItem #{workItem.Id} is deleted: TransitionToState works only for existing WorkItems");
+                return false;
+            }
+            if (workItem.Changes.Any(op => op.Path == "/fields/" + CoreFieldRefNames.State))
+            {
+                _context.Logger.WriteError($"WorkItem #{workItem.Id} state has already changed: cannot use TransitionToState");
+                return false;
+            }
+
+            string workItemType = workItem.WorkItemType;
+            if (!_stateWorkflows.TryGetValue(workItemType, out var stateWorkflow))
+            {
+                // cache
+                stateWorkflow = new WorkItemStateWorkflow(workItemType);
+                if (!await stateWorkflow.LoadAsync(_context))
+                {
+                    _context.Logger.WriteError($"Failed to retrieve States for work item type '{workItemType}'");
+                    return false;
+                }
+                _stateWorkflows.Add(workItemType, stateWorkflow);
+            }
+
+            string currentState = workItem.State;
+
+            if (!stateWorkflow.HasState(currentState))
+            {
+                _context.Logger.WriteError($"Current state '{currentState}' is not valid for work item type '{workItemType}'");
+                return false;
+            }
+            if (!stateWorkflow.HasState(targetState))
+            {
+                _context.Logger.WriteError($"Target state '{targetState}' is not valid for work item type '{workItemType}'");
+                return false;
+            }
+
+            var stateSequence = stateWorkflow.GetTransitionPath(currentState, targetState);
+
+            if (!stateSequence.Any())
+            {
+                _context.Logger.WriteError($"Target state '{targetState}' cannot be reached from '{currentState}' for work item type '{workItemType}'");
+                return false;
+            }
+
+            // finally we can do something about
+
+            if (stateSequence.Count() == 1)
+            {
+                workItem.State = targetState;
+                _context.Logger.WriteInfo($"WorkItem #{workItem.Id} state will change from '{currentState}' to '{targetState}' when Rule exits");
+                // No need for intermediate save
+                return true;
+            }
+
+            // more than one change => need intermediate saves
+            var statePersister = new Persistance.PersistStateChange(_context);
+            bool commit = !_context.DryRun;
+            //TODO resolve catch 22 to pick impersonate value
+            bool impersonate = false;
+            foreach (var nextState in stateSequence)
+            {
+                _context.Logger.WriteVerbose($"Transitioning from '{currentState}' to '{nextState}'");
+                workItem.State = nextState;
+                if (!await statePersister.PersistAsync(workItem, comment, commit, impersonate, bypassrules, _context.CancellationToken))
+                {
+                    _context.Logger.WriteError($"Target state '{targetState}' cannot be reached from '{workItemType}'");
+                    // we already saved the change, so align in-mem object
+                    workItem.ResetValueOfExistingField(CoreFieldRefNames.State, currentState);
+                    return false;
+                }
+                _context.Logger.WriteInfo($"Transitioning WorkItem #{workItem.Id} from '{currentState}' to '{nextState}' succeeded");
+                currentState = nextState;
+            }
+            // we already saved the change, so align in-mem object
+            workItem.ResetValueOfExistingField(CoreFieldRefNames.State, targetState);
+
+            return true;
+        }
+
         public async Task<IEnumerable<WorkItemTypeCategory>> GetWorkItemCategories()
         {
             return await _lazyGetWorkItemCategories.Value;
@@ -160,7 +249,7 @@ namespace aggregator.Engine
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Sonar Code Smell", "S907:\"goto\" statement should not be used")]
-        public async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
+        internal async Task<(int created, int updated)> SaveChanges(SaveMode mode, bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             if (impersonate)
             {
