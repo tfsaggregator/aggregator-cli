@@ -11,7 +11,7 @@ namespace aggregator.Engine.Persistance
         public PersistBatch(EngineContext context)
             : base(context) { }
 
-        internal async Task<(int created, int updated)> SaveChanges_Batch(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
+        internal async Task<(int created, int updated)> PersistAsync(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             // see https://github.com/redarrowlabs/vsts-restapi-samplecode/blob/master/VSTSRestApiSamples/WorkItemTracking/Batch.cs
             // and https://docs.microsoft.com/en-us/rest/api/vsts/wit/workitembatchupdate?view=vsts-rest-4.1

@@ -173,16 +173,16 @@ namespace aggregator.Engine
                     _context.Logger.WriteVerbose($"No save mode specified, assuming {SaveMode.TwoPhases}.");
                     goto case SaveMode.TwoPhases;
                 case SaveMode.Item:
-                    var saver = new Persistance.PersistByItem(_context);
-                    var resultItem = await saver.SaveChanges_ByItem(commit, impersonate, bypassrules, cancellationToken);
+                    var byItemPersister = new Persistance.PersistByItem(_context);
+                    var resultItem = await byItemPersister.PersistAsync(commit, impersonate, bypassrules, cancellationToken);
                     return resultItem;
                 case SaveMode.Batch:
-                    var saver2 = new Persistance.PersistBatch(_context);
-                    var resultBatch = await saver2.SaveChanges_Batch(commit, impersonate, bypassrules, cancellationToken);
+                    var batchPersister = new Persistance.PersistBatch(_context);
+                    var resultBatch = await batchPersister.PersistAsync(commit, impersonate, bypassrules, cancellationToken);
                     return resultBatch;
                 case SaveMode.TwoPhases:
-                    var saver3 = new Persistance.PersistTwoPhases(_context);
-                    var resultTwoPhases = await saver3.SaveChanges_TwoPhases(commit, impersonate, bypassrules, cancellationToken);
+                    var twoPhasePersister = new Persistance.PersistTwoPhases(_context);
+                    var resultTwoPhases = await twoPhasePersister.PersistAsync(commit, impersonate, bypassrules, cancellationToken);
                     return resultTwoPhases;
                 default:
                     throw new InvalidOperationException($"Unsupported save mode: {mode}.");
@@ -222,7 +222,7 @@ namespace aggregator.Engine
                     ReferenceName = backlog.ReferenceName
                 };
 
-                foreach (var workItemTypeName in backlog.WorkItemTypes.Select(wt=>wt.Name))
+                foreach (var workItemTypeName in backlog.WorkItemTypes.Select(wt => wt.Name))
                 {
                     var states = await _clients.WitClient.GetWorkItemTypeStatesAsync(_context.ProjectName, workItemTypeName);
 
@@ -243,7 +243,6 @@ namespace aggregator.Engine
 
             return workItemCategoryStates;
         }
-
     }
 
     public class WorkItemTypeCategory

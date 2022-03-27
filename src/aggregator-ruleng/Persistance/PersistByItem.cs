@@ -9,7 +9,7 @@ namespace aggregator.Engine.Persistance
         public PersistByItem(EngineContext context)
             : base(context) { }
 
-        internal async Task<(int created, int updated)> SaveChanges_ByItem(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
+        internal async Task<(int created, int updated)> PersistAsync(bool commit, bool impersonate, bool bypassrules, CancellationToken cancellationToken)
         {
             int createdCounter = 0;
             int updatedCounter = 0;
