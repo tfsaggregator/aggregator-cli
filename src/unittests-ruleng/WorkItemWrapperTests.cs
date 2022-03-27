@@ -27,7 +27,7 @@ namespace unittests_ruleng
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
 
-            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings(), false, default(System.Threading.CancellationToken));
         }
 
         [Fact]
@@ -341,7 +341,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = true };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -376,7 +376,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -409,7 +409,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -443,7 +443,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
