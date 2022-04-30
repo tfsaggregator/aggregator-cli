@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
@@ -371,15 +372,19 @@ namespace aggregator.cli
 
         private async Task ForceFunctionRuntimeVersionAsync(InstanceName instance, CancellationToken cancellationToken)
         {
-            const string TargetVersion = "~3";
-            // Change V2 to V3 FUNCTIONS_EXTENSION_VERSION ~3
+            const string TargetVersion = "~4";
+            const string DotNetVersion = "v6.0";
+            // Change V2/V3 to V4 FUNCTIONS_EXTENSION_VERSION ~4
             var webFunctionApp = await GetWebApp(instance, cancellationToken);
             var currentAzureRuntimeVersion = webFunctionApp.GetAppSettings()
                                                            .GetValueOrDefault("FUNCTIONS_EXTENSION_VERSION");
-            if (currentAzureRuntimeVersion?.Value != TargetVersion)
+            var currentDotNetVersion = webFunctionApp.NetFrameworkVersion;
+            if (currentAzureRuntimeVersion?.Value != TargetVersion ||
+                currentDotNetVersion?.Value != DotNetVersion)
             {
                 webFunctionApp.Update()
                           .WithAppSetting("FUNCTIONS_EXTENSION_VERSION", TargetVersion)
+                          .WithNetFrameworkVersion(NetFrameworkVersion.Parse(DotNetVersion))
                           .Apply();
             }
         }
