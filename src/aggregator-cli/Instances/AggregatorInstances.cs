@@ -330,25 +330,34 @@ namespace aggregator.cli
 
         internal async Task<bool> UpdateAsync(InstanceName instance, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
+            // capture the list of rules/Functions _before_
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': retriving rules");
+            var rules = new AggregatorRules(_azure, _logger);
+            var allRules = await rules.ListAsync(instance, cancellationToken);
+            var ruleNames = allRules.Select(r => r.RuleName).ToList();
+
             // update runtime package
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating run-time package to {requiredVersion} from {sourceUrl}");
             var package = new FunctionRuntimePackage(_logger);
             bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
             if (!ok)
                 return false;
 
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': force AzFunction runtime version");
             await ForceFunctionRuntimeVersionAsync(instance, cancellationToken);
 
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating root files");
             var uploadFiles = await UpdateDefaultFilesAsync(package);
 
-            var rules = new AggregatorRules(_azure, _logger);
-            var allRules = await rules.ListAsync(instance, cancellationToken);
-
-            foreach (var ruleName in allRules.Select(r => r.RuleName))
+            foreach (var ruleName in ruleNames)
             {
-                _logger.WriteInfo($"Updating Rule '{ruleName}'");
+                _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating Rule '{ruleName}'");
                 await rules.UploadRuleFilesAsync(instance, ruleName, uploadFiles, cancellationToken);
             }
 
+            // TODO replace 'aggregatorVersion' Azure tag on resources...easier said than done
+
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': complete");
             return true;
         }
 
