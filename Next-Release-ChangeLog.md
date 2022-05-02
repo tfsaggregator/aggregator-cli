@@ -3,12 +3,13 @@ This release has a few fixes and a new feature.
 
 CLI Commands and Options
 ========================
-No changes.
+Fixes upgrading a previous instance to the latest run-time (PR #263).
 
 
 Docker and Azure Function Hosting
 ========================
 No changes.
+
 
 Rule Language
 ========================
