@@ -23,6 +23,7 @@ No changes.
 Build, Test, Documentation
 ========================
 * Renamed `aggregator-cli.sln` to `aggregator3.sln`.
+* Added upgrade tests.
 
 
 File Hashes

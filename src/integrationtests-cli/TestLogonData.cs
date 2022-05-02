@@ -23,10 +23,11 @@ namespace integrationtests.cli
             PAT = data.pat;
 
             string uniqueSuffix = data.uniqueSuffix;
-
             UniqueSuffix = string.IsNullOrEmpty(uniqueSuffix) ? GetRandomString(8) : uniqueSuffix;
 
             RuntimeSourceUrl = data.runtimeSourceUrl;
+            string versionToUpgrade = data.versionToUpgrade;
+            VersionToUpgrade = string.IsNullOrEmpty(versionToUpgrade) ? "1.1.0" : versionToUpgrade;
         }
 
         private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")
@@ -54,5 +55,6 @@ namespace integrationtests.cli
         public string PAT { get; }
         // Local data
         public string RuntimeSourceUrl { get; }
+        public string VersionToUpgrade { get; }
     }
 }
