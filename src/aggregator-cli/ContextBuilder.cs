@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.VisualStudio.Services.WebApi;
 
 namespace aggregator.cli
@@ -12,12 +13,14 @@ namespace aggregator.cli
     {
         internal ILogger Logger { get; }
         internal IAzure Azure { get; }
+        internal IResourceManagementClient AzureManagement { get; }
         internal VssConnection Devops { get; }
         internal INamingTemplates Naming { get; }
-        internal CommandContext(ILogger logger, IAzure azure, VssConnection devops, INamingTemplates naming)
+        internal CommandContext(ILogger logger, IAzure azure, IResourceManagementClient azureManagement, VssConnection devops, INamingTemplates naming)
         {
             Logger = logger;
             Azure = azure;
+            AzureManagement = azureManagement;
             Devops = devops;
             Naming = naming;
         }
@@ -28,6 +31,7 @@ namespace aggregator.cli
         private readonly string namingTemplate;
         private readonly ILogger logger;
         private bool azureLogon;
+        private bool azureManagementLogon;
         private bool devopsLogon;
 
         internal ContextBuilder(ILogger logger, string namingTemplate)
@@ -42,6 +46,12 @@ namespace aggregator.cli
             return this;
         }
 
+        internal ContextBuilder WithAzureManagement()
+        {
+            azureManagementLogon = true;
+            return this;
+        }
+
         internal ContextBuilder WithDevOpsLogon()
         {
             devopsLogon = true;
@@ -51,6 +61,7 @@ namespace aggregator.cli
         internal async Task<CommandContext> BuildAsync(CancellationToken cancellationToken)
         {
             IAzure azure = null;
+            IResourceManagementClient azureManagement = null;
             VssConnection devops = null;
 
             if (azureLogon)
@@ -64,6 +75,19 @@ namespace aggregator.cli
                 }
 
                 azure = connection.Logon();
+                logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
+            }
+            if (azureManagementLogon)
+            {
+                logger.WriteVerbose($"Authenticating to Azure...");
+                var (connection, reason) = AzureLogon.Load();
+                if (reason != LogonResult.Succeeded)
+                {
+                    string msg = TranslateResult(reason);
+                    throw new InvalidOperationException(string.Format(msg, "Azure", "logon.azure"));
+                }
+
+                azureManagement = connection.LogonManagement();
                 logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
             }
 
@@ -97,7 +121,7 @@ namespace aggregator.cli
                     break;
             }
 
-            return new CommandContext(logger, azure, devops, naming);
+            return new CommandContext(logger, azure, azureManagement, devops, naming);
         }
 
         private static string TranslateResult(LogonResult reason)

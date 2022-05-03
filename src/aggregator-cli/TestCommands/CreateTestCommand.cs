@@ -32,7 +32,7 @@ namespace aggregator.cli
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
             var instance = context.Naming.Instance(Instance, ResourceGroup);
-            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
+            var instances = new AggregatorInstances(context.Azure, null, context.Logger, context.Naming);
             var boards = new Boards(context.Devops, context.Logger);
 
             int id = await boards.CreateWorkItemAsync(this.Project, this.Title, cancellationToken);

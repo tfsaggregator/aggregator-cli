@@ -20,7 +20,7 @@ namespace aggregator.cli
                 .BuildAsync(cancellationToken);
             context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var instance = context.Naming.Instance(Instance, ResourceGroup);
-            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
+            var instances = new AggregatorInstances(context.Azure, null, context.Logger, context.Naming);
             bool ok = await instances.StreamLogsAsync(instance, cancellationToken);
             return ok ? ExitCodes.Success : ExitCodes.Failure;
         }
