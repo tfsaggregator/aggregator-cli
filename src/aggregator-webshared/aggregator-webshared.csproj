@@ -5,12 +5,7 @@
     <RootNamespace>aggregator</RootNamespace>
     <!-- AssemblyInfo -->
     <Title>Aggregator Server Common</Title>
-    <Company>TFS Aggregator Team</Company>
-    <Product>Aggregator CLI</Product>
-    <Copyright>Copyright © TFS Aggregator Team</Copyright>
     <Description>Shared code between Azure Function and ASP.NET</Description>
-    <VersionPrefix>0.0.1</VersionPrefix>
-    <VersionSuffix>localdev</VersionSuffix>
     <CodeAnalysisRuleSet>..\.sonarlint\tfsaggregator_aggregator-clicsharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 

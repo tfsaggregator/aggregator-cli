@@ -1,0 +1,9 @@
+<Project>
+ <PropertyGroup>
+    <Company>TFS Aggregator Team</Company>
+    <Product>Aggregator 3</Product>
+    <Copyright>Copyright © TFS Aggregator Team</Copyright>
+    <VersionPrefix>1.3.0</VersionPrefix>
+    <VersionSuffix>beta.1</VersionSuffix>
+ </PropertyGroup>
+</Project>

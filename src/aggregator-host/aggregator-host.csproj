@@ -5,13 +5,8 @@
     <RootNamespace>aggregator_host</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <!-- AssemblyInfo -->
-    <Title>Aggregator CLI</Title>
-    <Company>TFS Aggregator Team</Company>
-    <Product>Aggregator Host</Product>
-    <Copyright>Copyright © TFS Aggregator Team</Copyright>
+    <Title>Aggregator Host</Title>
     <Description>Aggregator Hosts the Rules Interpreter</Description>
-    <VersionPrefix>0.0.1</VersionPrefix>
-    <VersionSuffix>localdev</VersionSuffix>    
     <CodeAnalysisRuleSet>..\.sonarlint\tfsaggregator_aggregator-clicsharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
