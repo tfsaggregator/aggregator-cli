@@ -79,7 +79,7 @@ namespace aggregator.cli
             });
             var types = new Type[]
             {
-                    typeof(CreateTestCommand), typeof(CleanupTestCommand),
+                    typeof(CreateTestCommand), typeof(UpdateTestCommand), typeof(CleanupTestCommand),
                     typeof(LogonAzureCommand), typeof(LogonDevOpsCommand), typeof(LogoffCommand), typeof(LogonEnvCommand),
                     typeof(ListInstancesCommand), typeof(InstallInstanceCommand), typeof(UpdateInstanceCommand),
                     typeof(UninstallInstanceCommand), typeof(ConfigureInstanceCommand), typeof(StreamLogsCommand),
@@ -89,39 +89,40 @@ namespace aggregator.cli
                     typeof(MapLocalRuleCommand)
             };
             var parserResult = parser.ParseArguments(args, types);
-            int rc = ExitCodes.Unexpected;
+            (bool success, int returnCode) returnValue = (false, ExitCodes.Unexpected);
             parserResult
-                .WithParsed<CreateTestCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<CleanupTestCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<LogonAzureCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<LogonDevOpsCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<LogoffCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<LogonEnvCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<ListInstancesCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<InstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<UpdateInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<UninstallInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<ConfigureInstanceCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<ListRulesCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<AddRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<RemoveRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<ConfigureRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<StreamLogsCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<UpdateRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<InvokeRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<ListMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<MapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<UnmapRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<UpdateMappingsCommand>(cmd => rc = cmd.Run(cancellationToken))
-                .WithParsed<MapLocalRuleCommand>(cmd => rc = cmd.Run(cancellationToken))
+                .WithParsed<CreateTestCommand>(cmd => returnValue = cmd.Run(cancellationToken, ReturnType.SuccessBooleanPlusIntegerValue))
+                .WithParsed<UpdateTestCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<CleanupTestCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<LogonAzureCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<LogonDevOpsCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<LogoffCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<LogonEnvCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<ListInstancesCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<InstallInstanceCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<UpdateInstanceCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<UninstallInstanceCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<ConfigureInstanceCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<ListRulesCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<AddRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<RemoveRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<ConfigureRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<StreamLogsCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<UpdateRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<InvokeRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<ListMappingsCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<MapRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<UnmapRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<UpdateMappingsCommand>(cmd => returnValue = cmd.Run(cancellationToken))
+                .WithParsed<MapLocalRuleCommand>(cmd => returnValue = cmd.Run(cancellationToken))
                 .WithNotParsed(errs =>
                 {
                     var helpText = HelpText.AutoBuild(parserResult);
                     Console.Error.Write(helpText);
-                    rc = ExitCodes.InvalidArguments;
+                    returnValue = (false, ExitCodes.InvalidArguments);
                 });
 
-
+            int rc = returnValue.returnCode;
             mainTimer.Stop();
             Telemetry.TrackEvent("CLI End", null,
                 new Dictionary<string, double> {

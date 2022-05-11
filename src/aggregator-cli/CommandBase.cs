@@ -9,6 +9,12 @@ using Microsoft.VisualStudio.Services.Common;
 
 namespace aggregator.cli
 {
+    internal enum ReturnType
+    {
+        ExitCode,
+        SuccessBooleanPlusIntegerValue
+    }
+
     abstract class CommandBase
     {
         [ShowInTelemetry]
@@ -25,7 +31,13 @@ namespace aggregator.cli
 
         internal abstract Task<int> RunAsync(CancellationToken cancellationToken);
 
-        internal int Run(CancellationToken cancellationToken)
+        // virtual because it is the exception not the norm, don't want to force every command with a dummy implementation
+        internal virtual async Task<(bool success, int returnCode)> RunWithReturnAsync(CancellationToken cancellationToken)
+        {
+            return (true, 0);
+        }
+
+        internal (bool success, int returnCode) Run(CancellationToken cancellationToken, ReturnType returnMode = ReturnType.ExitCode)
         {
             var thisCommandName = this.GetType().GetCustomAttribute<VerbAttribute>().Name;
 
@@ -61,31 +73,58 @@ namespace aggregator.cli
                 // Hello World
                 Logger.WriteInfo($"{title.Title} v{infoVersion.InformationalVersion} (build: {fileVersion.Version} {config.Configuration}) (c) {copyright.Copyright}");
 
-                var t = RunAsync(cancellationToken);
-                t.Wait(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                int rc = t.Result;
+                (bool success, int returnCode) packedResult;
+
+                switch (returnMode)
+                {
+                    case ReturnType.ExitCode:
+                        var t = RunAsync(cancellationToken);
+                        t.Wait(cancellationToken);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        packedResult = (default, t.Result);
+                        if (packedResult.returnCode == ExitCodes.Success)
+                        {
+                            packedResult.success = true;
+                            Logger.WriteSuccess($"{thisCommandName} Succeeded");
+                        }
+                        else if (packedResult.returnCode == ExitCodes.NotFound)
+                        {
+                            packedResult.success = true;
+                            Logger.WriteWarning($"{thisCommandName} Item Not found");
+                        }
+                        else
+                        {
+                            packedResult.success = false;
+                            Logger.WriteError($"{thisCommandName} Failed!");
+                        }
+                        break;
+                    case ReturnType.SuccessBooleanPlusIntegerValue:
+                        var t2 = RunWithReturnAsync(cancellationToken);
+                        t2.Wait(cancellationToken);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        packedResult = t2.Result;
+                        if (packedResult.success)
+                        {
+                            Logger.WriteSuccess($"{thisCommandName} Succeeded");
+                        }
+                        else
+                        {
+                            Logger.WriteError($"{thisCommandName} Failed!");
+                        }
+                        break;
+                    default:
+                        throw new NotImplementedException($"Fix code and add {returnMode} to ReturnType enum.");
+                }
 
                 var eventEnd = new EventTelemetry
                 {
                     Name = $"{thisCommandName} End"
                 };
-                eventEnd.Properties["exitCode"] = rc.ToString();
+                // SuccessBooleanPlusIntegerValue is used only in testing scenarios
+                eventEnd.Properties["exitCode"] = packedResult.returnCode.ToString();
                 Telemetry.TrackEvent(eventEnd);
 
-                if (rc == ExitCodes.Success)
-                {
-                    Logger.WriteSuccess($"{thisCommandName} Succeeded");
-                }
-                else if (rc == ExitCodes.NotFound)
-                {
-                    Logger.WriteWarning($"{thisCommandName} Item Not found");
-                }
-                else
-                {
-                    Logger.WriteError($"{thisCommandName} Failed!");
-                }
-                return rc;
+                return packedResult;
             }
             catch (Exception ex)
             {
@@ -95,7 +134,7 @@ namespace aggregator.cli
                     : ex.InnerException.Message
                     );
                 Telemetry.TrackException(ex);
-                return ExitCodes.Unexpected;
+                return (false, ExitCodes.Unexpected);
             }
         }
 
