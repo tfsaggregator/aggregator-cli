@@ -147,9 +147,9 @@ return string.Empty;
 ";
 
             var rule = new ScriptedRuleWrapper("Test", ruleCode.Mince());
-            var result = rule.Verify();
+            var (success, _) = rule.Verify();
 
-            Assert.False(result.success);
+            Assert.False(success);
         }
 
         [Fact]

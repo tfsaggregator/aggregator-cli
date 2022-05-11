@@ -31,7 +31,7 @@ namespace aggregator_host
         public async Task LoadAsync()
         {
             string fileName = _configuration.GetValue<string>("Aggregator_ApiKeysPath");
-            _log.LogDebug($"Loading API Keys from {fileName}");
+            _log.LogDebug("Loading API Keys from {fileName}", fileName);
             using (var fs = File.OpenRead(fileName))
             {
                 apiKeyRecords = await JsonSerializer.DeserializeAsync<ApiKeyRecord[]>(fs,
@@ -40,7 +40,8 @@ namespace aggregator_host
                     PropertyNameCaseInsensitive = true,
                 });
             }
-            _log.LogInformation($"Loaded {apiKeyRecords?.Length} API Keys");
+            int numOfAPIKeys = apiKeyRecords?.Length ?? 0;
+            _log.LogInformation("Loaded {numOfAPIKeys} API Keys", numOfAPIKeys);
         }
 
         public bool IsValidApiKey(StringValues request)

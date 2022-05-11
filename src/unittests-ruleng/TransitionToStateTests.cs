@@ -29,7 +29,7 @@ public class TransitionToStateTests
         WitClient = DefaultClientsContext.WitClient;
         WitClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
 
-        DefaultEngineContext = new EngineContext(DefaultClientsContext, DefaultClientsContext.ProjectId, DefaultClientsContext.ProjectName, Logger, new RuleSettings(), false, default(CancellationToken));
+        DefaultEngineContext = new EngineContext(DefaultClientsContext, DefaultClientsContext.ProjectId, DefaultClientsContext.ProjectName, Logger, new RuleSettings(), false, default);
 
         TaskWorkItemType = new WorkItemType
         {
@@ -121,7 +121,7 @@ public class TransitionToStateTests
         var path = stateInfo.GetTransitionPath("Proposed", "Resolved")?.ToArray();
 
         Assert.NotNull(path);
-        Assert.Equal(2, path.Count());
+        Assert.Equal(2, path.Length);
         Assert.Contains("Active", path);
         Assert.Contains("Resolved", path);
     }
@@ -277,8 +277,10 @@ public class TransitionToStateTests
                 { CoreFieldRefNames.WorkItemType, TaskWorkItemType.Name },
             }
         };
-        var workItemWrap = new WorkItemWrapper(DefaultEngineContext, workItem);
-        workItemWrap.State = "Active";
+        var workItemWrap = new WorkItemWrapper(DefaultEngineContext, workItem)
+        {
+            State = "Active"
+        };
         var sut = new WorkItemStore(DefaultEngineContext);
 
         bool ok = await sut.TransitionToState(workItemWrap, "Resolved", false, "Some comment");

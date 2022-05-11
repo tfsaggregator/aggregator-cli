@@ -50,7 +50,7 @@ internal class WorkItemStateWorkflow
     internal IEnumerable<string> GetTransitionPath(string currentState, string targetState)
     {
         // Constant cost
-        Func<Edge<string>, double> edgeCost = edge => 1;
+        static double edgeCost(Edge<string> edge) => 1;
         TryFunc<string, IEnumerable<Edge<string>>> tryGetPaths = Graph.ShortestPathsDijkstra(edgeCost, currentState);
         if (tryGetPaths(targetState, out var path))
         {

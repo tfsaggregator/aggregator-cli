@@ -56,6 +56,7 @@ namespace integrationtests.cli
             File.Delete(packageFile);
             string runtimeURL = $"https://github.com/tfsaggregator/aggregator-cli/releases/download/v{TestLogonData.VersionToUpgrade}/{runtimeFilename}";
             await DownloadFile(runtimeURL, PreviousVersionRuntimeFile, cancellationToken);
+            Assert.True(File.Exists(PreviousVersionRuntimeFile));
         }
 
         [Fact, Order(5)]

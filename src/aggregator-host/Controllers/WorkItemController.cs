@@ -32,7 +32,7 @@ namespace aggregator_host.Controllers
         public async Task<IActionResult> PostAsync(WebHookEvent eventData, string ruleName, CancellationToken cancellationToken)
         {
             var aggregatorVersion = RequestHelper.AggregatorVersion;
-            _log.LogInformation($"Aggregator v{aggregatorVersion} executing rule '{ruleName}'");
+            _log.LogInformation("Aggregator v{aggregatorVersion} executing rule '{ruleName}'", aggregatorVersion, ruleName);
 
             var webHookStartEvent = new EventTelemetry()
             {
@@ -106,13 +106,14 @@ namespace aggregator_host.Controllers
                     }
                     else
                     {
-                        _log.LogInformation($"Returning '{execResult}' from '{rule.Name}'");
+                        _log.LogInformation("Returning '{execResult}' from '{ruleName}'", execResult, ruleName);
                         return Ok(execResult);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.LogWarning($"Rule '{ruleName}' failed: {ex.Message}");
+                    string message = ex.Message;
+                    _log.LogWarning("Rule '{ruleName}' failed: {message}", ruleName, message);
                     Telemetry.TrackException(ex);
                     return BadRequest(ex.Message);
                 }

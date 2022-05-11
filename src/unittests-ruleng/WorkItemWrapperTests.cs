@@ -27,7 +27,7 @@ namespace unittests_ruleng
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
 
-            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings(), false, default(System.Threading.CancellationToken));
+            context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings(), false, default);
         }
 
         [Fact]
@@ -87,9 +87,10 @@ namespace unittests_ruleng
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
             };
 
-            var wrapper = new WorkItemWrapper(context, workItem);
-
-            wrapper.AssignedTo = null;
+            var wrapper = new WorkItemWrapper(context, workItem)
+            {
+                AssignedTo = null
+            };
 
             var idRef = new IdentityRef();
             wrapper.AssignedTo = idRef;
@@ -341,7 +342,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = true };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default);
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -356,8 +357,10 @@ namespace unittests_ruleng
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
             };
 
-            var wrapper = new WorkItemWrapper(context, workItem);
-            wrapper.Title = "Replaced title";
+            var wrapper = new WorkItemWrapper(context, workItem)
+            {
+                Title = "Replaced title"
+            };
 
             var expected = new JsonPatchOperation
             {
@@ -376,7 +379,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default);
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -391,8 +394,10 @@ namespace unittests_ruleng
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
             };
 
-            var wrapper = new WorkItemWrapper(context, workItem);
-            wrapper.Title = "Replaced title";
+            var wrapper = new WorkItemWrapper(context, workItem)
+            {
+                Title = "Replaced title"
+            };
 
             Assert.Single(wrapper.Changes);
             var actual = wrapper.Changes[0];
@@ -409,7 +414,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default);
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -424,8 +429,10 @@ namespace unittests_ruleng
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
             };
 
-            var wrapper = new WorkItemWrapper(context, workItem);
-            wrapper.Title = firstValue;
+            var wrapper = new WorkItemWrapper(context, workItem)
+            {
+                Title = firstValue
+            };
             wrapper.Title = "Replaced title - again";
 
             Assert.Single(wrapper.Changes);
@@ -443,7 +450,7 @@ namespace unittests_ruleng
         {
             var logger = Substitute.For<IAggregatorLogger>();
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default);
 
             int workItemId = 42;
             WorkItem workItem = new WorkItem
@@ -458,8 +465,10 @@ namespace unittests_ruleng
                 Url = $"{clientsContext.WorkItemsBaseUrl}/{workItemId}"
             };
 
-            var wrapper = new WorkItemWrapper(context, workItem);
-            wrapper.Reason = firstValue;
+            var wrapper = new WorkItemWrapper(context, workItem)
+            {
+                Reason = firstValue
+            };
             wrapper.Reason = "New reason - again";
 
             Assert.Single(wrapper.Changes);

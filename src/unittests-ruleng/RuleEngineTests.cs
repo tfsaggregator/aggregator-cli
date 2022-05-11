@@ -1,4 +1,4 @@
-using aggregator.Engine;
+﻿using aggregator.Engine;
 using Xunit;
 
 namespace unittests_ruleng
@@ -12,11 +12,11 @@ namespace unittests_ruleng
             var rule = new ScriptedRuleWrapper("Test", new[] { "" });
 
             //When
-            var result = rule.Verify();
+            var (success, diagnostics) = rule.Verify();
 
             //Then
-            Assert.True(result.success);
-            Assert.Empty(result.diagnostics);
+            Assert.True(success);
+            Assert.Empty(diagnostics);
         }
 
         [Fact]
@@ -26,11 +26,11 @@ namespace unittests_ruleng
             var rule = new ScriptedRuleWrapper("Test", new[] { "(" });
 
             //When
-            var result = rule.Verify();
+            var (success, diagnostics) = rule.Verify();
 
             //Then
-            Assert.False(result.success);
-            Assert.NotEmpty(result.diagnostics);
+            Assert.False(success);
+            Assert.NotEmpty(diagnostics);
         }
     }
 }

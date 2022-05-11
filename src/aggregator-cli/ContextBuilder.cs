@@ -88,7 +88,7 @@ namespace aggregator.cli
                 }
 
                 azureManagement = connection.LogonManagement();
-                logger.WriteInfo($"Connected to subscription {azure.SubscriptionId}");
+                logger.WriteInfo($"Connected to subscription {azureManagement.SubscriptionId}");
             }
 
             if (devopsLogon)

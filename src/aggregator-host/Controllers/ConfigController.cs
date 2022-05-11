@@ -61,7 +61,8 @@ namespace aggregator_host.Controllers
             }
             else
             {
-                _log.LogError("API Key request failed from {0}", HttpContext.Connection.RemoteIpAddress);
+                string sourceIPAddress = HttpContext?.Connection?.RemoteIpAddress?.ToString();
+                _log.LogError("API Key request failed from {sourceIPAddress}", sourceIPAddress);
                 return MagicConstants.InvalidApiKey;
 
             }

@@ -15,7 +15,7 @@ namespace integrationtests.cli
 {
     public abstract class End2EndScenarioBase
     {
-        protected static TestLogonData TestLogonData = new TestLogonData(
+        protected static TestLogonData TestLogonData = new(
             // CI scenario
             Environment.GetEnvironmentVariable("DOWNLOADSECUREFILE_SECUREFILEPATH")
             // Visual Studio

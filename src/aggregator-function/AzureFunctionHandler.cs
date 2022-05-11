@@ -137,8 +137,7 @@ namespace aggregator
         /// </summary>
         /// <returns>The created <see cref="BadRequestResult"/> for the response.</returns>
         [NonAction]
-        public virtual BadRequestResult BadRequest()
-            => new BadRequestResult();
+        public virtual BadRequestResult BadRequest() => new();
 
         /// <summary>
         /// Creates an <see cref="BadRequestObjectResult"/> that produces a <see cref="StatusCodes.Status400BadRequest"/> response.
@@ -146,8 +145,7 @@ namespace aggregator
         /// <param name="error">An error object to be returned to the client.</param>
         /// <returns>The created <see cref="BadRequestObjectResult"/> for the response.</returns>
         [NonAction]
-        public virtual BadRequestObjectResult BadRequest(object error)
-            => new BadRequestObjectResult(error);
+        public virtual BadRequestObjectResult BadRequest(object error) => new(error);
 
 
         /// <summary>
@@ -155,8 +153,7 @@ namespace aggregator
         /// </summary>
         /// <returns>The created <see cref="OkResult"/> for the response.</returns>
         [NonAction]
-        public virtual OkResult Ok()
-            => new OkResult();
+        public virtual OkResult Ok() => new();
 
         /// <summary>
         /// Creates an <see cref="OkObjectResult"/> object that produces an <see cref="StatusCodes.Status200OK"/> response.
@@ -164,24 +161,21 @@ namespace aggregator
         /// <param name="value">The content value to format in the entity body.</param>
         /// <returns>The created <see cref="OkObjectResult"/> for the response.</returns>
         [NonAction]
-        public virtual OkObjectResult Ok(object value)
-            => new OkObjectResult(value);
+        public virtual OkObjectResult Ok(object value) => new(value);
 
         /// <summary>
         /// Creates an <see cref="NotFoundResult"/> that produces a <see cref="StatusCodes.Status404NotFound"/> response.
         /// </summary>
         /// <returns>The created <see cref="NotFoundResult"/> for the response.</returns>
         [NonAction]
-        public virtual NotFoundResult NotFound()
-            => new NotFoundResult();
+        public virtual NotFoundResult NotFound() => new();
 
         /// <summary>
         /// Creates an <see cref="NotFoundObjectResult"/> that produces a <see cref="StatusCodes.Status404NotFound"/> response.
         /// </summary>
         /// <returns>The created <see cref="NotFoundObjectResult"/> for the response.</returns>
         [NonAction]
-        public virtual NotFoundObjectResult NotFound(object value)
-            => new NotFoundObjectResult(value);
+        public virtual NotFoundObjectResult NotFound(object value) => new (value);
 
         #endregion
     }

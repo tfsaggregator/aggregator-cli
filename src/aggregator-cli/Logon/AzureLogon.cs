@@ -88,8 +88,10 @@ namespace aggregator.cli
                 .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
                 .WithCredentials(azureCreds)
                 .Build();
-            var resourceClient = new ResourceManagementClient(restClient);
-            resourceClient.SubscriptionId = SubscriptionId;
+            var resourceClient = new ResourceManagementClient(restClient)
+            {
+                SubscriptionId = SubscriptionId
+            };
             return resourceClient;
         }
     }

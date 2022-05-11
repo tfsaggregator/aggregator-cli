@@ -24,7 +24,7 @@ namespace aggregator.cli
             for (int k = 0; k < c.Length; k++)
                 total += 11 * total + (int)c[k];
 
-            total = total % limit;
+            total %= limit;
 
             if (total < 0)
                 total += limit;

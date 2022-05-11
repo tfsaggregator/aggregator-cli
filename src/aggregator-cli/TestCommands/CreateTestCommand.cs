@@ -30,7 +30,9 @@ namespace aggregator.cli
         public bool returnId { get; set; }
 
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             throw new NotImplementedException("Use CreateTestCommand.RunWithReturnAsync() instead");
         }

@@ -31,7 +31,7 @@ namespace unittests_ruleng
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
 
-            engineDefaultContext = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings(), false, default(CancellationToken));
+            engineDefaultContext = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings(), false, default);
         }
 
 
@@ -168,12 +168,12 @@ namespace unittests_ruleng
 
             var wi = sut.NewWorkItem("Task");
             wi.Title = "Brand new";
-            var save = await sut.SaveChanges(SaveMode.Default, false, false, false, CancellationToken.None);
+            var (created, updated) = await sut.SaveChanges(SaveMode.Default, false, false, false, CancellationToken.None);
 
             Assert.NotNull(wi);
             Assert.True(wi.IsNew);
-            Assert.Equal(1, save.created);
-            Assert.Equal(0, save.updated);
+            Assert.Equal(1, created);
+            Assert.Equal(0, updated);
             Assert.Equal(-1, wi.Id.Value);
         }
 
@@ -233,11 +233,11 @@ namespace unittests_ruleng
             Assert.True(wrapper.IsDirty);
             Assert.Equal(RecycleStatus.ToDelete, wrapper.RecycleStatus);
 
-            var changedWorkItems = context.Tracker.GetChangedWorkItems();
-            Assert.Single(changedWorkItems.Deleted);
-            Assert.Empty(changedWorkItems.Created);
-            Assert.Empty(changedWorkItems.Updated);
-            Assert.Empty(changedWorkItems.Restored);
+            var (Created, Updated, Deleted, Restored) = context.Tracker.GetChangedWorkItems();
+            Assert.Single(Deleted);
+            Assert.Empty(Created);
+            Assert.Empty(Updated);
+            Assert.Empty(Restored);
         }
 
         [Fact]
@@ -257,11 +257,11 @@ namespace unittests_ruleng
             Assert.False(wrapper.IsDirty);
             Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
 
-            var changedWorkItems = context.Tracker.GetChangedWorkItems();
-            Assert.Empty(changedWorkItems.Deleted);
-            Assert.Empty(changedWorkItems.Created);
-            Assert.Empty(changedWorkItems.Updated);
-            Assert.Empty(changedWorkItems.Restored);
+            var (Created, Updated, Deleted, Restored) = context.Tracker.GetChangedWorkItems();
+            Assert.Empty(Deleted);
+            Assert.Empty(Created);
+            Assert.Empty(Updated);
+            Assert.Empty(Restored);
         }
 
         [Fact]
@@ -281,11 +281,11 @@ namespace unittests_ruleng
             Assert.False(wrapper.IsDirty);
             Assert.Equal(RecycleStatus.NoChange, wrapper.RecycleStatus);
 
-            var changedWorkItems = context.Tracker.GetChangedWorkItems();
-            Assert.Empty(changedWorkItems.Deleted);
-            Assert.Empty(changedWorkItems.Created);
-            Assert.Empty(changedWorkItems.Updated);
-            Assert.Empty(changedWorkItems.Restored);
+            var (Created, Updated, Deleted, Restored) = context.Tracker.GetChangedWorkItems();
+            Assert.Empty(Deleted);
+            Assert.Empty(Created);
+            Assert.Empty(Updated);
+            Assert.Empty(Restored);
         }
 
         [Fact]
@@ -313,7 +313,7 @@ namespace unittests_ruleng
                         );
                     });
             var ruleSettings = new RuleSettings { EnableRevisionCheck = true };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default);
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -322,10 +322,10 @@ namespace unittests_ruleng
             var wrapper = sut.GetWorkItem(workItemId);
             wrapper.Title = "Replaced title";
 
-            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, bypassrules: false, default);
+            var (created, updated) = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, bypassrules: false, default);
 
-            Assert.Equal(0, result.created);
-            Assert.Equal(1, result.updated);
+            Assert.Equal(0, created);
+            Assert.Equal(1, updated);
             logger.Received().WriteVerbose(@"[{""Body"":""[{\""op\"":5,\""path\"":\""/rev\"",\""from\"":null,\""value\"":2},{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""}]");
         }
 
@@ -354,7 +354,7 @@ namespace unittests_ruleng
                         );
                     });
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default);
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -363,10 +363,10 @@ namespace unittests_ruleng
             var wrapper = sut.GetWorkItem(workItemId);
             wrapper.Title = "Replaced title";
 
-            var result = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, bypassrules: false, default);
+            var (created, updated) = await sut.SaveChanges(SaveMode.Default, commit: true, impersonate: false, bypassrules: false, default);
 
-            Assert.Equal(0, result.created);
-            Assert.Equal(1, result.updated);
+            Assert.Equal(0, created);
+            Assert.Equal(1, updated);
             await witClient.Received().ExecuteBatchRequest(Arg.Is<IEnumerable<WitBatchRequest>>(l => l.Count() == 1));
             logger.Received().WriteVerbose(@"[{""Body"":""[{\""op\"":2,\""path\"":\""/fields/System.Title\"",\""from\"":null,\""value\"":\""Replaced title\""}]""}]");
         }

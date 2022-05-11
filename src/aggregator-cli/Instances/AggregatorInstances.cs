@@ -361,10 +361,11 @@ namespace aggregator.cli
             await SetVersionTag(instance, "Microsoft.Web", "sites", instance.FunctionAppName, "2021-01-01", cancellationToken);
             // HACK cannot use instance.StorageAccountName because older version used a random seed to generate the name
             var minVersionFixingStorageNameGeneration = new Semver.SemVersion(1, 3, 0, "beta");
-            var storageAccounts = await _azure.StorageAccounts.ListByResourceGroupAsync(instance.ResourceGroupName);
+            var storageAccounts = await _azure.StorageAccounts.ListByResourceGroupAsync(instance.ResourceGroupName, cancellationToken: cancellationToken);
             // we assume that there is one and only one StorageAccount created by aggregator in the ResourceGroup
             var storageAccount = storageAccounts.FirstOrDefault(a => a.Tags.ContainsKey("aggregatorVersion"));
-            if (Semver.SemVersion.TryParse(storageAccount?.Tags["aggregatorVersion"], out var semVer)
+            if (storageAccount is not null
+                && Semver.SemVersion.TryParse(storageAccount?.Tags["aggregatorVersion"], out var semVer)
                 && semVer >= minVersionFixingStorageNameGeneration)
             {
                 await SetVersionTag(instance, "Microsoft.Storage", "storageAccounts", instance.StorageAccountName, "2021-01-01", cancellationToken);

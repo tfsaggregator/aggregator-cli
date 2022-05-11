@@ -14,22 +14,23 @@ namespace aggregator.Engine.Persistance
         {
             if (commit)
             {
-                var payload = new JsonPatchDocument();
-                payload.Add(new JsonPatchOperation()
+                var payload = new JsonPatchDocument
                 {
-                    Operation = Operation.Replace,
-                    Path = "/fields/" + CoreFieldRefNames.State,
-                    Value = item.State
-                });
-                payload.Add(new JsonPatchOperation()
-                {
-                    Operation = Operation.Add,
-                    Path = "/fields/" + CoreFieldRefNames.History,
-                    Value = comment
-                }
-                );
+                    new JsonPatchOperation()
+                    {
+                        Operation = Operation.Replace,
+                        Path = "/fields/" + CoreFieldRefNames.State,
+                        Value = item.State
+                    },
+                    new JsonPatchOperation()
+                    {
+                        Operation = Operation.Add,
+                        Path = "/fields/" + CoreFieldRefNames.History,
+                        Value = comment
+                    }
+                };
                 _context.Logger.WriteInfo($"Updating workitem {item.Id}");
-                var updatedItem = await _clients.WitClient.UpdateWorkItemAsync(
+                _ = await _clients.WitClient.UpdateWorkItemAsync(
                     payload,
                     item.Id,
                     bypassRules: impersonate || bypassrules,
