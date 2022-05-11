@@ -1,18 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.Common;
-
+using System.Linq;
 
 namespace aggregator.Engine
 {
-    public static class Extensions
+    public static class EnumerableExtension
     {
-        public static string GetTeamProject(this WorkItem workItem)
+        /// <summary>
+        /// This method exists for backward compatibility reasons.
+        /// </summary>
+        /// <param name="this"></param>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public static string ToSeparatedString<T>(this IEnumerable<T> listOfT, char separator = ',')
         {
-            return workItem.Fields.GetCastedValueOrDefault("System.TeamProject", default(string));
+            return listOfT
+                .Aggregate("",
+                    (s, i) => FormattableString.Invariant($"{s}{separator}{i}"))
+                [1..];
         }
+
 
         // source https://stackoverflow.com/a/22222439/100864
         public static IEnumerable<IEnumerable<T>> Paginate<T>(this IEnumerable<T> source, int pageSize)
@@ -41,5 +49,6 @@ namespace aggregator.Engine
                 yield return new ReadOnlyCollection<T>(currentPage);
             }
         }
+
     }
 }

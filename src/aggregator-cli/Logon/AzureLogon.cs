@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
@@ -73,6 +74,23 @@ namespace aggregator.cli
             }
 
             return result.AccessToken;
+        }
+
+        internal IResourceManagementClient LogonManagement()
+        {
+            var spCreds = new ServicePrincipalLoginInformation()
+            {
+                ClientId = this.ClientId,
+                ClientSecret = this.ClientSecret,
+            };
+            var azureCreds = new AzureCredentials(spCreds, TenantId, AzureEnvironment.AzureGlobalCloud);
+            var restClient = RestClient.Configure()
+                .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
+                .WithCredentials(azureCreds)
+                .Build();
+            var resourceClient = new ResourceManagementClient(restClient);
+            resourceClient.SubscriptionId = SubscriptionId;
+            return resourceClient;
         }
     }
 }

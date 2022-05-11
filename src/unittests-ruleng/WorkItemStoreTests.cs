@@ -20,6 +20,7 @@ namespace unittests_ruleng
         private readonly IAggregatorLogger logger;
         private readonly WorkItemTrackingHttpClient witClient;
         private readonly TestClientsContext clientsContext;
+        private readonly EngineContext engineDefaultContext;
 
         public WorkItemStoreTests()
         {
@@ -29,6 +30,8 @@ namespace unittests_ruleng
 
             witClient = clientsContext.WitClient;
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
+
+            engineDefaultContext = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings(), false, default(CancellationToken));
         }
 
 
@@ -42,7 +45,7 @@ namespace unittests_ruleng
                 Fields = new Dictionary<string, object>()
             });
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var sut = new WorkItemStore(context);
 
             var wi = sut.GetWorkItem(workItemId);
@@ -70,7 +73,7 @@ namespace unittests_ruleng
                     }
                 });
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -101,7 +104,7 @@ namespace unittests_ruleng
                     );
             var ids = Enumerable.Range(1, 199).ToArray();
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -122,7 +125,7 @@ namespace unittests_ruleng
                     );
             var ids = Enumerable.Range(1, 350).ToArray();
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -144,7 +147,7 @@ namespace unittests_ruleng
                     );
             var ids = Enumerable.Range(1, 433).ToArray();
 
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var sut = new WorkItemStore(context);
 
             var wis = sut.GetWorkItems(ids);
@@ -160,7 +163,7 @@ namespace unittests_ruleng
         public async Task NewWorkItem_Succeeds()
         {
             witClient.ExecuteBatchRequest(default).ReturnsForAnyArgs(info => new List<WitBatchResponse>());
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var sut = new WorkItemStore(context);
 
             var wi = sut.NewWorkItem("Task");
@@ -177,7 +180,7 @@ namespace unittests_ruleng
         [Fact]
         public void AddChild_Succeeds()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             int workItemId = 1;
             witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(new WorkItem
             {
@@ -216,7 +219,7 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteWorkItem_Succeeds()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -240,7 +243,7 @@ namespace unittests_ruleng
         [Fact]
         public void DeleteAlreadyDeletedWorkItem_NoChange()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var workItem = ExampleTestData.DeltedWorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -264,7 +267,7 @@ namespace unittests_ruleng
         [Fact]
         public void RestoreNotDeletedWorkItem_NoChange()
         {
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, new RuleSettings());
+            var context = engineDefaultContext;
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -310,7 +313,7 @@ namespace unittests_ruleng
                         );
                     });
             var ruleSettings = new RuleSettings { EnableRevisionCheck = true };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 
@@ -351,7 +354,7 @@ namespace unittests_ruleng
                         );
                     });
             var ruleSettings = new RuleSettings { EnableRevisionCheck = false };
-            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings);
+            var context = new EngineContext(clientsContext, clientsContext.ProjectId, clientsContext.ProjectName, logger, ruleSettings, false, default(System.Threading.CancellationToken));
             var workItem = ExampleTestData.WorkItem;
             int workItemId = workItem.Id.Value;
 

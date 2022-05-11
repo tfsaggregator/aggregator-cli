@@ -27,7 +27,7 @@ namespace aggregator.Engine
 
         public async Task<string> RunAsync(IRule rule, Guid projectId, WorkItemData workItemPayload, string eventType, IClientsContext clients, CancellationToken cancellationToken = default)
         {
-            var executionContext = CreateRuleExecutionContext(projectId, workItemPayload, eventType, clients, rule.Settings);
+            var executionContext = CreateRuleExecutionContext(rule, projectId, workItemPayload, eventType, clients, rule.Settings, cancellationToken);
 
             var result = await ExecuteRuleAsync(rule, executionContext, cancellationToken);
 
@@ -36,10 +36,10 @@ namespace aggregator.Engine
 
         protected abstract Task<string> ExecuteRuleAsync(IRule rule, RuleExecutionContext executionContext, CancellationToken cancellationToken = default);
 
-        protected RuleExecutionContext CreateRuleExecutionContext(Guid projectId, WorkItemData workItemPayload, string eventType, IClientsContext clients, IRuleSettings ruleSettings)
+        protected RuleExecutionContext CreateRuleExecutionContext(IRule rule, Guid projectId, WorkItemData workItemPayload, string eventType, IClientsContext clients, IRuleSettings ruleSettings, CancellationToken cancellationToken = default)
         {
             var workItem = workItemPayload.WorkItem;
-            var context = new EngineContext(clients, projectId, workItem.GetTeamProject(), logger, ruleSettings);
+            var context = new EngineContext(clients, projectId, workItem.GetTeamProject(), logger, ruleSettings, dryRun, cancellationToken);
             var store = new WorkItemStore(context, workItem);
             var self = store.GetWorkItem(workItem.Id.Value);
             var selfChanges = new WorkItemUpdateWrapper(workItemPayload.WorkItemUpdate);
@@ -47,6 +47,7 @@ namespace aggregator.Engine
 
             var globals = new RuleExecutionContext
             {
+                ruleName = rule.Name,
                 self = self,
                 selfChanges = selfChanges,
                 store = store,

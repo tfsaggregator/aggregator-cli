@@ -14,10 +14,28 @@ namespace aggregator.cli
             FunctionAppSuffix = "aggregator",
         };
 
-        private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")
+        private static int PseudoHash(string s, int limit)
+        {
+            long total = 0;
+            var c = s.ToCharArray();
+
+            // Horner's rule for generating a polynomial 
+            // of 11 using ASCII values of the characters
+            for (int k = 0; k < c.Length; k++)
+                total += 11 * total + (int)c[k];
+
+            total = total % limit;
+
+            if (total < 0)
+                total += limit;
+
+            return (int)total;
+        }
+
+        private static string GetRandomString(string input, int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")
         {
 #pragma warning disable S2245 // Make sure that using this pseudorandom number generator is safe here
-            var randomGen = new Random((int)DateTime.Now.Ticks);
+            var randomGen = new Random(PseudoHash(input, allowedChars.Length));
             return new string(
                 Enumerable.Range(0, size)
                 .Select(x => allowedChars[randomGen.Next(0, allowedChars.Length)])
@@ -36,7 +54,7 @@ namespace aggregator.cli
             {
                 HostingPlanName = $"{functionAppName}-plan";
                 AppInsightName = $"{functionAppName}-ai";
-                StorageAccountName = $"aggregator{GetRandomString(8)}";
+                StorageAccountName = $"aggregator{GetRandomString(functionAppName, 8)}";
             }
         }
 

@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Threading;
 
 namespace aggregator.Engine
 {
     public class EngineContext
     {
-        public EngineContext(IClientsContext clients, Guid projectId, string projectName, IAggregatorLogger logger, IRuleSettings ruleSettings)
+        public EngineContext(IClientsContext clients, Guid projectId, string projectName, IAggregatorLogger logger, IRuleSettings ruleSettings, bool dryRun, CancellationToken cancellationToken)
         {
             Clients = clients;
             Logger = logger;
@@ -12,6 +13,8 @@ namespace aggregator.Engine
             ProjectId = projectId;
             ProjectName = projectName;
             RuleSettings = ruleSettings;
+            CancellationToken = cancellationToken;
+            DryRun = dryRun;
         }
 
         public Guid ProjectId { get; internal set; }
@@ -20,5 +23,7 @@ namespace aggregator.Engine
         internal IAggregatorLogger Logger { get; }
         internal Tracker Tracker { get; }
         internal IRuleSettings RuleSettings { get; }
+        internal CancellationToken CancellationToken { get; }
+        internal bool DryRun { get; }
     }
 }

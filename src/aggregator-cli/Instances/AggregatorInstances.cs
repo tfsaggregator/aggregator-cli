@@ -17,8 +17,8 @@ namespace aggregator.cli
     {
         private readonly INamingTemplates naming;
 
-        public AggregatorInstances(IAzure azure, ILogger logger, INamingTemplates naming)
-            : base(azure, logger)
+        public AggregatorInstances(IAzure azure, IResourceManagementClient azureManagement, ILogger logger, INamingTemplates naming)
+            : base(azure, logger, azureManagement)
         {
             this.naming = naming;
         }
@@ -329,28 +329,64 @@ namespace aggregator.cli
             return logData;
         }
 
-        internal async Task<bool> UpdateAsync(InstanceName instance, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
+        internal async Task<bool> UpdateAsync(InstanceCreateNames instance, string requiredVersion, string sourceUrl, CancellationToken cancellationToken)
         {
+            // capture the list of rules/Functions _before_
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': retriving rules");
+            var rules = new AggregatorRules(_azure, _logger);
+            var allRules = await rules.ListAsync(instance, cancellationToken);
+            var ruleNames = allRules.Select(r => r.RuleName).ToList();
+
             // update runtime package
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating run-time package to {requiredVersion} from {sourceUrl}");
             var package = new FunctionRuntimePackage(_logger);
             bool ok = await package.UpdateVersionAsync(requiredVersion, sourceUrl, instance, _azure, cancellationToken);
             if (!ok)
                 return false;
 
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': force AzFunction runtime version");
             await ForceFunctionRuntimeVersionAsync(instance, cancellationToken);
 
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating root files");
             var uploadFiles = await UpdateDefaultFilesAsync(package);
 
-            var rules = new AggregatorRules(_azure, _logger);
-            var allRules = await rules.ListAsync(instance, cancellationToken);
-
-            foreach (var ruleName in allRules.Select(r => r.RuleName))
+            foreach (var ruleName in ruleNames)
             {
-                _logger.WriteInfo($"Updating Rule '{ruleName}'");
+                _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating Rule '{ruleName}'");
                 await rules.UploadRuleFilesAsync(instance, ruleName, uploadFiles, cancellationToken);
             }
 
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': updating Tag 'aggregatorVersion' on resources");
+            // TODO we should use APIs instead of template in creation...
+            await SetVersionTag(instance, "Microsoft.Web", "sites", instance.FunctionAppName, "2021-01-01", cancellationToken);
+            // HACK cannot use instance.StorageAccountName because older version used a random seed to generate the name
+            var minVersionFixingStorageNameGeneration = new Semver.SemVersion(1, 3, 0, "beta");
+            var storageAccounts = await _azure.StorageAccounts.ListByResourceGroupAsync(instance.ResourceGroupName);
+            // we assume that there is one and only one StorageAccount created by aggregator in the ResourceGroup
+            var storageAccount = storageAccounts.FirstOrDefault(a => a.Tags.ContainsKey("aggregatorVersion"));
+            if (Semver.SemVersion.TryParse(storageAccount?.Tags["aggregatorVersion"], out var semVer)
+                && semVer >= minVersionFixingStorageNameGeneration)
+            {
+                await SetVersionTag(instance, "Microsoft.Storage", "storageAccounts", instance.StorageAccountName, "2021-01-01", cancellationToken);
+            }
+            else
+            {
+                await SetVersionTag(instance, "Microsoft.Storage", "storageAccounts", storageAccount.Name, "2021-01-01", cancellationToken);
+            }
+            await SetVersionTag(instance, "microsoft.insights", "components", instance.AppInsightName, "2020-02-02", cancellationToken);
+            await SetVersionTag(instance, "Microsoft.Web", "serverfarms", instance.HostingPlanName, "2021-01-01", cancellationToken);
+
+            _logger.WriteInfo($"Upgrading instance '{instance.PlainName}': complete");
             return true;
+        }
+
+        private async Task SetVersionTag(InstanceName instance, string resourceProviderNamespace, string resourceType, string resourceName, string apiVersion, CancellationToken cancellationToken)
+        {
+            //string apiVersion = ;
+            var theResource = await _azureManagement.Resources.GetAsync(instance.ResourceGroupName, resourceProviderNamespace, "", resourceType, resourceName, apiVersion, cancellationToken);
+            var infoVersion = GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+            theResource.Tags["aggregatorVersion"] = infoVersion.InformationalVersion;
+            await _azureManagement.Resources.UpdateAsync(instance.ResourceGroupName, resourceProviderNamespace, "", resourceType, resourceName, apiVersion, theResource, cancellationToken);
         }
 
         private static async Task<Dictionary<string, string>> UpdateDefaultFilesAsync(FunctionRuntimePackage package)
@@ -372,9 +408,10 @@ namespace aggregator.cli
 
         private async Task ForceFunctionRuntimeVersionAsync(InstanceName instance, CancellationToken cancellationToken)
         {
+            // HACK this must match appSettings of Microsoft.Web/sites resource in instance-template.json !!!
             const string TargetVersion = "~4";
             const string DotNetVersion = "v6.0";
-            // Change V2/V3 to V4 FUNCTIONS_EXTENSION_VERSION ~4
+            // Change FUNCTIONS_EXTENSION_VERSION to TargetVersion
             var webFunctionApp = await GetWebApp(instance, cancellationToken);
             var currentAzureRuntimeVersion = webFunctionApp.GetAppSettings()
                                                            .GetValueOrDefault("FUNCTIONS_EXTENSION_VERSION");

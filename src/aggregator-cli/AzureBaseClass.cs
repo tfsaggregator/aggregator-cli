@@ -3,19 +3,20 @@ using System.Threading.Tasks;
 
 using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.Fluent;
-
+using Microsoft.Azure.Management.ResourceManager.Fluent;
 
 namespace aggregator.cli
 {
     internal abstract class AzureBaseClass
     {
         protected IAzure _azure;
-
+        protected IResourceManagementClient _azureManagement;
         protected ILogger _logger;
 
-        protected AzureBaseClass(IAzure azure, ILogger logger)
+        protected AzureBaseClass(IAzure azure, ILogger logger, IResourceManagementClient azureManagement = null)
         {
             _azure = azure;
+            _azureManagement = azureManagement;
             _logger = logger;
         }
 

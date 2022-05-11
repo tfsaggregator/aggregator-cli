@@ -1,0 +1,17 @@
+if (eventType == "workitem.created") {
+    return $"Hello { self.WorkItemType } #{ self.Id } from Rule 6!";
+}
+
+if (eventType == "workitem.updated" && selfChanges.Fields.ContainsKey("System.Title")) {
+
+    string newTitle = selfChanges.Fields["System.Title"].NewValue.ToString();
+    if (newTitle == "CloseMe") {
+        bool ok = await store.TransitionToState(self, "Closed", false, "Closed by rule");
+        return ok ? "TransitionToState Closed" : "TransitionToState failed!";
+    }
+    if (newTitle == "DropMe") {
+        bool ok = await store.TransitionToState(self, "Removed", false, "Removed by rule");
+        return ok ? "TransitionToState Removed" : "TransitionToState failed!";
+    }
+
+}

@@ -21,7 +21,7 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
             context.ResourceGroupDeprecationCheck(this.ResourceGroup);
-            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
+            var instances = new AggregatorInstances(context.Azure, null, context.Logger, context.Naming);
             if (!string.IsNullOrEmpty(Location))
             {
                 context.Logger.WriteVerbose($"Searching aggregator instances in {Location} Region...");

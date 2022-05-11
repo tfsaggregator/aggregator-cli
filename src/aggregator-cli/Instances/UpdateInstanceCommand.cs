@@ -26,11 +26,12 @@ namespace aggregator.cli.Instances
         {
             var context = await Context
                                 .WithAzureLogon()
+                                .WithAzureManagement()
                                 .BuildAsync(cancellationToken);
             context.ResourceGroupDeprecationCheck(this.ResourceGroup);
 
-            var instances = new AggregatorInstances(context.Azure, context.Logger, context.Naming);
-            var instance = context.Naming.Instance(Instance, ResourceGroup);
+            var instances = new AggregatorInstances(context.Azure, context.AzureManagement, context.Logger, context.Naming);
+            var instance = context.Naming.GetInstanceCreateNames(Instance, ResourceGroup);
 
             bool ok = await instances.UpdateAsync(instance, RequiredVersion, SourceUrl, cancellationToken);
             return ok ? ExitCodes.Success : ExitCodes.Failure;

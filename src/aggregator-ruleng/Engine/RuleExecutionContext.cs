@@ -6,6 +6,7 @@
     public class RuleExecutionContext
     {
 #pragma warning disable S1104 // Fields should not have public accessibility
+        public string ruleName;
         public WorkItemWrapper self;
         public WorkItemUpdateWrapper selfChanges;
         public WorkItemStore store;

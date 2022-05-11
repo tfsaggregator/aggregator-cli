@@ -74,6 +74,33 @@ return $""Hello { self.WorkItemType } #{ self.Id } - { self.Title }!"";
         }
 
         [Fact]
+        public async Task PrintRuleName_Succeeds()
+        {
+            string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;
+            int workItemId = 42;
+            WorkItem workItem = new WorkItem
+            {
+                Id = workItemId,
+                Fields = new Dictionary<string, object>
+                {
+                    { "System.WorkItemType", "Bug" },
+                    { "System.Title", "Hello" },
+                    { "System.TeamProject", clientsContext.ProjectName },
+                }
+            };
+            witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.All).Returns(workItem);
+            string ruleCode = @"
+return $""Hello {self.WorkItemType} #{self.Id} - {self.Title} from {ruleName}!"";
+";
+
+            var rule = new ScriptedRuleWrapper("MyTestRule", ruleCode.Mince());
+            string result = await engine.RunAsync(rule, clientsContext.ProjectId, workItem, eventType, clientsContext, CancellationToken.None);
+
+            Assert.Equal("Hello Bug #42 - Hello from MyTestRule!", result);
+            await witClient.DidNotReceive().GetWorkItemAsync(Arg.Any<int>(), expand: Arg.Any<WorkItemExpand>());
+        }
+
+        [Fact]
         public async Task LanguageDirective_Succeeds()
         {
             string eventType = ServiceHooksEventTypeConstants.WorkItemCreated;

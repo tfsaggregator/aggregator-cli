@@ -46,5 +46,30 @@ namespace aggregator.cli
             return newWorkItem.Id ?? 0;
         }
 
+        internal async Task<int> UpdateWorkItemAsync(string projectName, int workItemId, string newTitle, CancellationToken cancellationToken)
+        {
+            logger.WriteVerbose($"Reading Azure DevOps project data...");
+            var projectClient = devops.GetClient<ProjectHttpClient>();
+            var project = await projectClient.GetProject(projectName);
+            logger.WriteInfo($"Project {projectName} data read.");
+
+            var witClient = devops.GetClient<WorkItemTrackingHttpClient>();
+            JsonPatchDocument patchDocument = new JsonPatchDocument
+            {
+                new JsonPatchOperation()
+                {
+                    Operation = Operation.Replace,
+                    Path = "/fields/System.Title",
+                    Value = newTitle
+                }
+            };
+
+            logger.WriteVerbose($"Updating work item #{workItemId} in '{project.Name}' with new Title '{newTitle}'");
+            var workItem = await witClient.UpdateWorkItemAsync(patchDocument, workItemId, validateOnly: false, bypassRules: false, cancellationToken: cancellationToken);
+            logger.WriteInfo($"Updated work item ID {workItem.Id} '{workItem.Fields["System.Title"]}' in '{project.Name}'");
+
+            return 0;
+        }
+
     }
 }

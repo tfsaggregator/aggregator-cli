@@ -42,7 +42,7 @@ namespace integrationtests.cli
 
 
         [Fact, Order(10)]
-        async Task InstallInstances()
+        async Task InstallInstance()
         {
             (int rc, string output) = await RunAggregatorCommand($"install.instance --verbose --name {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --location {TestLogonData.Location}"
                 + (string.IsNullOrWhiteSpace(TestLogonData.RuntimeSourceUrl)
@@ -54,7 +54,7 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(20)]
-        async Task AddRules()
+        async Task AddRule()
         {
             (int rc, string output) = await RunAggregatorCommand($"add.rule --verbose --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --name {ruleName} --file {ruleFile}");
 
@@ -63,7 +63,7 @@ namespace integrationtests.cli
         }
 
         [Fact, Order(30)]
-        async Task MapRules()
+        async Task MapRule()
         {
             (int rc, string output) = await RunAggregatorCommand($"map.rule --verbose --project \"{TestLogonData.ProjectName}\" --event workitem.created --instance {instanceName} --resourceGroup {TestLogonData.ResourceGroup} --rule {ruleName}");
 
