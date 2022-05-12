@@ -130,7 +130,7 @@ namespace aggregator.Engine
                     return store.GetWorkItems(ChildrenLinks);
                 }
                 else
-                    return new WorkItemWrapper[0];
+                    return Array.Empty<WorkItemWrapper>();
             }
         }
 

@@ -30,7 +30,7 @@ namespace integrationtests.cli
             VersionToUpgrade = string.IsNullOrEmpty(versionToUpgrade) ? "1.1.0" : versionToUpgrade;
 
             string workItemId = data.workItemId;
-            WorkItemId = string.IsNullOrEmpty(workItemId) ? 0 : int.Parse(workItemId);
+            WorkItemId = string.IsNullOrEmpty(workItemId) ? 0 : int.Parse(workItemId, System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private static string GetRandomString(int size, string allowedChars = "abcdefghijklmnopqrstuvwxyz0123456789")

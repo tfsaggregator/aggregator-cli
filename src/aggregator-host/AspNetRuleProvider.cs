@@ -48,7 +48,7 @@ namespace aggregator
                 rulesPath = _configuration.GetValue<string>(WebHostDefaults.ContentRootKey);
                 _logger.WriteVerbose($"Searching '{ruleName}' in {rulesPath}");
                 var provider = new PhysicalFileProvider(rulesPath);
-                var contents = provider.GetDirectoryContents(SCRIPT_RULE_DIRECTORY).Where(f => f.Name.EndsWith(SCRIPT_RULE_NAME_PATTERN));
+                var contents = provider.GetDirectoryContents(SCRIPT_RULE_DIRECTORY).Where(f => f.Name.EndsWith(SCRIPT_RULE_NAME_PATTERN, StringComparison.InvariantCulture));
 
                 ruleFilePath = contents.First(IsRequestedRule)?.PhysicalPath;
             }

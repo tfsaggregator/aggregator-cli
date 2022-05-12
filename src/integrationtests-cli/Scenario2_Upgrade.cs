@@ -46,7 +46,7 @@ namespace integrationtests.cli
                 PlatformID.Win32NT => "aggregator-cli-win-x64.zip",
                 PlatformID.Unix => "aggregator-cli-linux-x64.zip",
                 PlatformID.MacOSX => "aggregator-cli-osx-x64.zip",
-                _ => throw new Exception()
+                _ => throw new NotImplementedException($"Unsupported OS {Environment.OSVersion.Platform}")
             };
             string packageURL = $"https://github.com/tfsaggregator/aggregator-cli/releases/download/v{TestLogonData.VersionToUpgrade}/{package}";
             string packageFile = Path.GetTempFileName();

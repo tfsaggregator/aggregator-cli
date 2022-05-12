@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -79,7 +80,7 @@ namespace aggregator.cli
                     Name = $"{thisCommandName} End"
                 };
                 // SuccessBooleanPlusIntegerValue is used only in testing scenarios
-                eventEnd.Properties["exitCode"] = packedResult.returnCode.ToString();
+                eventEnd.Properties["exitCode"] = packedResult.returnCode.ToString(CultureInfo.InvariantCulture);
                 Telemetry.TrackEvent(eventEnd);
 
                 return packedResult;

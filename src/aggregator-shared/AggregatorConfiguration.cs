@@ -60,7 +60,7 @@ namespace aggregator
 
             var settings = await webApp.GetAppSettingsAsync();
             var ac = new Model.AggregatorConfiguration();
-            foreach (var ruleSetting in settings.Where(kvp => kvp.Key.StartsWith(RULE_SETTINGS_PREFIX)).Select(kvp => new { ruleNameKey = kvp.Key[RULE_SETTINGS_PREFIX.Length..], value = kvp.Value.Value }))
+            foreach (var ruleSetting in settings.Where(kvp => kvp.Key.StartsWith(RULE_SETTINGS_PREFIX, StringComparison.InvariantCulture)).Select(kvp => new { ruleNameKey = kvp.Key[RULE_SETTINGS_PREFIX.Length..], value = kvp.Value.Value }))
             {
                 var (ruleName, key) = SplitRuleNameKey(ruleSetting.ruleNameKey);
 

@@ -38,7 +38,9 @@ namespace aggregator
 
         }
 
+#pragma warning disable CA1707 // Identifiers should not contain underscores
         private WorkItemEventContext Newtonsoft_CreateContextFromEvent(WebHookEvent eventData, string collectionUrl, Guid teamProjectId)
+#pragma warning restore CA1707 // Identifiers should not contain underscores
         {
             var resourceObject = eventData.Resource as Newtonsoft.Json.Linq.JObject;
             if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventData.EventType)
@@ -56,7 +58,9 @@ namespace aggregator
             }
         }
 
+#pragma warning disable CA1707 // Identifiers should not contain underscores
         public WorkItemEventContext SystemTextJson_CreateContextFromEvent(WebHookEvent eventData, string collectionUrl, Guid teamProjectId)
+#pragma warning restore CA1707 // Identifiers should not contain underscores
         {
             var resourceObject = (JsonElement)eventData.Resource;
             if (ServiceHooksEventTypeConstants.WorkItemUpdated == eventData.EventType)

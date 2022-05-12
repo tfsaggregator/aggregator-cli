@@ -23,7 +23,7 @@ namespace aggregator
             var jsonContent = await bodyStreamReader.ReadToEndAsync();
             if (string.IsNullOrWhiteSpace(jsonContent))
             {
-                logger.LogWarning($"Failed parsing request body: empty");
+                logger.LogWarning("Failed parsing request body: empty");
                 return null;
             }
 

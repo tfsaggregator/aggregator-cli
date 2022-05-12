@@ -15,6 +15,7 @@ namespace integrationtests.cli
 {
     public abstract class End2EndScenarioBase
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible", Justification = "<Pending>")]
         protected static TestLogonData TestLogonData = new(
             // CI scenario
             Environment.GetEnvironmentVariable("DOWNLOADSECUREFILE_SECUREFILEPATH")

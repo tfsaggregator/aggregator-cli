@@ -8,7 +8,7 @@ namespace integrationtests.cli
 
     public class Scenario5WorkItem
     {
-        public int WorkItemId = 0;
+        public int WorkItemId;
     }
 
     public abstract class Scenario5_Base : End2EndScenarioBase, IClassFixture<Scenario5WorkItem>

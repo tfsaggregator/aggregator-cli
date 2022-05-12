@@ -72,7 +72,7 @@ namespace aggregator
                 telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
                 telemetryClient.Context.Device.Id = telemetrySettings.DeviceId;
                 telemetryClient.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                Trace.WriteLine(string.Format("SessionID: {0}", telemetryClient.Context.Session.Id));
+                Trace.WriteLine($"SessionID: {telemetryClient.Context.Session.Id}");
             }
         }
 
