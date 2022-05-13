@@ -9,7 +9,7 @@ namespace aggregator.cli
     [Verb("test.cleanup", HelpText = "Cleanup Azure resource.", Hidden = true)]
     class CleanupTestCommand : CommandBase
     {
-        [Option('g', "resourceGroup", Required = true, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
         internal override async Task<int> RunAsync(CancellationToken cancellationToken)

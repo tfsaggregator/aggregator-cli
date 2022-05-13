@@ -15,7 +15,7 @@ namespace aggregator.cli
         public string Instance { get; set; }
 
         [ShowInTelemetry(TelemetryDisplayMode.Presence)]
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
         [ShowInTelemetry(TelemetryDisplayMode.Presence)]
@@ -32,7 +32,6 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             bool ok = DevOpsEvents.IsValidEvent(Event) || Event == "*";
             if (!ok)
             {

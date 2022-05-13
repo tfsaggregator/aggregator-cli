@@ -7,7 +7,7 @@ namespace aggregator.cli
     [Verb("remove.rule", HelpText = "Remove a rule from existing Aggregator instance in Azure.")]
     class RemoveRuleCommand : CommandBase
     {
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
@@ -22,7 +22,6 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var mappings = new AggregatorMappings(context.Devops, context.Azure, context.Logger, context.Naming);
             var outcome = await mappings.RemoveRuleAsync(instance, Name);

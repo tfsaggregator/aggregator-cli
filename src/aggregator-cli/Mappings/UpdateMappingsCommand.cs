@@ -14,7 +14,7 @@ namespace aggregator.cli
         [Option('d', "destInstance", Required = true, HelpText = "Destination Aggregator instance name.")]
         public string DestInstance { get; set; }
 
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
         [Option('p', "project", Required = false, Default = "", HelpText = "Azure DevOps project name.")]
@@ -26,7 +26,6 @@ namespace aggregator.cli
                 .WithDevOpsLogon()
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             if (SourceInstance == DestInstance)
             {
                 context.Logger.WriteError("Source must be different from destination.");

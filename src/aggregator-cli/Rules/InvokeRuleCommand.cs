@@ -44,7 +44,7 @@ namespace aggregator.cli
         public string Instance { get; set; }
 
         [ShowInTelemetry(TelemetryDisplayMode.Presence)]
-        [Option('g', "resourceGroup", SetName = "Remote", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
+        [Option('g', "resourceGroup", SetName = "Remote", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
 
         [ShowInTelemetry]
@@ -58,7 +58,6 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon()
                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool ok = DevOpsEvents.IsValidEvent(Event);
             if (!ok)

@@ -15,7 +15,7 @@ namespace aggregator.cli
         public string Location { get; set; }
 
         [ShowInTelemetry(TelemetryDisplayMode.Presence)]
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instance.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instance.")]
         public string ResourceGroup { get; set; }
 
         [ShowInTelemetry]
@@ -35,7 +35,6 @@ namespace aggregator.cli
                 .WithAzureLogon()
                 .WithDevOpsLogon() // need the token, so we can save it in the app settings
                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var instances = new AggregatorInstances(context.Azure, null, context.Logger, context.Naming);
             var instance = context.Naming.Instance(Name, ResourceGroup);
             if (Authentication)

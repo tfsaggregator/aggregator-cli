@@ -10,7 +10,7 @@ namespace aggregator.cli.Instances
     class UpdateInstanceCommand : CommandBase
     {
         [ShowInTelemetry(TelemetryDisplayMode.Presence)]
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
         public string Instance { get; set; }
@@ -28,7 +28,6 @@ namespace aggregator.cli.Instances
                                 .WithAzureLogon()
                                 .WithAzureManagement()
                                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
 
             var instances = new AggregatorInstances(context.Azure, context.AzureManagement, context.Logger, context.Naming);
             var instance = context.Naming.GetInstanceCreateNames(Instance, ResourceGroup);

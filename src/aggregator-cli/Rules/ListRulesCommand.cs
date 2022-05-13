@@ -7,7 +7,7 @@ namespace aggregator.cli
     [Verb("list.rules", HelpText = "List the rule in existing Aggregator instance in Azure.")]
     class ListRulesCommand : CommandBase
     {
-        [Option('g', "resourceGroup", Required = false, Default = "", HelpText = "Azure Resource Group hosting the Aggregator instances.")]
+        [Option('g', "resourceGroup", Required = true, HelpText = "Azure Resource Group hosting the Aggregator instances.")]
         public string ResourceGroup { get; set; }
 
         [Option('i', "instance", Required = true, HelpText = "Aggregator instance name.")]
@@ -18,7 +18,6 @@ namespace aggregator.cli
             var context = await Context
                 .WithAzureLogon()
                 .BuildAsync(cancellationToken);
-            context.ResourceGroupDeprecationCheck(this.ResourceGroup);
             var instance = context.Naming.Instance(Instance, ResourceGroup);
             var rules = new AggregatorRules(context.Azure, context.Logger);
             bool any = false;
