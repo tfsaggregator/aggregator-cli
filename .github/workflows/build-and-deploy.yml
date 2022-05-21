@@ -42,8 +42,6 @@ jobs:
       CONFIGURATION: Release
       SONAR_ORG: 'tfsaggregator'
       SONAR_PROJECTKEY: 'tfsaggregator_aggregator-cli'
-      # list of TimeSpan controlling reading app logs from Kudu while running Integration tests
-      AGGREGATOR_KUDU_LOGRETRIEVE_ATTEMPTS: '0:0:30 0:1:00 0:1:30 0:2:00 0:3:00'
     outputs:
       dockerTag: 'v${{ steps.gitversion.outputs.fullSemVer }}'
       releaseTag: ${{ steps.get_git_tag.outputs.tag_name }}
@@ -153,14 +151,25 @@ jobs:
 
   integration_test:
     runs-on: windows-latest
+    env:
+      DOTNETSDK_VERSION: '6.0.201' # SDK Version to use.
+      CONFIGURATION: Release
+      # list of TimeSpan controlling reading app logs from Kudu while running Integration tests
+      AGGREGATOR_KUDU_LOGRETRIEVE_ATTEMPTS: '0:0:30 0:1:00 0:1:30 0:2:00 0:3:00'
     needs: [dummy_job, build]
     steps:
+    - uses: actions/checkout@v3 # CHECK FOR UPDATES
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-dotnet@v1 # CHECK FOR UPDATES
+      with:
+        dotnet-version: '${{ env.DOTNETSDK_VERSION }}'
     # Prepare Artifacts (req'd by integration tests)
     - name: 'Package FunctionRuntime'
       if: ${{ fromJSON(env.run_integration_tests) }}
       run: |
         mkdir -p outputs/function
-        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
+        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ needs.build.outputs.majorMinorPatch }} -p:VersionSuffix=${{ needs.build.outputs.preReleaseTag }}
         pushd outputs/function && \
         7z a -bd -r FunctionRuntime.zip && \
         popd
