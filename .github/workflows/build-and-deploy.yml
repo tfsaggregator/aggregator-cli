@@ -191,6 +191,7 @@ jobs:
     - name: 'Run integration tests'
       if: ${{ fromJSON(env.run_integration_tests) }}
       run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
+      shell: bash
     - name: 'Scrap secrets'
       if: always()
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
@@ -198,6 +199,7 @@ jobs:
     - name: 'Report on Code Coverage'
       if: always()
       run: 'dotnet reportgenerator "-reports:test-results/*/*.xml" "-targetdir:coverage-report/" "-reporttypes:Html" "-assemblyfilters:-*Tests*.*"'
+      shell: bash
     - name: Upload Code Coverage Reports
       if: always()
       uses: actions/upload-artifact@v2
