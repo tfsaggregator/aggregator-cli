@@ -100,44 +100,6 @@ jobs:
         dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-core.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-core/unittests-core.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-ruleng.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-ruleng/unittests-ruleng.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=unittests-function.trx" --no-build --no-restore --configuration $CONFIGURATION src/unittests-function/unittests-function.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-    # Prepare Artifacts (req'd by integration tests)
-    - name: 'Package FunctionRuntime'
-      if: ${{ fromJSON(env.run_integration_tests) }}
-      run: |
-        mkdir -p outputs/function
-        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
-        pushd outputs/function && \
-        7z a -bd -r FunctionRuntime.zip && \
-        popd
-    # Heavy weight integration tests
-    # logon-data.json is stored in project Secrets
-    - name: 'Prepare integration tests'
-      if: ${{ fromJSON(env.run_integration_tests) }}
-      run: |
-        echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
-        export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
-        INTEGRATIONTEST_SUBSCRIPTIONID=$(jq -r '.subscription?' $LOGONDATA_FNAME)
-        echo "Next message must display a valid Guid"
-        echo "Azure subscription for testing: $INTEGRATIONTEST_SUBSCRIPTIONID"
-        echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json
-      env:
-        LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
-      shell: bash
-    - name: 'Run integration tests'
-      if: ${{ fromJSON(env.run_integration_tests) }}
-      run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
-    - name: 'Scrap secrets'
-      if: always()
-      run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
-    - name: 'Report on Code Coverage'
-      if: always()
-      run: 'dotnet reportgenerator "-reports:test-results/*/*.xml" "-targetdir:coverage-report/" "-reporttypes:Html" "-assemblyfilters:-*Tests*.*"'
-    - name: Upload Code Coverage Reports
-      if: always()
-      uses: actions/upload-artifact@v2
-      with:
-        name: coverage_report
-        path: coverage-report/**
     - name: SonarCloud Scan
       if: ${{ fromJSON(env.run_integration_tests) }}
       run: dotnet sonarscanner end
@@ -189,10 +151,53 @@ jobs:
         name: release_packages
         path: outputs/**
 
+  integration_test:
+    runs-on: windows-latest
+    needs: [dummy_job, build]
+    steps:
+    # Prepare Artifacts (req'd by integration tests)
+    - name: 'Package FunctionRuntime'
+      if: ${{ fromJSON(env.run_integration_tests) }}
+      run: |
+        mkdir -p outputs/function
+        dotnet publish --configuration $CONFIGURATION --output $GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ steps.gitversion.outputs.majorMinorPatch }} -p:VersionSuffix=${{ steps.gitversion.outputs.preReleaseTag }}
+        pushd outputs/function && \
+        7z a -bd -r FunctionRuntime.zip && \
+        popd
+    # Heavy weight integration tests
+    # logon-data.json is stored in project Secrets
+    - name: 'Prepare integration tests'
+      if: ${{ fromJSON(env.run_integration_tests) }}
+      run: |
+        echo "$LOGONDATA_JSON" > $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+        export LOGONDATA_FNAME=$GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+        INTEGRATIONTEST_SUBSCRIPTIONID=$(jq -r '.subscription?' $LOGONDATA_FNAME)
+        echo "Next message must display a valid Guid"
+        echo "Azure subscription for testing: $INTEGRATIONTEST_SUBSCRIPTIONID"
+        echo "{\"sdk\":{\"version\":\"$DOTNETSDK_VERSION\"} }" > global.json
+      env:
+        LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
+      shell: bash
+    - name: 'Run integration tests'
+      if: ${{ fromJSON(env.run_integration_tests) }}
+      run: 'dotnet test --collect:"XPlat Code Coverage" --results-directory test-results/ --logger "trx;LogFileName=integrationtests-cli.trx" --no-restore --configuration $CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
+    - name: 'Scrap secrets'
+      if: always()
+      run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+    - name: 'Report on Code Coverage'
+      if: always()
+      run: 'dotnet reportgenerator "-reports:test-results/*/*.xml" "-targetdir:coverage-report/" "-reporttypes:Html" "-assemblyfilters:-*Tests*.*"'
+    - name: Upload Code Coverage Reports
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage_report
+        path: coverage-report/**
+
   release_to_github:
 
     runs-on: ubuntu-latest
-    needs: [dummy_job, build]
+    needs: [dummy_job, build, integration_test]
     if: ${{ fromJSON(needs.dummy_job.outputs.release_new_version) }}
     steps:
     - name: Download artifacts
@@ -284,7 +289,7 @@ jobs:
   push_to_dockerhub:
 
     runs-on: ${{ matrix.os }}
-    needs: [dummy_job, build]
+    needs: [dummy_job, build, integration_test]
     if: ${{ fromJSON(needs.dummy_job.outputs.release_new_version) }}
     env:
       map_os_to_rid: '{"ubuntu-latest":"linux-x64", "windows-latest":"win-x64"}'
