@@ -164,6 +164,7 @@ jobs:
         pushd outputs/function && \
         7z a -bd -r FunctionRuntime.zip && \
         popd
+      shell: bash
     # Heavy weight integration tests
     # logon-data.json is stored in project Secrets
     - name: 'Prepare integration tests'
@@ -184,6 +185,7 @@ jobs:
     - name: 'Scrap secrets'
       if: always()
       run: rm $GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json
+      shell: bash
     - name: 'Report on Code Coverage'
       if: always()
       run: 'dotnet reportgenerator "-reports:test-results/*/*.xml" "-targetdir:coverage-report/" "-reporttypes:Html" "-assemblyfilters:-*Tests*.*"'
