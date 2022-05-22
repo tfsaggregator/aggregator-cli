@@ -185,7 +185,7 @@ jobs:
         echo "Next message must display a valid Guid"
         $SubscriptionId = (Get-Content $LogonDataPath | ConvertFrom-Json).subscription
         echo "Azure subscription for testing: ${SubscriptionId}"
-        echo "{\"sdk\":{\"version\":\"$env:DOTNETSDK_VERSION\"} }" > global.json
+        Set-Content -Path global.json -Value "{`"sdk`":{`"version`":`"$env:DOTNETSDK_VERSION`"} }" -Encoding utf8NoBOM
       env:
         LOGONDATA_JSON: ${{ secrets.INTEGRATIONTESTS_CLI_LOGONDATA_JSON }}
     - name: 'Run integration tests'
