@@ -180,6 +180,7 @@ jobs:
     - name: 'Prepare integration tests'
       if: ${{ fromJSON(env.run_integration_tests) }}
       run: |
+        dotnet build --configuration $env:CONFIGURATION src/integrationtests-cli/integrationtests-cli.csproj
         $LogonDataPath = "$env:GITHUB_WORKSPACE/src/integrationtests-cli/logon-data.json"
         Set-Content -Path $LogonDataPath -Value "$env:LOGONDATA_JSON" -Encoding utf8NoBOM
         echo "Next message must display a valid Guid"
