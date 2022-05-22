@@ -172,8 +172,8 @@ jobs:
       run: |
         mkdir -p outputs/function
         dotnet publish --configuration $env:CONFIGURATION --output $env:GITHUB_WORKSPACE/outputs/function/ src/aggregator-function/aggregator-function.csproj -p:VersionPrefix=${{ needs.build.outputs.majorMinorPatch }} -p:VersionSuffix=${{ needs.build.outputs.preReleaseTag }}
-        pushd outputs/function && \
-        7z a -bd -r FunctionRuntime.zip && \
+        pushd outputs/function
+        7z a -bd -r FunctionRuntime.zip
         popd
     # Heavy weight integration tests
     # logon-data.json is stored in project Secrets
